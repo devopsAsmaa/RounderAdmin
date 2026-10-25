@@ -7,65 +7,65 @@
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4"><div><div class="small text-secondary">{{ __('Live metrics') }}</div><h1 class="h3 fw-bold mb-1">{{ __('Dashboard') }}</h1><p class="text-secondary mb-0">{{ __('Metrics are queried from MySQL records.') }}</p></div><span class="pill">{{ now()->translatedFormat('d F Y') }}</span></div>
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
 @if(array_key_exists('residents',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Residents') }}">
+<div class="col"><a href="{{ route('admin.residents.index') }}" class="kpi-card" aria-label="{{ __('Residents') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Residents') }}</span><span class="kpi-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['residents'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('providers',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Approved providers') }}">
+<div class="col"><a href="{{ route('admin.providers.index') }}" class="kpi-card" aria-label="{{ __('Approved providers') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Approved providers') }}</span><span class="kpi-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['providers'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('bookings',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('All bookings') }}">
+<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card" aria-label="{{ __('All bookings') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('All bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['bookings'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('pending_bookings',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Pending bookings') }}">
+<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card" aria-label="{{ __('Pending bookings') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Pending bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['pending_bookings'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('revenue',$stats))
 <div class="col"><article class="kpi-card financial" aria-label="{{ __('Collected payments') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Collected payments') }}</span><span class="kpi-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['revenue'],2) }} <span class="kpi-currency">{{ __('SAR') }}</span></div>
 </article></div>@endif
 @if(array_key_exists('linked_homes',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Linked homes') }}">
+<div class="col"><a href="{{ route('admin.realestate.index') }}" class="kpi-card" aria-label="{{ __('Linked homes') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Linked homes') }}</span><span class="kpi-icon"><i class="fa-solid fa-building" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['linked_homes'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('open_reports',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Open facility reports') }}">
+<div class="col"><a href="{{ route('admin.content.index') }}" class="kpi-card" aria-label="{{ __('Open facility reports') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Open facility reports') }}</span><span class="kpi-icon"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['open_reports'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('community_posts',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Community posts') }}">
+<div class="col"><a href="{{ route('admin.content.index') }}" class="kpi-card" aria-label="{{ __('Community posts') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Community posts') }}</span><span class="kpi-icon"><i class="fa-solid fa-comments" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['community_posts'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('active_initiatives',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Active initiatives') }}">
+<div class="col"><a href="{{ route('admin.content.index') }}" class="kpi-card" aria-label="{{ __('Active initiatives') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Active initiatives') }}</span><span class="kpi-icon"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['active_initiatives'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('pending_emergencies',$stats))
-<div class="col"><article class="kpi-card urgent" aria-label="{{ __('Pending emergency requests') }}">
+<div class="col"><a href="{{ route('admin.emergencies.index') }}" class="kpi-card urgent" aria-label="{{ __('Pending emergency requests') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Pending emergency requests') }}</span><span class="kpi-icon"><i class="fa-solid fa-truck-medical" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['pending_emergencies'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('active_subscriptions',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Active subscriptions') }}">
+<div class="col"><a href="{{ route('admin.subscriptions.index') }}" class="kpi-card" aria-label="{{ __('Active subscriptions') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Active subscriptions') }}</span><span class="kpi-icon"><i class="fa-solid fa-repeat" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['active_subscriptions'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('available_packages',$stats))
-<div class="col"><article class="kpi-card " aria-label="{{ __('Available packages') }}">
+<div class="col"><a href="{{ route('admin.packages.index') }}" class="kpi-card" aria-label="{{ __('Available packages') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Available packages') }}</span><span class="kpi-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['available_packages'],0) }}</div>
-</article></div>@endif
+</a></div>@endif
 @if(array_key_exists('commission_total',$stats))
 <div class="col"><article class="kpi-card financial" aria-label="{{ __('Platform commissions') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Platform commissions') }}</span><span class="kpi-icon"><i class="fa-solid fa-coins" aria-hidden="true"></i></span></div>

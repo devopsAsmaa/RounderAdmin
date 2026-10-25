@@ -18,7 +18,7 @@ class ApiVisitCreateVisitRequest extends ResidentRequest
     {
         return [
             'visitor_name' => ['required', 'string', 'min:2', 'max:120'],
-            'visitor_phone' => ['nullable', 'regex:/^\+[1-9]\d{7,14}$/'],
+            'visitor_phone' => ['nullable', 'regex:/^05[0-9]{8}$/'],
             'starts_at' => ['required', 'date', 'after:now'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
         ];

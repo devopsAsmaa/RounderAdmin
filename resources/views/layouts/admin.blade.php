@@ -17,11 +17,15 @@
 @media(max-width:991.98px){.admin-main{margin:0}.admin-main .container{padding:1rem}.content{padding:0!important}.panel{padding:1rem!important}.table-responsive{max-width:100%}.navbar{gap:.5rem}.navbar-brand{font-size:1rem}input,select,textarea{max-width:100%}}
 
 body,button,input,select,textarea{font-family:"Tajawal",system-ui,sans-serif}
-.kpi-card{height:100%;min-height:154px;padding:1.25rem;background:#fff;border:1px solid #e4ecea;border-radius:18px;box-shadow:0 6px 20px #073b4305;display:flex;flex-direction:column;justify-content:space-between;gap:1.1rem}
+.kpi-card{height:100%;min-height:154px;padding:1.25rem;background:#fff;border:1px solid #e4ecea;border-radius:18px;box-shadow:0 6px 20px #073b4305;display:flex;flex-direction:column;justify-content:space-between;gap:1.1rem;text-decoration:none;color:inherit;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+a.kpi-card:hover{transform:translateY(-3px);box-shadow:0 12px 24px #073b4318;border-color:#b4dbd2;color:inherit}
 .kpi-card .kpi-label{font-size:.95rem;font-weight:500;color:#61757b;line-height:1.6}
-.kpi-icon{flex-shrink:0;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:var(--petrol);background:#e8f4f0;font-size:1.2rem}
+.kpi-icon{flex-shrink:0;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:var(--petrol);background:#e8f4f0;font-size:1.2rem;transition:background-color .18s ease}
+a.kpi-card:hover .kpi-icon{background:var(--petrol);color:#fff}
 .kpi-card.financial .kpi-icon{background:#fff0df;color:#b6530b}
+a.kpi-card.financial:hover .kpi-icon{background:#b6530b;color:#fff}
 .kpi-card.urgent .kpi-icon{background:#fff0f0;color:#c54848}
+a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 .kpi-value{font-size:2rem;font-weight:800;line-height:1.2;letter-spacing:.01em;color:var(--petrol);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .kpi-currency{font-size:.8rem;font-weight:500;color:#75868b}
 .dashboard-intro{padding:1.25rem 0}.dashboard-intro h1{font-weight:800}
@@ -49,9 +53,14 @@ body,button,input,select,textarea{font-family:"Tajawal",system-ui,sans-serif}
 @adminCan('admin.about')<a class="{{ request()->routeIs('admin.about') ? 'active' : '' }}" href="{{ route('admin.about') }}"><i class="fa-solid fa-circle-info me-2" aria-hidden="true"></i>{{ __('About Rounder') }}</a>@endadminCan
 </details>
 @endif
+@if(app(\App\Modules\Access\Services\AdminPermissionService::class)->allowsRoute(auth()->user(),'admin.residents.index','GET'))
+<details class="menu-group mb-2" open><summary class="fw-bold px-3 py-2">{{ __('Residents') }}</summary>
+@adminCan('admin.residents.index')<a class="{{ request()->routeIs('admin.residents.*') ? 'active' : '' }}" href="{{ route('admin.residents.index') }}"><i class="fa-solid fa-users me-2" aria-hidden="true"></i>{{ __('Residents') }}</a>@endadminCan
+</details>
+@endif
 @if(app(\App\Modules\Access\Services\AdminPermissionService::class)->allowsRoute(auth()->user(),'admin.users.index','GET') || app(\App\Modules\Access\Services\AdminPermissionService::class)->allowsRoute(auth()->user(),'admin.users.create','GET'))
 <details class="menu-group mb-2" open><summary class="fw-bold px-3 py-2">{{ __('Users') }}</summary>
-@adminCan('admin.users.index')<a class="{{ request()->routeIs('admin.users.index') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>{{ __('Users') }}</a>@endadminCan
+@adminCan('admin.users.index')<a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>{{ __('Administrators') }}</a>@endadminCan
 @adminCan('admin.users.create')<a class="{{ request()->routeIs('admin.users.create') ? 'active' : '' }}" href="{{ route('admin.users.create') }}"><i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>{{ __('Create user') }}</a>@endadminCan
 </details>
 @endif

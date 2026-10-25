@@ -21,7 +21,7 @@ class ApiAuthRegisterRequest extends PublicRequest
         return [
    'name'=>['required','string','min:2','max:120'],
    'email'=>['required','string','email:rfc','max:254','unique:users,email'],
-   'phone'=>['nullable','string','regex:/^\+[1-9][0-9]{7,14}$/','unique:users,phone'],
+'phone' => ['nullable', 'string', 'regex:/^05[0-9]{8}$/', 'unique:users,phone'],
    'password'=>['required','string','min:10','max:72',BookingStatusCode::Confirmed->value,'regex:/[a-z]/','regex:/[A-Z]/','regex:/[0-9]/'],
    'locale'=>['sometimes',Rule::enum(SupportedLocale::class)],
   ];
