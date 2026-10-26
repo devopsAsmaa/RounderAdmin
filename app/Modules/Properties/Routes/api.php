@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1/resident')->middleware(['auth:sanctum', 'resident'])->group(function () {
     Route::get('/cities', \App\Modules\Properties\Controllers\Api\CityController::class);
     Route::get('/homes', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'index']);
+    Route::post('/homes', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'addUnit'])->middleware('throttle:10,1');
+    Route::post('/homes/add-unit', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'addUnit'])->middleware('throttle:10,1');
+    Route::post('/homes/set-primary', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'setPrimary'])->middleware('throttle:10,1');
     Route::post('/homes/link', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'link'])->middleware('throttle:10,1');
     Route::get('/visits', [\App\Modules\Properties\Controllers\Api\VisitController::class, 'visits']);
     Route::post('/visits', [\App\Modules\Properties\Controllers\Api\VisitController::class, 'createVisit'])->middleware('throttle:10,1');

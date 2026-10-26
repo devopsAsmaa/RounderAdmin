@@ -9,6 +9,9 @@ use App\Modules\Identity\Requests\ApiAuthRegisterRequest;
 use App\Modules\Identity\Requests\ApiAuthLoginRequest;
 use App\Modules\Identity\Requests\ApiAuthLogoutRequest;
 use App\Modules\Identity\Requests\ApiAuthMeRequest;
+use App\Modules\Identity\Requests\ApiValidateMobileRequest;
+use App\Modules\Identity\Requests\ApiSendOtpRequest;
+use App\Modules\Identity\Requests\ApiVerifyOtpRequest;
 
 /** متحكم HTTP لمجال Identity؛ يفوض جميع العمليات إلى الخدمة. */
 class AuthController extends Controller
@@ -65,5 +68,35 @@ class AuthController extends Controller
     public function me(ApiAuthMeRequest $request): \Illuminate\Http\JsonResponse
     {
         return response()->json($this->service->me($request->validated(), $request->user()), 200);
+    }
+
+    /**
+     * التحقق من رقم الجوال.
+     * @param ApiValidateMobileRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function validateMobile(ApiValidateMobileRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->validateMobile($request->validated(), null), 200);
+    }
+
+    /**
+     * إرسال رمز التحقق OTP.
+     * @param ApiSendOtpRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sendOtp(ApiSendOtpRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->sendOtp($request->validated(), null), 200);
+    }
+
+    /**
+     * التحقق من رمز OTP وتأكيد الدخول.
+     * @param ApiVerifyOtpRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verifyOtp(ApiVerifyOtpRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->verifyOtp($request->validated(), null), 200);
     }
 }

@@ -6,6 +6,9 @@ enum Operation: string
     case ApiAuthRegister = 'ApiAuthService.register';
     case ApiAuthLogin = 'ApiAuthService.login';
     case ApiAuthLogout = 'ApiAuthService.logout';
+    case ApiAuthValidateMobile = 'ApiAuthService.validateMobile';
+    case ApiAuthSendOtp = 'ApiAuthService.sendOtp';
+    case ApiAuthVerifyOtp = 'ApiAuthService.verifyOtp';
     case ApiProfileUpdateProfile = 'ApiProfileService.updateProfile';
     case AdminUserDelete = 'AdminUserService.delete';
     case AdminUserStore = 'AdminUserService.store';

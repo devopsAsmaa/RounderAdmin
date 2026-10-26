@@ -6,9 +6,37 @@ use App\Core\Http\Requests\ResidentRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
+use Carbon\Carbon;
+
 /** التحقق من مدخلات VisitController::createVisit قبل تشغيل الخدمة. */
 class ApiVisitCreateVisitRequest extends ResidentRequest
 {
+    /**
+     * معالجة وتحويل التواريخ الواردة بصيغة ISO 8601 إلى صيغة التاريخ المتوافقة مع MySQL.
+     */
+    protected function prepareForValidation(): void
+    {
+        $merge = [];
+        $startsAt = $this->input('starts_at');
+        $endsAt = $this->input('ends_at');
+
+        if ($startsAt) {
+            try {
+                $merge['starts_at'] = Carbon::parse($startsAt)->format('Y-m-d H:i:s');
+            } catch (\Throwable) {}
+        }
+
+        if ($endsAt) {
+            try {
+                $merge['ends_at'] = Carbon::parse($endsAt)->format('Y-m-d H:i:s');
+            } catch (\Throwable) {}
+        }
+
+        if (!empty($merge)) {
+            $this->merge($merge);
+        }
+    }
+
     /**
      * قواعد المدخلات؛ صلاحيات الدور موروثة من قاعدة الطلب.
      * @return array<string, mixed>

@@ -68,6 +68,15 @@ class User extends Authenticatable
     }
 
     /**
+     * الحصول على رقم الجوال كاسم بديل لرقم الهاتف.
+     * @return string|null
+     */
+    public function getMobileAttribute(): ?string
+    {
+        return $this->attributes['phone'] ?? null;
+    }
+
+    /**
      * السجل المرتبط عبر role_id.
      * @return BelongsTo
      */
@@ -317,6 +326,7 @@ class User extends Authenticatable
     public function residentHomes(): BelongsToMany
     {
         return $this->belongsToMany(Home::class, 'resident_homes')
-            ->withPivot(['unit_label', 'is_primary'])->withTimestamps();
+            ->withPivot(['id', 'unit_label', 'residence_type', 'custom_name', 'floor_number', 'area_sqm', 'ownership_type', 'is_primary'])
+            ->withTimestamps();
     }
 }
