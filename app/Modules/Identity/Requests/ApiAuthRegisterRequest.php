@@ -56,9 +56,9 @@ class ApiAuthRegisterRequest extends PublicRequest
     public function messages(): array
     {
         return [
-            'mobile.regex' => __('validation.mobile_format', ['attribute' => __('validation.attributes.mobile', [], 'ar') ?: 'الجوال']) !== 'validation.mobile_format'
-                ? __('validation.mobile_format')
-                : 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
+            'mobile.required' => 'رقم الجوال مطلوب.',
+            'mobile.regex' => 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
+            'phone.required' => 'رقم الهاتف مطلوب.',
             'phone.regex' => 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
         ];
     }

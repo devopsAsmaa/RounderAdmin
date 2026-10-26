@@ -32,7 +32,7 @@
 </select>
 </div>
 @if($emergency)
-<div class="col-md-6"><label for="contact_phone" class="form-label">{{ __('Contact phone') }}</label><input id="contact_phone" name="contact_phone" type="tel" dir="ltr" value="{{ old('contact_phone') }}" class="form-control" pattern="\\+[1-9][0-9]{7,14}" maxlength="16" placeholder="+9665XXXXXXXX" required></div>
+<div class="col-md-6"><label for="contact_phone" class="form-label">{{ __('Contact phone') }}</label><input id="contact_phone" name="contact_phone" type="tel" dir="ltr" value="{{ old('contact_phone') }}" class="form-control" pattern="05[0-9]{8}" maxlength="10" placeholder="05XXXXXXXX" required></div>
 <div class="col-md-6"><label for="location_details" class="form-label">{{ __('Location details') }}</label><input id="location_details" name="location_details" value="{{ old('location_details') }}" class="form-control" minlength="4" maxlength="255" required></div>
 <div class="col-12"><label for="description" class="form-label">{{ __('Emergency description') }}</label><textarea id="description" name="description" class="form-control" rows="4" minlength="10" maxlength="3000" required>{{ old('description') }}</textarea></div>
 <div class="col-12"><div class="form-check"><input id="confirm_emergency" type="checkbox" name="confirm_emergency" value="1" class="form-check-input" @checked(old('confirm_emergency')) required><label for="confirm_emergency" class="form-check-label">{{ __('I confirm this is an emergency request.') }}</label></div></div>

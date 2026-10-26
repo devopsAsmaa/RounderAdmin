@@ -8,9 +8,9 @@
 @if($user->exists) @method('PUT') @endif
 <h2 class="h5">{{ $user->exists ? __('Edit') : __('Create user') }}</h2>
 <div class="row g-3">
-@foreach(['name'=>'Name','email'=>'Email address','phone'=>'Phone'] as $field=>$label)
+@foreach(['name'=>'Name','phone'=>'Phone (05xxxxxxxx)','email'=>'Email address'] as $field=>$label)
 <div class="col-md-4"><label class="form-label" for="{{ $field }}">{{ __($label) }}</label><input id="{{ $field }}" name="{{ $field }}" type="{{ $field==='email' ? 'email' : ($field==='phone' ? 'tel' : 'text') }}" class="form-control"
-value="{{ old($field,$user->$field) }}" @required($field!=='phone') maxlength="{{ $field==='name' ? 120 : ($field==='phone' ? 20 : 254) }}"></div>
+value="{{ old($field,$user->$field) }}" @required($field!=='email') @if($field==='phone') pattern="05[0-9]{8}" placeholder="05XXXXXXXX" dir="ltr" @endif maxlength="{{ $field==='name' ? 120 : ($field==='phone' ? 10 : 254) }}"></div>
 @endforeach
 <div class="col-md-4"><label for="permission-set" class="form-label">{{ __('Permissions') }}</label>
 <select id="permission-set" name="permission_set_id" class="form-select" required><option value="">{{ __('Choose permission') }}</option>

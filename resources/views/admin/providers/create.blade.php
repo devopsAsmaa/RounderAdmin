@@ -8,8 +8,8 @@
 @adminCan('admin.providers.store','POST')<form method="post" action="{{ route('admin.providers.store') }}">@csrf
 <div class="row g-3">
 <div class="col-md-4"><label class="form-label">{{ __('Contact name') }}</label><input class="form-control" name="name" required minlength="2" maxlength="120" value="{{ old('name') }}"></div>
-<div class="col-md-4"><label class="form-label">{{ __('Email address') }}</label><input type="email" class="form-control" name="email" required maxlength="254" value="{{ old('email') }}"></div>
-<div class="col-md-4"><label class="form-label">{{ __('Phone') }} (+966…)</label><input type="tel" class="form-control" name="phone" required pattern="\+[1-9][0-9]{7,14}" value="{{ old('phone') }}"></div>
+<div class="col-md-4"><label class="form-label">{{ __('Phone') }} (05…)</label><input type="tel" dir="ltr" class="form-control" name="phone" required pattern="05[0-9]{8}" maxlength="10" placeholder="05XXXXXXXX" value="{{ old('phone') }}"></div>
+<div class="col-md-4"><label class="form-label">{{ __('Email address') }}</label><input type="email" class="form-control" name="email" maxlength="254" value="{{ old('email') }}"></div>
 <div class="col-md-6"><label class="form-label">{{ __('Company name') }}</label><input class="form-control" name="company_name" required minlength="2" maxlength="160" value="{{ old('company_name') }}"></div>
 <div class="col-md-3"><label class="form-label">{{ __('Account language') }}</label><select class="form-select" name="locale" required><option value="ar" @selected(old('locale','ar')==='ar')>العربية</option><option value="en" @selected(old('locale','ar')==='en')>English</option><option value="ur" @selected(old('locale','ar')==='ur')>اردو</option></select></div>
 <div class="col-md-3"><label class="form-label">{{ __('Approval') }}</label><select class="form-select" name="is_approved" required><option value="0" @selected(old('is_approved',0)==0)>{{ __('Pending approval') }}</option><option value="1" @selected(old('is_approved',0)==1)>{{ __('Approved') }}</option></select></div>

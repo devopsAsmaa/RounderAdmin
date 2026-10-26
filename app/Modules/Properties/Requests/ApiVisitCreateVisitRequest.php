@@ -8,11 +8,13 @@ use Illuminate\Support\Str;
 
 use Carbon\Carbon;
 
+use App\Core\Support\SaudiPhone;
+
 /** التحقق من مدخلات VisitController::createVisit قبل تشغيل الخدمة. */
 class ApiVisitCreateVisitRequest extends ResidentRequest
 {
     /**
-     * معالجة وتحويل التواريخ الواردة بصيغة ISO 8601 إلى صيغة التاريخ المتوافقة مع MySQL.
+     * معالجة وتحويل التواريخ الواردة بصيغة ISO 8601 إلى صيغة التاريخ المتوافقة مع MySQL وتوحيد رقم الجوال.
      */
     protected function prepareForValidation(): void
     {
@@ -32,6 +34,10 @@ class ApiVisitCreateVisitRequest extends ResidentRequest
             } catch (\Throwable) {}
         }
 
+        if ($this->has('visitor_phone')) {
+            $merge['visitor_phone'] = SaudiPhone::normalize((string) $this->input('visitor_phone'));
+        }
+
         if (!empty($merge)) {
             $this->merge($merge);
         }
@@ -46,9 +52,17 @@ class ApiVisitCreateVisitRequest extends ResidentRequest
     {
         return [
             'visitor_name' => ['required', 'string', 'min:2', 'max:120'],
-            'visitor_phone' => ['nullable', 'regex:/^05[0-9]{8}$/'],
+            'visitor_phone' => ['required', 'string', 'regex:' . SaudiPhone::REGEX],
             'starts_at' => ['required', 'date', 'after:now'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'visitor_phone.required' => 'رقم هاتف الزائر مطلوب.',
+            'visitor_phone.regex' => 'رقم هاتف الزائر يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
         ];
     }
 }

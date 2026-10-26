@@ -42,7 +42,7 @@ class ApiVerifyOtpRequest extends PublicRequest
     {
         return [
             'mobile.required' => 'رقم الجوال مطلوب.',
-            'mobile.regex' => 'رقم الجوال غير صحيح.',
+            'mobile.regex' => 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
             'otp.required' => 'رمز التحقق مطلوب.',
             'otp.digits' => 'رمز التحقق يجب أن يتكون من 6 أرقام.',
         ];

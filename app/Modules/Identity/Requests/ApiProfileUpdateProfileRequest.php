@@ -7,9 +7,21 @@ use App\Core\Http\Requests\ResidentRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
+use App\Core\Support\SaudiPhone;
+
 /** التحقق من مدخلات ProfileController::updateProfile قبل تشغيل الخدمة. */
 class ApiProfileUpdateProfileRequest extends ResidentRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('phone') || $this->has('mobile')) {
+            $raw = (string) ($this->input('phone') ?? $this->input('mobile') ?? '');
+            $this->merge([
+                'phone' => SaudiPhone::normalize($raw),
+            ]);
+        }
+    }
+
     /**
      * قواعد المدخلات؛ صلاحيات الدور موروثة من قاعدة الطلب.
      * @return array<string, mixed>
@@ -19,9 +31,17 @@ class ApiProfileUpdateProfileRequest extends ResidentRequest
     {
         return [
             'name' => ['sometimes', 'required', 'string', 'min:2', 'max:120'],
-            'email' => ['sometimes', 'required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($this->user()->id)],
-            'phone' => ['sometimes', 'nullable', 'regex:/^05[0-9]{8}$/', Rule::unique('users', 'phone')->ignore($this->user()->id)],
+            'email' => ['sometimes', 'nullable', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($this->user()->id)],
+            'phone' => ['sometimes', 'required', 'string', 'regex:' . SaudiPhone::REGEX, Rule::unique('users', 'phone')->ignore($this->user()->id)],
             'locale' => ['sometimes', 'required', Rule::in(array_column(SupportedLocale::cases(), 'value'))],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.required' => 'رقم الهاتف مطلوب.',
+            'phone.regex' => 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
         ];
     }
 }

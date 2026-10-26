@@ -42,7 +42,7 @@ class ApiValidateMobileRequest extends PublicRequest
     {
         return [
             'mobile.required' => 'رقم الجوال مطلوب.',
-            'mobile.regex' => 'رقم الجوال يجب أن يبدأ بـ 05 أو 5 ويتكون من أرقام صحيحة.',
+            'mobile.regex' => 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
         ];
     }
 }
