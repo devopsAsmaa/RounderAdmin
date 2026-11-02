@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Modules\Identity\Events\IdentityChanged;
 use App\Modules\Identity\Enums\Operation;
+use App\Modules\Identity\Services\SMS;
+use Illuminate\Support\Facades\Log;
 
 /** قواعد عمل Identity؛ تستقبل بيانات متحققاً منها دون الاعتماد على HTTP. */
 class ApiAuthService
@@ -187,6 +189,19 @@ class ApiAuthService
 
         // إنشاء كود عشوائي مكون من 6 أرقام مطابق لتصميم الفيجما
         $otp = (string) random_int(100000, 999999);
+
+       try {
+        SMS::send($mobile, 'Your OTP code is '.$otp);
+        } catch (\Exception $e) {
+            // تسجيل الخطأ في logs
+            Log::error('Failed to send OTP', [
+                'mobile' => $user->mobile,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+          return response()->json(['error' => 'Failed to send OTP. Please try again.'], 500);
+
+        }
 
         // حفظ الكود في Cache لمدة 3 دقائق
         Cache::put('otp_' . $mobile, $otp, now()->addMinutes(3));

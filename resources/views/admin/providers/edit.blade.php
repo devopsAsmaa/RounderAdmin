@@ -13,6 +13,7 @@
 <div class="col-md-6"><label class="form-label">{{ __('Company name') }}</label><input class="form-control" name="company_name" required minlength="2" maxlength="160" value="{{ old('company_name',$provider->company_name) }}"></div>
 <div class="col-md-3"><label class="form-label">{{ __('Account language') }}</label><select class="form-select" name="locale" required><option value="ar" @selected(old('locale',$provider->user->locale instanceof \BackedEnum ? $provider->user->locale->value : $provider->user->locale)==='ar')>العربية</option><option value="en" @selected(old('locale',$provider->user->locale instanceof \BackedEnum ? $provider->user->locale->value : $provider->user->locale)==='en')>English</option><option value="ur" @selected(old('locale',$provider->user->locale instanceof \BackedEnum ? $provider->user->locale->value : $provider->user->locale)==='ur')>اردو</option></select></div>
 <div class="col-md-3"><label class="form-label">{{ __('Approval') }}</label><select class="form-select" name="is_approved" required><option value="0" @selected(old('is_approved',$provider->is_approved)==0)>{{ __('Pending approval') }}</option><option value="1" @selected(old('is_approved',$provider->is_approved)==1)>{{ __('Approved') }}</option></select></div>
+@include('admin.providers.partials.services-field')
 
 @if($contract)
 <input type="hidden" name="contract_id" value="{{ $contract->id }}">

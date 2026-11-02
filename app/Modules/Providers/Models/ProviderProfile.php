@@ -5,9 +5,11 @@ namespace App\Modules\Providers\Models;
 use App\Modules\Bookings\Models\BookingProviderAssignment;
 use App\Modules\Emergencies\Models\EmergencyProviderAssignment;
 use App\Modules\Identity\Models\User;
+use App\Modules\Catalog\Models\Service;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** يمثل بيانات provider_profiles وعلاقاتها بالمفاتيح الأجنبية في قاعدة البيانات. */
@@ -41,6 +43,16 @@ class ProviderProfile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * الخدمات التي يقدمها مزود الخدمة.
+     * @return BelongsToMany
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'provider_services', 'provider_profile_id', 'service_id')
+            ->withTimestamps();
     }
 
     /**

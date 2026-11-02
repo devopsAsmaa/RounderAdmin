@@ -216,6 +216,110 @@
             ]
         },
         {
+            "name": "Pages & Policies",
+            "item": [
+                {
+                    "name": "GET /terms",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/terms",
+                        "description": "استرجاع الشروط والأحكام بحسب لغة الطلب (عامة دون الحاجة لمصادقة).",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
+                },
+                {
+                    "name": "GET /privacy",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/privacy",
+                        "description": "استرجاع سياسة الخصوصية بحسب لغة الطلب (عامة دون الحاجة لمصادقة).",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
+                },
+                {
+                    "name": "GET /pages/{slug}",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/pages/terms",
+                        "description": "استرجاع أي صفحة بناءً على الـ slug بحسب لغة الطلب.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
+                }
+            ]
+        },
+        {
             "name": "Identity",
             "item": [
                 {
@@ -678,6 +782,84 @@
                     "response": []
                 },
                 {
+                    "name": "POST /resident/properties",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/resident/properties",
+                        "description": "إضافة عقار جديد للمستخدم (فيلا / شقة / دور) وربطه بحسابه تلقائياً، مع دعم اسم العقار وتحديد نوع الملكية والتعيين كعقار رئيسي.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"برج النرجس\",\n    \"address\": \"حي النرجس، شارع عثمان بن عفان\",\n    \"district\": \"النرجس\",\n    \"city_id\": 1,\n    \"residence_type\": \"apartment\",\n    \"unit_number\": \"101\",\n    \"floor_number\": \"1\",\n    \"area_sqm\": 145.5,\n    \"ownership_type\": \"owner\",\n    \"is_primary\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.within(200, 299));",
+                                    "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                                    "    const data = pm.response.json().data;",
+                                    "    if (data && data.home_id) pm.environment.set(\"home_id\", String(data.home_id));",
+                                    "    if (data && data.id) pm.environment.set(\"resident_home_id\", String(data.id));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
+                },
+                {
+                    "name": "GET /resident/properties",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/resident/properties",
+                        "description": "استعراض جميع العقارات المرتبطة بحساب المستخدم الحالي."
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
+                },
+                {
                     "name": "POST /resident/homes/add-unit",
                     "request": {
                         "method": "POST",
@@ -987,6 +1169,21 @@
                     "response": []
                 },
                 {
+                    "name": "GET /resident/service-providers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/resident/service-providers?service_id={{service_id}}",
+                        "description": "Returns approved providers linked to the requested service_id."
+                    },
+                    "response": []
+                },
+                {
                     "name": "GET /resident/packages",
                     "request": {
                         "method": "GET",
@@ -1095,6 +1292,36 @@
         {
             "name": "Bookings",
             "item": [
+                {
+                    "name": "GET /resident/booking-statuses",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/resident/booking-statuses",
+                        "description": "قائمة حالات الحجوزات مع الترجمة حسب لغة الطلب."
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                                ]
+                            }
+                        }
+                    ],
+                    "response": []
+                },
                 {
                     "name": "GET /resident/bookings",
                     "request": {
@@ -1260,6 +1487,25 @@
         {
             "name": "Emergencies",
             "item": [
+                {
+                    "name": "GET /resident/emergency-types",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/resident/emergency-types",
+                        "description": "Returns active emergency types with names in the requested locale."
+                    },
+                    "response": []
+                },
                 {
                     "name": "GET /resident/emergency-requests",
                     "request": {

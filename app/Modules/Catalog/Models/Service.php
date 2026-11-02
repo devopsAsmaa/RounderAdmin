@@ -6,6 +6,7 @@ use App\Modules\Bookings\Models\Booking;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** يمثل بيانات services وعلاقاتها بالمفاتيح الأجنبية في قاعدة البيانات. */
@@ -87,6 +88,16 @@ class Service extends Model
     }
 
     /**
+     * مزودو الخدمة المرتبطون بهذه الخدمة.
+     * @return BelongsToMany
+     */
+    public function providers(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Modules\Providers\Models\ProviderProfile::class, 'provider_services', 'service_id', 'provider_profile_id')
+            ->withTimestamps();
+    }
+
+    /**
      * إخفاء عناصر الكتالوج الموقوفة عن الاختيارات الجديدة.
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
@@ -95,4 +106,8 @@ class Service extends Model
     {
         return $query->where($this->qualifyColumn('is_active'), true);
     }
+    public function subServices(): HasMany
+{
+    return $this->hasMany(SubService::class, 'service_id');
+}
 }

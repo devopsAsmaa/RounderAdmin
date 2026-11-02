@@ -8,6 +8,7 @@ enum Operation: string
     case AdminHomeDelete = 'AdminHomeService.delete';
     case ApiResidentHomeLink = 'ApiResidentHomeService.link';
     case ApiAddUnit = 'ApiResidentHomeService.addUnit';
+    case ApiAddProperty = 'ApiResidentHomeService.addProperty';
     case ApiSetPrimaryHome = 'ApiResidentHomeService.setPrimary';
     case ApiVisitCreateVisit = 'ApiVisitService.createVisit';
     case ApiVisitCancelVisit = 'ApiVisitService.cancelVisit';

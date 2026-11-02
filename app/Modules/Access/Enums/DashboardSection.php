@@ -9,6 +9,9 @@ enum DashboardSection: string
     case Providers = 'providers';
     case Realestate = 'realestate';
     case Services = 'services';
+    case SubServices = 'sub_services';   // جديد
+    case ServiceCategories = 'service_categories'; // جديد
+
     case Packages = 'packages';
     case Features = 'features';
     case Subscriptions = 'subscriptions';
@@ -16,6 +19,7 @@ enum DashboardSection: string
     case Orders = 'orders';
     case Emergencies = 'emergencies';
     case Permissions = 'permissions';
+    case Pages = 'pages';
     /** @return string */
     public function label(): string
     {
@@ -26,6 +30,8 @@ enum DashboardSection: string
             self::Providers => __('Providers and contracts'),
             self::Realestate => __('Homes'),
             self::Services => __('Available services'),
+            self::SubServices => __('Sub services'),   // جديد
+            self::ServiceCategories => __('Service categories'), // جديد
             self::Packages => __('Customer packages'),
             self::Features => __('Package comparison features'),
             self::Subscriptions => __('Customer subscriptions'),
@@ -33,6 +39,7 @@ enum DashboardSection: string
             self::Orders => __('Service orders'),
             self::Emergencies => __('Emergency requests'),
             self::Permissions => __('Permissions'),
+            self::Pages => __('Pages and policies'),
         };
     }
 }

@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Modules\Providers\Events\ProvidersChanged;
 use App\Modules\Providers\Enums\Operation;
+use App\Modules\Catalog\Models\Service;
 
 /** قواعد عمل Providers؛ تستقبل بيانات متحققاً منها دون الاعتماد على HTTP. */
 class AdminProviderService
@@ -90,13 +91,15 @@ class AdminProviderService
 
         DB::transaction(function () use ($input, $actor, $data) {
             $userId = $this->accounts->create($data, $actor?->id)->getKey();
-            $providerId = ProviderProfile::query()->create([
+            $provider = ProviderProfile::query()->create([
                 'user_id' => $userId,
                 'company_name' => $data['company_name'],
                 'is_approved' => $data['is_approved'],
                 'created_at' => now(),
                 'updated_at' => now(),
-            ])->getKey();
+            ]);
+            $providerId = $provider->getKey();
+            $provider->services()->sync($data['service_ids'] ?? []);
             $contractStatus = ProviderContractStatus::query()
                 ->where('code', $data['is_approved'] ? ContractStatusCode::Active->value : ContractStatusCode::Draft->value)->value('id');
             DomainViolation::unless($contractStatus, FailureReason::Configuration, 'Provider contract statuses are not configured.');
@@ -124,8 +127,28 @@ class AdminProviderService
      */
     public function edit(int $providerId): array
     {
-        $provider = ProviderProfile::with('user')->findOrFail($providerId);
-        return ['provider'=>$provider,'contract'=>$provider->contracts()->latest('id')->first()];
+        $provider = ProviderProfile::with(['user', 'services.translations'])->findOrFail($providerId);
+        return [
+            'provider' => $provider,
+            'contract' => $provider->contracts()->latest('id')->first(),
+            'services' => $this->availableServices(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function create(): array
+    {
+        return ['services' => $this->availableServices()];
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Service>
+     */
+    private function availableServices(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Service::query()->with('translations')->orderBy('code')->get();
     }
 
     /**
@@ -145,6 +168,9 @@ class AdminProviderService
                 'company_name' => $input['company_name'],
                 'is_approved' => $input['is_approved'],
             ]);
+            if (array_key_exists('service_ids', $input)) {
+                $provider->services()->sync($input['service_ids'] ?? []);
+            }
             if (!empty($input['contract_id'])) {
                 $contract = $provider->contracts()->lockForUpdate()->findOrFail($input['contract_id']);
                 if ($input['is_approved'] && $contract->status?->code === ContractStatusCode::Draft->value) {

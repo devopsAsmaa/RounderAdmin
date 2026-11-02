@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Properties\Requests\ApiResidentHomeIndexRequest;
 use App\Modules\Properties\Requests\ApiResidentHomeLinkRequest;
 use App\Modules\Properties\Requests\ApiAddUnitRequest;
+use App\Modules\Properties\Requests\ApiAddPropertyRequest;
 use App\Modules\Properties\Requests\ApiSetPrimaryHomeRequest;
 
 /** متحكم HTTP لمجال Properties؛ يفوض جميع العمليات إلى الخدمة. */
@@ -53,6 +54,16 @@ class ResidentHomeController extends Controller
     public function addUnit(ApiAddUnitRequest $request): \Illuminate\Http\JsonResponse
     {
         return response()->json($this->service->addUnit($request->validated(), $request->user()), 201);
+    }
+
+    /**
+     * حفظ عقار جديد للمستخدم وربطه بحسابه تلقائياً.
+     * @param ApiAddPropertyRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function addProperty(ApiAddPropertyRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->addProperty($request->validated(), $request->user()), 201);
     }
 
     /**

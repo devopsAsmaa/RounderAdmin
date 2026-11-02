@@ -60,9 +60,10 @@ class AdminOrderCreationService
     private function performStoreService(array $input, User|\App\Modules\Identity\Models\Admin|null $actor): mixed
     {
         $data = $input;
+        $images = $input['images'] ?? [];
+        unset($data['images']);
 
-        
-        DB::transaction(function () use ($data, $input, $actor) {
+        DB::transaction(function () use ($data, $input, $actor, $images) {
             $membership = $this->membership($data['resident_home_id']);
             $service = Service::query()->where('id', $data['service_id'])->where('is_active', true)->lockForUpdate()->first();
             if (!$service) {
@@ -70,15 +71,25 @@ class AdminOrderCreationService
             }
             $status = BookingStatus::query()->where('code', BookingStatusCode::Pending->value)->firstOrFail();
             // Prices and resident IDs are always taken from trusted database records.
-            $id = Booking::query()->create([
+            $booking = Booking::query()->create([
                 'resident_id' => $membership->user_id, 'resident_home_id' => $membership->id,
                 'home_id' => $membership->home_id, 'service_id' => $service->id,
                 'booking_status_id' => $status->id, 'scheduled_at' => $data['scheduled_at'],
                 'total_amount' => $service->base_price, 'notes' => $data['notes'] ?? null,
                 'created_at' => now(), 'updated_at' => now(),
-            ])->getKey();
+            ]);
+
+            if (!empty($images) && is_array($images)) {
+                $storage = new \App\Modules\Bookings\Services\BookingMediaStorage();
+                foreach ($images as $image) {
+                    if ($image instanceof \Illuminate\Http\UploadedFile) {
+                        $storage->store($booking, $image, $actor, 'photo');
+                    }
+                }
+            }
+
             BookingStatusHistory::query()->create([
-                'booking_id' => $id, 'booking_status_id' => $status->id,
+                'booking_id' => $booking->id, 'booking_status_id' => $status->id,
                 ...\App\Core\AdminActor::attributes($actor, 'changed_by'), 'note' => 'Created by administrator', 'created_at' => now(),
             ]);
         });

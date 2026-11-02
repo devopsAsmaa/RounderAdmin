@@ -35,8 +35,11 @@ class ApiResidentHomeService
 
             return [
                 'id' => $h->id,
+                'home_id' => $h->id,
+                'property_id' => $h->id,
                 'resident_home_id' => $h->pivot->id ?? null,
                 'name' => $h->name,
+                'property_name' => $h->name,
                 'custom_name' => $h->pivot->custom_name ?? null,
                 'unit_label' => $h->pivot->unit_label,
                 'unit_number' => $h->pivot->unit_label,
@@ -126,7 +129,7 @@ class ApiResidentHomeService
                 $cityId = $firstCity?->id ?? 32068;
             }
 
-            $homeName = $input['custom_name'] ?? $input['district'] ?? 'سكن جديد';
+            $homeName = $input['custom_name'] ?? $input['name'] ?? $input['property_name'] ?? $input['district'] ?? 'سكن جديد';
 
             $home = Home::create([
                 'city_id' => $cityId,
@@ -170,12 +173,18 @@ class ApiResidentHomeService
                 'message' => 'تم حفظ السكن وإضافة الوحدة بنجاح.',
                 'data' => [
                     'id' => $residentHome->id,
+                    'resident_home_id' => $residentHome->id,
                     'home_id' => $home->id,
+                    'property_id' => $home->id,
                     'home_name' => $home->name,
+                    'property_name' => $home->name,
+                    'name' => $home->name,
+                    'property_code' => $home->property_code,
                     'address' => $home->address,
                     'district' => $home->district,
                     'city' => $cityName,
                     'unit_label' => $residentHome->unit_label,
+                    'unit_number' => $residentHome->unit_label,
                     'residence_type' => $residentHome->residence_type,
                     'residence_type_label' => match($residentHome->residence_type) {
                         'apartment' => 'شقة',
@@ -185,6 +194,115 @@ class ApiResidentHomeService
                     },
                     'floor_number' => $residentHome->floor_number,
                     'custom_name' => $residentHome->custom_name,
+                    'area_sqm' => $residentHome->area_sqm ? (float) $residentHome->area_sqm : null,
+                    'ownership_type' => $residentHome->ownership_type,
+                    'ownership_type_label' => $residentHome->ownership_type === 'tenant' ? 'مستأجر' : 'مالك',
+                    'is_primary' => (bool) $residentHome->is_primary,
+                    'latitude' => $home->latitude,
+                    'longitude' => $home->longitude,
+                    'created_at' => $residentHome->created_at?->toIso8601String(),
+                ],
+            ];
+        });
+    }
+
+    /**
+     * حفظ عقار جديد وربطه بالمستخدم تلقائياً، أو ربطه بكود عقار موجود مسبقاً.
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     */
+    public function addProperty(array $input, ?User $actor): array
+    {
+        return DB::transaction(function () use ($input, $actor) {
+            // إذا أرسل العميل رمز عقار مسجل مسبقاً، نربطه به مباشرة
+            if (!empty($input['property_code'])) {
+                $existingHome = Home::where('property_code', $input['property_code'])->first();
+                if ($existingHome) {
+                    $linkData = [
+                        'property_code' => $input['property_code'],
+                        'unit_label' => $input['unit_number'] ?? $input['unit_label'] ?? '1',
+                    ];
+                    return $this->performLink($linkData, $actor);
+                }
+            }
+
+            $cityId = $input['city_id'] ?? null;
+            if (!$cityId && !empty($input['city_name'])) {
+                $cityName = trim($input['city_name']);
+                $cityId = CityTranslation::where('name', 'like', "%{$cityName}%")->value('city_id');
+            }
+            if (!$cityId) {
+                $firstCity = City::first();
+                $cityId = $firstCity?->id ?? 32068;
+            }
+
+            $propertyName = $input['name'] ?? $input['property_name'] ?? $input['custom_name'] ?? $input['district'] ?? 'عقار جديد';
+
+            $home = Home::create([
+                'city_id' => $cityId,
+                'name' => $propertyName,
+                'address' => $input['address'],
+                'district' => $input['district'] ?? null,
+                'latitude' => $input['latitude'] ?? null,
+                'longitude' => $input['longitude'] ?? null,
+                'property_code' => 'PR-' . strtoupper(Str::random(8)),
+                'floors_count' => !empty($input['floor_number']) && is_numeric($input['floor_number']) ? (int) $input['floor_number'] : null,
+            ]);
+
+            $hasExistingHomes = $actor->residentHomes()->exists();
+            $shouldBePrimary = !empty($input['is_primary']) || !$hasExistingHomes;
+
+            if ($shouldBePrimary && $hasExistingHomes) {
+                $actor->residentHomes()->newPivotStatement()->where('user_id', $actor->id)->update(['is_primary' => false]);
+            }
+
+            $unitNumber = $input['unit_number'] ?? $input['unit_label'] ?? (($input['residence_type'] ?? '') === 'villa' ? 'الفيلا' : '1');
+
+            $residentHome = ResidentHome::create([
+                'user_id' => $actor->id,
+                'home_id' => $home->id,
+                'unit_label' => $unitNumber,
+                'residence_type' => $input['residence_type'] ?? 'apartment',
+                'custom_name' => $input['custom_name'] ?? $input['name'] ?? null,
+                'floor_number' => $input['floor_number'] ?? null,
+                'area_sqm' => $input['area_sqm'] ?? null,
+                'ownership_type' => $input['ownership_type'] ?? 'owner',
+                'is_primary' => $shouldBePrimary,
+            ]);
+
+            app(\App\Modules\Notifications\Services\AdminAlertService::class)->record(
+                \App\Modules\Notifications\Enums\AlertType::ResidentLinked, $home->id);
+
+            DB::afterCommit(fn () => event(new PropertiesChanged(Operation::ApiAddProperty, $actor?->id)));
+
+            $cityName = $home->city?->translations->firstWhere('locale', app()->getLocale())?->name ?? $home->city?->code ?? '';
+
+            return [
+                'status' => true,
+                'message' => 'تم إضافة العقار وربطه بحسابك بنجاح.',
+                'data' => [
+                    'id' => $residentHome->id,
+                    'resident_home_id' => $residentHome->id,
+                    'home_id' => $home->id,
+                    'property_id' => $home->id,
+                    'property_code' => $home->property_code,
+                    'name' => $home->name,
+                    'property_name' => $home->name,
+                    'custom_name' => $residentHome->custom_name,
+                    'address' => $home->address,
+                    'district' => $home->district,
+                    'city' => $cityName,
+                    'unit_label' => $residentHome->unit_label,
+                    'unit_number' => $residentHome->unit_label,
+                    'residence_type' => $residentHome->residence_type,
+                    'residence_type_label' => match($residentHome->residence_type) {
+                        'apartment' => 'شقة',
+                        'villa' => 'فيلا',
+                        'floor' => 'دور',
+                        default => $residentHome->residence_type,
+                    },
+                    'floor_number' => $residentHome->floor_number,
                     'area_sqm' => $residentHome->area_sqm ? (float) $residentHome->area_sqm : null,
                     'ownership_type' => $residentHome->ownership_type,
                     'ownership_type_label' => $residentHome->ownership_type === 'tenant' ? 'مستأجر' : 'مالك',

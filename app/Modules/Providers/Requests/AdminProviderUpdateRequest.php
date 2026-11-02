@@ -19,6 +19,10 @@ class AdminProviderUpdateRequest extends AdminRequest
                 'phone' => SaudiPhone::normalize($raw),
             ]);
         }
+
+        if ($this->boolean('_service_ids_submitted') && !$this->exists('service_ids')) {
+            $this->merge(['service_ids' => []]);
+        }
     }
 
     /**
@@ -35,6 +39,9 @@ class AdminProviderUpdateRequest extends AdminRequest
             'locale' => ['required', Rule::enum(SupportedLocale::class)],
             'company_name' => ['required', 'string', 'min:2', 'max:160'],
             'is_approved' => ['required', 'boolean'],
+            'service_ids' => ['sometimes', 'array'],
+            'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
+            '_service_ids_submitted' => ['sometimes', 'accepted'],
             'contract_id'=>['nullable','integer'],
             'service_commission_percent'=>['required_with:contract_id','numeric','between:0,100','decimal:0,2'],
             'emergency_commission_percent'=>['required_with:contract_id','numeric','between:0,100','decimal:0,2'],

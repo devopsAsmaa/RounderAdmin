@@ -21,6 +21,8 @@ class AdminOrderCreationStoreServiceRequest extends AdminRequest
             'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where('is_active', true)],
             'scheduled_at' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'images' => ['sometimes', 'nullable', 'array', 'max:5'],
+            'images.*' => ['file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ];
     }
 }

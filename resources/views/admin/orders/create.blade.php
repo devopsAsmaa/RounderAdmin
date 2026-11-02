@@ -9,7 +9,7 @@
 @if($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 @if($memberships->isEmpty())<div class="alert alert-warning">{{ __('Add a resident linked to a property before creating a request.') }}</div>@endif
 @if($options->isEmpty())<div class="alert alert-warning">{{ __('No active request types are available.') }}</div>@endif
-<form method="post" action="{{ route($emergency ? 'admin.emergencies.store' : 'admin.service-orders.store') }}" class="row g-3">
+<form method="post" action="{{ route($emergency ? 'admin.emergencies.store' : 'admin.service-orders.store') }}" class="row g-3" enctype="multipart/form-data">
 @csrf
 <div class="col-12"><h2 class="h5">{{ __('Resident and property details') }}</h2>
 <label class="form-label" for="membership-search">{{ __('Search resident or property') }}</label><input id="membership-search" type="search" class="form-control mb-3" placeholder="{{ __('Search resident or property') }}">
@@ -39,6 +39,7 @@
 @else
 <div class="col-md-6"><label for="scheduled_at" class="form-label">{{ __('Scheduled date and time') }}</label><input id="scheduled_at" name="scheduled_at" type="datetime-local" class="form-control" value="{{ old('scheduled_at') }}" required></div>
 <div class="col-12"><label for="notes" class="form-label">{{ __('Notes') }}</label><textarea id="notes" name="notes" class="form-control" maxlength="2000" rows="3">{{ old('notes') }}</textarea></div>
+<div class="col-12"><label for="images" class="form-label">{{ __('Photos / Attachments') }}</label><input id="images" name="images[]" type="file" class="form-control" accept="image/jpeg,image/png,image/webp,image/jpg" multiple><div class="form-text">{{ __('You can attach photos to describe the problem or requested service.') }}</div></div>
 <div class="col-12"><div class="alert alert-info mb-0">{{ __('The service price is taken from the current service catalogue.') }}</div></div>
 @endif
 <div class="col-12 d-flex gap-2 border-top pt-4"><a class="btn btn-outline-secondary" href="{{ route($emergency ? 'admin.emergencies.index' : 'admin.service-orders.index') }}">{{ __('Cancel') }}</a><button class="btn {{ $emergency ? 'btn-danger' : 'btn-primary' }} px-4" type="submit" @disabled($memberships->isEmpty() || $options->isEmpty())>{{ __('Create request') }}</button></div>
