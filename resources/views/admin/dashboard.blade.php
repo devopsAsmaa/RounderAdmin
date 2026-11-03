@@ -35,17 +35,17 @@
 <div class="kpi-value">{{ number_format($stats['providers'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('bookings',$stats))
-<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card kpi-orange" aria-label="{{ __('All bookings') }}">
+<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card" aria-label="{{ __('All bookings') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('All bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['bookings'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('pending_bookings',$stats))
-<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card kpi-orange" aria-label="{{ __('Pending bookings') }}">
-<div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label fw-bold">{{ __('Pending bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
-<div class="kpi-value" style="color: var(--orange);">{{ number_format($stats['pending_bookings'],0) }}</div>
+<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card" aria-label="{{ __('Pending bookings') }}">
+<div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Pending bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
+<div class="kpi-value">{{ number_format($stats['pending_bookings'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('revenue',$stats))
-<div class="col"><article class="kpi-card financial" aria-label="{{ __('Collected payments') }}">
+<div class="col"><article class="kpi-card" aria-label="{{ __('Collected payments') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Collected payments') }}</span><span class="kpi-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['revenue'],2) }} <span class="kpi-currency">{{ __('SAR') }}</span></div>
 </article></div>@endif
@@ -70,7 +70,7 @@
 <div class="kpi-value">{{ number_format($stats['active_initiatives'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('pending_emergencies',$stats))
-<div class="col"><a href="{{ route('admin.emergencies.index') }}" class="kpi-card urgent" aria-label="{{ __('Pending emergency requests') }}">
+<div class="col"><a href="{{ route('admin.emergencies.index') }}" class="kpi-card" aria-label="{{ __('Pending emergency requests') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Pending emergency requests') }}</span><span class="kpi-icon"><i class="fa-solid fa-truck-medical" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['pending_emergencies'],0) }}</div>
 </a></div>@endif
@@ -85,7 +85,7 @@
 <div class="kpi-value">{{ number_format($stats['available_packages'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('commission_total',$stats))
-<div class="col"><article class="kpi-card financial" aria-label="{{ __('Platform commissions') }}">
+<div class="col"><article class="kpi-card" aria-label="{{ __('Platform commissions') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Platform commissions') }}</span><span class="kpi-icon"><i class="fa-solid fa-coins" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['commission_total'],2) }} <span class="kpi-currency">{{ __('SAR') }}</span></div>
 </article></div>@endif

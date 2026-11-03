@@ -190,22 +190,10 @@ body{
 
 body,button,input,select,textarea{font-family:"Tajawal",system-ui,sans-serif}
 .kpi-card{height:100%;min-height:154px;padding:1.35rem 1.3rem;background:#fff;border:1px solid #e2ece9;border-radius:18px;box-shadow:0 3px 16px rgba(2,51,62,0.035);display:flex;flex-direction:column;justify-content:space-between;gap:1.15rem;text-decoration:none;color:inherit;position:relative;overflow:hidden;transition:transform .2s cubic-bezier(0.16,1,0.3,1),box-shadow .2s ease,border-color .2s ease}
-a.kpi-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(2,51,62,0.09);border-color:#b4dbd2;color:inherit}
+a.kpi-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(251,130,47,0.12);border-color:#ffd4b8;color:inherit}
 .kpi-card .kpi-label{font-size:.94rem;font-weight:600;color:#4f686e;line-height:1.5}
-.kpi-icon{flex-shrink:0;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:var(--petrol);background:#e4f2ee;font-size:1.18rem;transition:background-color .18s ease,transform .18s ease}
-a.kpi-card:hover .kpi-icon{background:var(--petrol);color:#fff;transform:scale(1.06)}
-.kpi-card.kpi-orange{border-top:3.5px solid var(--orange)!important}
-.kpi-card.kpi-orange .kpi-icon{background:#fff3eb;color:var(--orange)}
-a.kpi-card.kpi-orange:hover{border-color:#ffd4b8;box-shadow:0 12px 28px rgba(251,130,47,0.16)}
-a.kpi-card.kpi-orange:hover .kpi-icon{background:var(--orange);color:#fff}
-.kpi-card.financial{border-top:3.5px solid #d97706!important}
-.kpi-card.financial .kpi-icon{background:#fff1e5;color:#b6530b}
-a.kpi-card.financial:hover{border-color:#ffd4b8;box-shadow:0 12px 28px rgba(251,130,47,0.12)}
-a.kpi-card.financial:hover .kpi-icon{background:#b6530b;color:#fff}
-.kpi-card.urgent{border-top:3.5px solid #dc2626!important}
-.kpi-card.urgent .kpi-icon{background:#fff0f0;color:#c54848}
-a.kpi-card.urgent:hover{border-color:#ffc5c5;box-shadow:0 12px 28px rgba(197,48,48,0.12)}
-a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
+.kpi-icon{flex-shrink:0;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:var(--orange);background:#fff3eb;font-size:1.18rem;transition:background-color .18s ease,transform .18s ease,color .18s ease}
+a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1.06)}
 .kpi-value{font-size:2.1rem;font-weight:800;line-height:1.15;letter-spacing:.01em;color:var(--petrol);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .kpi-currency{font-size:.82rem;font-weight:600;color:#71878d}
 .dashboard-intro{padding:1.25rem 0}.dashboard-intro h1{font-weight:800}
