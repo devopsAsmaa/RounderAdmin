@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 @section('title', __('Service categories').' · Rounder')
 @section('body')
+@php $locale = $locale ?? app()->getLocale(); @endphp
 <main class="container py-4">
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <h1 class="h3 mb-0">{{ __('Service categories') }}</h1>
