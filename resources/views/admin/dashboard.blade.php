@@ -91,51 +91,61 @@
 </article></div>@endif
 </div>
 @adminCan('admin.service-orders.index')
-<div class="panel p-3 p-lg-4 mb-4">
+<div class="panel p-3 p-lg-4 mb-4" style="border-radius: 16px;">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-            <h2 class="h5 fw-bold mb-1">{{ __('Recent bookings') }}</h2>
+            <h2 class="h5 fw-bold mb-1 text-dark">{{ __('Recent bookings') }}</h2>
             <div class="small text-secondary">{{ __('Latest activity across the system') }}</div>
         </div>
-        <a href="{{ route('admin.service-orders.index') }}" class="btn btn-sm btn-outline-primary">
+        <a href="{{ route('admin.service-orders.index') }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5" style="border-radius: 9px; font-weight: 600; padding: 0.4rem 0.95rem;">
             <span>{{ __('View all') }}</span>
-            <i class="fa-solid {{ app()->getLocale() === 'ar' ? 'fa-arrow-left' : 'fa-arrow-right' }} ms-1"></i>
+            <i class="fa-solid {{ app()->getLocale() === 'ar' ? 'fa-arrow-left' : 'fa-arrow-right' }}"></i>
         </a>
     </div>
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table align-middle mb-0" style="table-layout: fixed; width: 100%;">
             <thead>
-                <tr>
-                    <th>#</th>
-                    <th>{{ __('Resident') }}</th>
-                    <th>{{ __('Service') }}</th>
-                    <th>{{ __('Status') }}</th>
-                    <th>{{ __('Date') }}</th>
-                    <th class="text-end">{{ __('Actions') }}</th>
+                <tr style="border-bottom: 2px solid #eef2f1;">
+                    <th style="width: 10%;">#</th>
+                    <th style="width: 24%;">{{ __('Resident') }}</th>
+                    <th style="width: 24%;">{{ __('Service') }}</th>
+                    <th style="width: 15%;">{{ __('Status') }}</th>
+                    <th style="width: 13%;">{{ __('Date') }}</th>
+                    <th style="width: 14%;" class="text-end">{{ __('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($recent as $booking)
-                <tr>
-                    <td>
-                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="fw-bold text-decoration-none" style="color: var(--petrol);">
+                <tr style="border-bottom: 1px solid #edf3f0;">
+                    <td class="py-3">
+                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="badge text-decoration-none" style="background: var(--petrol); color: #fff; font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 7px; font-weight: 700;">
                             #{{ $booking->id }}
                         </a>
                     </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="rounded-circle d-grid place-items-center" style="width: 30px; height: 30px; background: #eaf3f0; color: var(--petrol); font-weight: 700; font-size: 0.78rem;">
-                                {{ mb_substr($booking->resident->name ?? '—', 0, 1) }}
+                    <td class="py-3">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; background: rgba(2, 51, 62, 0.08); color: var(--petrol); font-size: 0.85rem;">
+                                <i class="fa-solid fa-user"></i>
                             </div>
-                            <span class="fw-semibold">{{ $booking->resident->name }}</span>
+                            <div>
+                                <div class="fw-bold text-dark fs-6">{{ $booking->resident->name }}</div>
+                                @if($booking->home)
+                                    <div class="small text-secondary" style="font-size: 0.74rem;">
+                                        <i class="fa-solid fa-house-chimney text-rounder-orange me-1"></i>{{ $booking->home->name }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </td>
-                    <td>
-                        <span class="badge" style="background: rgba(2, 51, 62, 0.06); color: var(--petrol); font-size: 0.82rem; font-weight: 600;">
-                            {{ $booking->service->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->service->code }}
-                        </span>
+                    <td class="py-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; background: rgba(251, 130, 47, 0.1); color: var(--orange); font-size: 0.8rem;">
+                                <i class="fa-solid fa-screwdriver-wrench"></i>
+                            </div>
+                            <span class="fw-semibold text-dark">{{ $booking->service->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->service->code }}</span>
+                        </div>
                     </td>
-                    <td>
+                    <td class="py-3">
                         @php
                             $stCode = $booking->status->code ?? 'pending';
                             $stColor = match($stCode) {
@@ -145,26 +155,28 @@
                                 default => ['bg' => '#fff8ec', 'color' => '#b45309', 'border' => '#fed7aa', 'dot' => '#f59e0b'],
                             };
                         @endphp
-                        <span class="badge rounded-pill d-inline-flex align-items-center gap-1.5" style="background: {{ $stColor['bg'] }}; color: {{ $stColor['color'] }}; border: 1px solid {{ $stColor['border'] }}; font-size: 0.78rem; font-weight: 600; padding: 0.3rem 0.7rem;">
-                            <span style="width: 5px; height: 5px; border-radius: 50%; background: {{ $stColor['dot'] }};"></span>
-                            {{ $booking->status->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->status->code }}
+                        <span class="badge rounded-pill d-inline-flex align-items-center gap-2" style="background: {{ $stColor['bg'] }}; color: {{ $stColor['color'] }}; border: 1px solid {{ $stColor['border'] }}; font-size: 0.78rem; font-weight: 600; padding: 0.35rem 0.75rem;">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ $stColor['dot'] }};"></span>
+                            <span>{{ $booking->status->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->status->code }}</span>
                         </span>
                     </td>
-                    <td>
-                        <span class="text-secondary small">{{ $booking->created_at->format('Y-m-d') }}</span>
+                    <td class="py-3">
+                        <div class="small text-secondary fw-medium" style="font-size: 0.78rem;">
+                            <i class="fa-regular fa-calendar text-rounder-orange me-1"></i>{{ $booking->created_at->format('Y-m-d') }}
+                        </div>
                     </td>
-                    <td class="text-end">
-                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1" title="{{ __('View details') }}" style="border-radius: 7px; font-size: 0.8rem;">
+                    <td class="py-3 text-end">
+                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" title="{{ __('View details') }}" style="border-radius: 8px; font-weight: 600; padding: 0.35rem 0.75rem; font-size: 0.8rem;">
                             <i class="fa-solid fa-eye text-rounder-orange"></i>
-                            <span class="d-none d-md-inline">{{ __('View details') }}</span>
+                            <span>{{ __('View details') }}</span>
                         </a>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-secondary py-4">
-                        <i class="fa-regular fa-folder-open d-block fs-3 mb-2 opacity-50"></i>
-                        {{ __('No bookings yet') }}
+                    <td colspan="6" class="text-center text-secondary py-5">
+                        <i class="fa-regular fa-folder-open d-block fs-2 mb-2 text-secondary opacity-50"></i>
+                        <div>{{ __('No bookings yet') }}</div>
                     </td>
                 </tr>
                 @endforelse
