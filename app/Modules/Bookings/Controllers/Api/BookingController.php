@@ -35,6 +35,17 @@ class BookingController extends Controller
     }
 
     /**
+     * إرجاع تفاصيل طلب محدد للساكن مع مراحل الطلب.
+     * @param int $bookingId
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(int $bookingId, \Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->show($bookingId, $request->user()), 200);
+    }
+
+    /**
      * تمرير الطلب المتحقق منه وإرجاع استجابة HTTP فقط.
      * @param ApiBookingStoreRequest $request
      * @return \Illuminate\Http\JsonResponse

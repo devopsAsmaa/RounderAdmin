@@ -70,6 +70,8 @@ class ApiBookingService
             'total_amount' => $booking->total_amount,
             'service_provider_id' => $booking->service_provider_id,
             'service_provider_name' => $booking->serviceProvider?->company_name,
+            'can_cancel' => in_array($booking->status?->code, [BookingStatusCode::Pending->value, BookingStatusCode::Confirmed->value], true),
+            'stages' => $this->formatStages($booking),
             'images' => $booking->bookingMedia->map(fn ($m) => [
                 'id' => $m->id,
                 'url' => $m->url,
@@ -83,6 +85,112 @@ class ApiBookingService
             'current_page' => $page->currentPage(), 'last_page' => $page->lastPage(),
             'per_page' => $page->perPage(), 'total' => $page->total(),
         ]];
+    }
+
+    /**
+     * إرجاع تفاصيل طلب محدد للساكن متضمناً مراحل التتبع (Stages) الأربع.
+     * @param int $bookingId
+     * @param ?User $actor
+     * @return array
+     */
+    public function show(int $bookingId, ?User $actor): array
+    {
+        $booking = Booking::with([
+            'home',
+            'residentHome',
+            'service.translations',
+            'subService.translations',
+            'status.translations',
+            'serviceProvider',
+            'bookingMedia',
+            'statusHistory'
+        ])
+        ->where('resident_id', $actor->id)
+        ->findOrFail($bookingId);
+
+        $locale = app()->getLocale();
+        $code = $booking->status?->code ?? 'pending';
+
+        return [
+            'data' => [
+                'id' => $booking->id,
+                'service_id' => $booking->service_id,
+                'service_name' => $booking->service->translations->firstWhere('locale', $locale)?->name ?? $booking->service->code,
+                'sub_service_id' => $booking->sub_service_id,
+                'sub_service_name' => $booking->subService?->translations->firstWhere('locale', $locale)?->name ?? $booking->subService?->code,
+                'status_id' => $booking->booking_status_id,
+                'status_name' => $booking->status?->translations->firstWhere('locale', $locale)?->name ?? $booking->status?->code,
+                'status_code' => $code,
+                'scheduled_at' => $booking->scheduled_at,
+                'total_amount' => $booking->total_amount,
+                'service_provider_id' => $booking->service_provider_id,
+                'service_provider_name' => $booking->serviceProvider?->company_name,
+                'home_id' => $booking->home_id,
+                'home_name' => $booking->home?->name,
+                'unit_label' => $booking->residentHome?->unit_label,
+                'notes' => $booking->notes,
+                'can_cancel' => in_array($code, [BookingStatusCode::Pending->value, BookingStatusCode::Confirmed->value], true),
+                'stages' => $this->formatStages($booking),
+                'images' => $booking->bookingMedia->map(fn ($m) => [
+                    'id' => $m->id,
+                    'url' => $m->url,
+                    'kind' => $m->kind,
+                    'mime_type' => $m->mime_type,
+                    'size_bytes' => $m->size_bytes,
+                ])->values(),
+                'created_at' => $booking->created_at?->toIso8601String(),
+            ],
+        ];
+    }
+
+    /**
+     * حساب وتنسيق مراحل الطلب (مراحل التتبع الأربع المطابقة لتصميم الفيجما).
+     * @param Booking $booking
+     * @return array
+     */
+    public function formatStages(Booking $booking): array
+    {
+        $code = $booking->status?->code ?? 'pending';
+        $history = $booking->relationLoaded('statusHistory') ? $booking->statusHistory : $booking->statusHistory()->get();
+        $isEn = app()->getLocale() === 'en';
+
+        $submittedAt = $history->firstWhere('booking_status_id', 81)?->created_at?->toIso8601String()
+            ?? $booking->created_at?->toIso8601String();
+        $confirmedAt = $history->firstWhere('booking_status_id', 82)?->created_at?->toIso8601String();
+        $inProgressAt = $history->firstWhere('booking_status_id', 83)?->created_at?->toIso8601String();
+        $completedAt = $history->firstWhere('booking_status_id', 84)?->created_at?->toIso8601String()
+            ?? $booking->completed_at?->toIso8601String();
+
+        return [
+            [
+                'key' => 'submitted',
+                'title' => $isEn ? 'Order Submitted' : 'تم إرسال طلبك',
+                'is_done' => true,
+                'is_current' => $code === BookingStatusCode::Pending->value,
+                'timestamp' => $submittedAt,
+            ],
+            [
+                'key' => 'accepted',
+                'title' => $isEn ? 'Order Accepted' : 'تم قبول الطلب',
+                'is_done' => in_array($code, [BookingStatusCode::Confirmed->value, BookingStatusCode::InProgress->value, BookingStatusCode::Completed->value], true),
+                'is_current' => $code === BookingStatusCode::Confirmed->value,
+                'timestamp' => $confirmedAt,
+            ],
+            [
+                'key' => 'on_the_way',
+                'title' => $isEn ? 'Technician On The Way' : 'الفني في الطريق',
+                'is_done' => in_array($code, [BookingStatusCode::InProgress->value, BookingStatusCode::Completed->value], true),
+                'is_current' => $code === BookingStatusCode::InProgress->value,
+                'timestamp' => $inProgressAt,
+            ],
+            [
+                'key' => 'completed',
+                'title' => $isEn ? 'Service Completed' : 'اكتملت الخدمة',
+                'is_done' => $code === BookingStatusCode::Completed->value,
+                'is_current' => $code === BookingStatusCode::Completed->value,
+                'timestamp' => $completedAt,
+            ],
+        ];
     }
 
     /**
