@@ -38,16 +38,16 @@
             <div id="ordersTableView" class="orders-view-pane">
                 <div class="panel p-3 p-lg-4 mb-4" style="border-radius: 14px;">
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0" style="table-layout: fixed; width: 100%;">
+                        <table class="table align-middle mb-0" style="table-layout: fixed; width: 100%; min-width: 1020px;">
                             <thead>
                                 <tr style="border-bottom: 2px solid #e5ede9;">
                                     <th style="width: 14%;">{{ __('Order') }}</th>
                                     <th style="width: 16%;">{{ __('Resident and home') }}</th>
                                     <th style="width: 17%;">{{ __('Service') }}</th>
-                                    <th style="width: 21%;">{{ __('Assigned provider') }}</th>
-                                    <th style="width: 8%;">{{ __('Photos') }}</th>
-                                    <th style="width: 10%;">{{ __('Status') }}</th>
-                                    <th style="width: 14%;" class="text-end">{{ __('Actions') }}</th>
+                                    <th style="width: 17%;">{{ __('Assigned provider') }}</th>
+                                    <th style="width: 7%;">{{ __('Photos') }}</th>
+                                    <th style="width: 9%;">{{ __('Status') }}</th>
+                                    <th style="width: 20%;" class="text-end">{{ __('Actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -69,9 +69,9 @@
                                         <!-- 1. Order ID & Schedule -->
                                         <td class="py-3">
                                             <div class="d-flex align-items-center gap-1.5 mb-1">
-                                                <span class="badge" style="background: var(--petrol); color: #fff; font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 7px; font-weight: 700;">
+                                                <a href="{{ route('admin.service-orders.show', $order->id) }}" class="badge text-decoration-none shadow-sm" style="background: var(--petrol); color: #fff; font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 7px; font-weight: 700;" title="{{ __('View details') }}">
                                                     #{{ $order->id }}
-                                                </span>
+                                                </a>
                                             </div>
                                             <div class="small text-secondary" style="font-size: 0.76rem;">
                                                 <i class="fa-regular fa-calendar text-rounder-orange me-1"></i>{{ $schedDate }}
@@ -93,7 +93,11 @@
 
                                         <!-- 3. Service & Price -->
                                         <td class="py-3">
-                                            <div class="fw-bold text-dark">{{ $order->service_name ?? $order->service_code }}</div>
+                                            <div>
+                                                <a href="{{ route('admin.service-orders.show', $order->id) }}" class="fw-bold text-dark text-decoration-none" title="{{ __('View details') }}">
+                                                    {{ $order->service_name ?? $order->service_code }}
+                                                </a>
+                                            </div>
                                             @if($order->sub_service_name || $order->sub_service_code)
                                                 <div class="mt-1">
                                                     <span class="badge" style="background: rgba(2, 51, 62, 0.08); color: var(--petrol); font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 6px; font-size: 0.74rem;">
@@ -152,22 +156,27 @@
                                         </td>
 
                                         <!-- 7. Actions -->
-                                        <td class="py-3 text-end">
-                                            <div class="d-inline-flex align-items-center gap-1.5">
+                                        <td class="py-3 text-end" style="white-space: nowrap;">
+                                            <div class="d-inline-flex align-items-center gap-1.5 flex-nowrap" style="white-space: nowrap;">
                                                 @adminCan('admin.service-orders.update','PUT')
-                                                <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#orderUpdateModal-{{ $order->id }}" style="border-radius: 8px; font-weight: 600; padding: 0.35rem 0.7rem; font-size: 0.78rem;" title="{{ __('Assign & Update') }}">
+                                                <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#orderUpdateModal-{{ $order->id }}" style="border-radius: 8px; font-weight: 600; padding: 0.38rem 0.72rem; font-size: 0.78rem; white-space: nowrap;" title="{{ __('Assign & Update') }}">
                                                     <i class="fa-solid fa-sliders"></i>
                                                     <span>{{ __('Assign & Update') }}</span>
                                                 </button>
                                                 @endadminCan
 
-                                                <a href="{{ route('admin.service-orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" style="border-radius: 8px; font-weight: 600; padding: 0.35rem 0.65rem; font-size: 0.78rem;" title="{{ __('View details') }}">
+                                                <a href="{{ route('admin.service-orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 text-nowrap shadow-sm" style="border-radius: 8px; font-weight: 600; padding: 0.38rem 0.68rem; font-size: 0.78rem; white-space: nowrap; border-color: #d1dfda; background: #fff;" title="{{ __('View details') }}">
                                                     <i class="fa-solid fa-eye text-rounder-orange"></i>
                                                     <span>{{ __('View details') }}</span>
                                                 </a>
 
                                                 @adminCan('admin.service-orders.destroy','DELETE')
-                                                    @include('admin.partials.delete-button', ['action' => route('admin.service-orders.destroy', $order->id)])
+                                                <form method="post" action="{{ route('admin.service-orders.destroy', $order->id) }}" class="d-inline-flex m-0 delete-record-form">
+                                                    @csrf @method('DELETE')
+                                                    <button type="button" data-confirm-delete class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center shadow-sm" title="{{ __('Delete') }}" style="width: 33px; height: 33px; border-radius: 8px; padding: 0; border-color: #fca5a5;">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </form>
                                                 @endadminCan
                                             </div>
                                         </td>
@@ -234,7 +243,12 @@
                                 </a>
 
                                 @adminCan('admin.service-orders.destroy','DELETE')
-                                    @include('admin.partials.delete-button', ['action' => route('admin.service-orders.destroy', $order->id)])
+                                <form method="post" action="{{ route('admin.service-orders.destroy', $order->id) }}" class="d-inline-flex m-0 delete-record-form">
+                                    @csrf @method('DELETE')
+                                    <button type="button" data-confirm-delete class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center shadow-sm" title="{{ __('Delete') }}" style="width: 34px; height: 34px; border-radius: 8px; padding: 0; border-color: #fca5a5;">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
                                 @endadminCan
                             </div>
                         </div>
