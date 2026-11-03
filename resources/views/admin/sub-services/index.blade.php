@@ -46,7 +46,7 @@
 <div class="table-responsive"><table class="table align-middle"><thead><tr><th style="width:60px;">#</th><th>{{ __('Sub service') }}</th><th>{{ __('Service') }}</th>
 <th>{{ __('Sort order') }}</th><th style="width:120px;">{{ __('Status') }}</th><th style="width:160px;" class="text-end">{{ __('Actions') }}</th></tr></thead><tbody>
 @forelse($subServices as $sub)<tr><td class="text-secondary fw-semibold">{{ $sub->id }}</td>
-<td><div class="d-flex align-items-center gap-2">@if($sub->image_path)<img class="rounded border" width="44" height="44" style="object-fit:cover" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($sub->image_path) }}" alt="{{ __('Product image') }}">@endif<div><div class="fw-bold text-dark">{{ $sub->translations->firstWhere('locale',$locale)?->name ?? $sub->code }}</div><div class="small text-secondary font-monospace">{{ $sub->code }}</div></div></div></td>
+<td><div class="d-flex align-items-center gap-3">@if($sub->image_path)<img class="rounded border flex-shrink-0" width="44" height="44" style="object-fit:cover" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($sub->image_path) }}" alt="{{ __('Product image') }}">@endif<div><div class="fw-bold text-dark">{{ $sub->translations->firstWhere('locale',$locale)?->name ?? $sub->code }}</div><div class="small text-secondary font-monospace">{{ $sub->code }}</div></div></div></td>
 <td><span class="badge" style="background: rgba(2, 51, 62, 0.06); color: var(--petrol); font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 8px;">{{ $sub->service?->translations->firstWhere('locale',$locale)?->name ?? $sub->service?->code }}</span></td>
 <td>{{ $sub->sort_order }}</td>
 <td>

@@ -55,11 +55,11 @@
                 <tr>
                     <td class="text-center text-secondary small fw-bold">{{ $service->id }}</td>
                     <td>
-                        <div class="d-flex align-items-center gap-2.5">
+                        <div class="d-flex align-items-center gap-3">
                             @if($service->image_path)
                                 <img class="rounded-3 border flex-shrink-0" width="46" height="46" style="object-fit:cover" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($service->image_path) }}" alt="{{ __('Product image') }}">
                             @else
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; background: rgba(2, 51, 62, 0.05); color: var(--petrol);">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; background: rgba(2, 51, 62, 0.05); color: var(--petrol); font-size: 1.15rem;">
                                     <i class="fa-solid fa-screwdriver-wrench"></i>
                                 </div>
                             @endif
@@ -85,12 +85,12 @@
                     </td>
                     <td>
                         @if($service->is_active)
-                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1.5" style="background:#eef8f4; color:#0e6c51; border:1px solid #bde4d5; font-size:0.8rem; font-weight:600; padding:0.38rem 0.8rem;">
+                            <span class="badge rounded-pill d-inline-flex align-items-center gap-2" style="background:#eef8f4; color:#0e6c51; border:1px solid #bde4d5; font-size:0.8rem; font-weight:600; padding:0.38rem 0.8rem;">
                                 <span class="topbar-status-dot" style="width:6px;height:6px;"></span>
                                 {{ __('Active') }}
                             </span>
                         @else
-                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1.5" style="background:#fdf2f2; color:#b32a2a; border:1px solid #f4c7c7; font-size:0.8rem; font-weight:600; padding:0.38rem 0.8rem;">
+                            <span class="badge rounded-pill d-inline-flex align-items-center gap-2" style="background:#fdf2f2; color:#b32a2a; border:1px solid #f4c7c7; font-size:0.8rem; font-weight:600; padding:0.38rem 0.8rem;">
                                 <span style="width:6px;height:6px;border-radius:50%;background:#dc3545;"></span>
                                 {{ __('Inactive') }}
                             </span>
