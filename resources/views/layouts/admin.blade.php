@@ -208,6 +208,8 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 .topbar{position:sticky;top:0;z-index:1030;height:64px;min-height:64px;background:#fff;border-bottom:1px solid #eef2f1;box-shadow:0 1px 3px rgba(2,51,62,0.03)}
 
 /* Topbar Buttons & Pills */
+.topbar-date-pill{height:40px;padding:0 .9rem;border-radius:11px;background:#f6f9f8;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;transition:all .18s ease}
+.topbar-date-pill:hover{background:#edf6f3;border-color:#b4dad0}
 .topbar-circle-btn{width:40px;height:40px;padding:0;display:inline-grid;place-items:center;border-radius:11px;background:#f6f9f8;border:1px solid #dce7e4;color:var(--petrol);font-size:.9rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
 .topbar-circle-btn:hover,.topbar-circle-btn:focus{background:#edf6f3;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
 .topbar-pill-btn{height:40px;padding:0 .85rem;border-radius:11px;background:#f6f9f8;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.45rem;transition:all .18s ease;cursor:pointer}
@@ -255,16 +257,17 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 </span>
 <span class="fw-bold text-dark fs-6">{{ $cleanTitle }}</span>
 </div>
-
-{{-- Topbar Date Pill --}}
-<span class="badge rounded-pill d-none d-sm-inline-flex align-items-center gap-1.5 px-3 py-1.5" style="background:#f6f9f8; color:#4a656c; border:1px solid #dce7e4; font-size:0.8rem; font-weight:600;">
-<i class="fa-regular fa-calendar-days text-secondary"></i>
-{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('d F Y') }}
-</span>
 </div>
 
-{{-- Left Side: Notifications, Language Pill, User Pill (Refresh removed) --}}
+{{-- Left Side: Date Pill, Divider, Notifications, Language Pill, Divider, User Pill --}}
 <div class="d-flex align-items-center gap-2 gap-sm-2.5">
+<div class="topbar-date-pill d-none d-md-inline-flex">
+<i class="fa-regular fa-calendar-days text-rounder-orange"></i>
+<span>{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('d F Y') }}</span>
+</div>
+
+<div class="topbar-divider d-none d-md-block"></div>
+
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 @include('admin.partials.notifications')
 @endif
