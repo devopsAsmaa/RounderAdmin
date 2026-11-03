@@ -205,24 +205,22 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 .dashboard-intro{padding:1.25rem 0}.dashboard-intro h1{font-weight:800}
 @media(max-width:575.98px){.kpi-card{min-height:132px}.kpi-value{font-size:1.85rem}}
 
-.topbar{position:sticky;top:0;z-index:1030;height:70px;min-height:70px;background:#fff;border-bottom:1px solid #e7eeeb;box-shadow:0 2px 14px rgba(2,51,62,0.035)}
-.topbar-status-dot{width:8px;height:8px;border-radius:50%;background-color:#10b981;display:inline-block;box-shadow:0 0 0 0 rgba(16,185,129,0.5);animation:topbarPulse 2s infinite}
-@keyframes topbarPulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,0.6)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+.topbar{position:sticky;top:0;z-index:1030;height:64px;min-height:64px;background:#fff;border-bottom:1px solid #eef2f1;box-shadow:0 1px 3px rgba(2,51,62,0.03)}
 
 /* Topbar Buttons & Pills */
-.topbar-circle-btn{width:42px;height:42px;padding:0;display:inline-grid;place-items:center;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.92rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
-.topbar-circle-btn:hover,.topbar-circle-btn:focus{background:#eaf4f0;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
-.topbar-pill-btn{height:42px;padding:0 .9rem;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.45rem;transition:all .18s ease;cursor:pointer}
-.topbar-pill-btn:hover,.topbar-pill-btn:focus{background:#eaf4f0;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
+.topbar-circle-btn{width:40px;height:40px;padding:0;display:inline-grid;place-items:center;border-radius:11px;background:#f6f9f8;border:1px solid #dce7e4;color:var(--petrol);font-size:.9rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
+.topbar-circle-btn:hover,.topbar-circle-btn:focus{background:#edf6f3;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
+.topbar-pill-btn{height:40px;padding:0 .85rem;border-radius:11px;background:#f6f9f8;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.45rem;transition:all .18s ease;cursor:pointer}
+.topbar-pill-btn:hover,.topbar-pill-btn:focus{background:#edf6f3;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
 
 /* User Profile Pill */
-.topbar-user-pill{height:44px;padding:0;padding-inline-start:.32rem;padding-inline-end:.75rem;border-radius:13px;background:#f5f8f7;border:1px solid #dce7e4;display:inline-flex;align-items:center;gap:.55rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
-.topbar-user-pill:hover,.topbar-user-pill:focus{background:#eaf4f0;border-color:#b4dad0;box-shadow:0 3px 12px rgba(2,51,62,0.06);transform:translateY(-1px)}
-.topbar-user-avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--petrol),#035163);color:#fff;font-weight:800;font-size:.92rem;display:grid;place-items:center;text-transform:uppercase;box-shadow:0 2px 6px rgba(2,51,62,0.18)}
+.topbar-user-pill{height:42px;padding:0;padding-inline-start:.3rem;padding-inline-end:.75rem;border-radius:12px;background:#f6f9f8;border:1px solid #dce7e4;display:inline-flex;align-items:center;gap:.55rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
+.topbar-user-pill:hover,.topbar-user-pill:focus{background:#edf6f3;border-color:#b4dad0;box-shadow:0 2px 8px rgba(2,51,62,0.05);transform:translateY(-1px)}
+.topbar-user-avatar{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--petrol),#035163);color:#fff;font-weight:800;font-size:.88rem;display:grid;place-items:center;text-transform:uppercase;box-shadow:0 2px 5px rgba(2,51,62,0.18)}
 .topbar-user-name{font-size:.82rem;font-weight:700;color:var(--petrol);line-height:1.2;white-space:nowrap}
-.topbar-user-role{font-size:.68rem;font-weight:500;color:#78949a;line-height:1.1;white-space:nowrap}
-.topbar-user-chevron{font-size:.68rem;color:#8ea3a8;transition:transform .18s ease}
-.topbar-divider{width:1px;height:26px;background:#e2ece9;margin:0 .2rem}
+.topbar-user-role{font-size:.66rem;font-weight:500;color:#78949a;line-height:1.1;white-space:nowrap}
+.topbar-user-chevron{font-size:.66rem;color:#8ea3a8;transition:transform .18s ease}
+.topbar-divider{width:1px;height:22px;background:#e2ece9;margin:0 .2rem}
 
 /* Notifications Badge Styling */
 #notification-count{background:var(--orange)!important;color:#fff!important;font-size:.65rem;font-weight:800;padding:.22em .5em;border-radius:50rem;box-shadow:0 2px 6px rgba(251,130,47,0.4);border:2px solid #fff}
@@ -236,6 +234,13 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 </style></head>
 <body>
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
+@php
+    $rawTitle = View::yieldContent('title', __('Rounder admin'));
+    $cleanTitle = trim(str_replace(['· Rounder', '· Rounder', 'Rounder -', '· راوندر', '- راوندر', 'Rounder'], '', $rawTitle));
+    if (empty($cleanTitle)) {
+        $cleanTitle = __('Dashboard');
+    }
+@endphp
 <nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar">
 <div class="d-flex align-items-center gap-2 gap-md-3">
 <button class="topbar-btn topbar-icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
@@ -244,32 +249,16 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <a class="navbar-brand brand d-lg-none d-flex align-items-center gap-2 m-0 text-decoration-none" href="{{ route('admin.dashboard') }}">
 <span class="brand-text text-rounder-orange">rounder</span>
 </a>
-<div class="d-none d-lg-flex align-items-center gap-2 text-secondary small">
-<i class="fa-solid fa-layer-group text-muted opacity-50"></i>
-<span class="opacity-30">/</span>
-<span class="fw-bold text-dark">@yield('title', __('Rounder admin'))</span>
+<div class="d-none d-lg-flex align-items-center gap-2">
+<span class="d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;border-radius:8px;background:rgba(2,51,62,0.06);color:var(--petrol);">
+<i class="fa-solid fa-layer-group" style="font-size:0.8rem;"></i>
+</span>
+<span class="fw-bold text-dark fs-6">{{ $cleanTitle }}</span>
+</div>
 </div>
 
-{{-- Live Date Badge --}}
-<span class="badge rounded-pill d-none d-md-inline-flex align-items-center gap-1.5 px-3 py-1.5" style="background:#f4f7f6; color:#405b61; border:1px solid #dce7e4; font-size:0.78rem; font-weight:600;">
-<i class="fa-regular fa-calendar text-muted"></i>
-{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('l، d F Y') }}
-</span>
-
-{{-- Live Online Status Badge --}}
-<span class="badge rounded-pill d-none d-xl-inline-flex align-items-center gap-1.5 px-2.5 py-1.5" style="background:#eef8f4; color:#0e6c51; border:1px solid #bde4d5; font-size:0.75rem; font-weight:600;">
-<span class="topbar-status-dot"></span>
-{{ __('System online') }}
-</span>
-</div>
-
-{{-- Left Side: Refresh, Notifications, Language Pill, User Pill --}}
+{{-- Left Side: Notifications, Language Pill, User Pill (Refresh removed) --}}
 <div class="d-flex align-items-center gap-2 gap-sm-2.5">
-{{-- Quick Refresh Button --}}
-<a href="{{ url()->current() }}" class="topbar-circle-btn d-none d-sm-inline-grid" title="{{ __('Refresh') }}" aria-label="{{ __('Refresh') }}">
-<i class="fa-solid fa-arrows-rotate"></i>
-</a>
-
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 @include('admin.partials.notifications')
 @endif
