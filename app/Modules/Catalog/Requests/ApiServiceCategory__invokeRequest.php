@@ -16,6 +16,10 @@ class ApiServiceCategory__invokeRequest extends ResidentRequest
      */
     public function rules(): array
     {
-        return ['service_category_id' => ['nullable', 'integer'], 'status_id' => ['nullable', 'integer'], 'per_page' => ['sometimes', 'integer', 'between:1,50']];
+        return [
+            'service_category_id' => ['nullable', 'integer'],
+            'status_id' => ['nullable', 'integer'],
+            'sub_services_limit' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ];
     }
 }

@@ -37,10 +37,13 @@ final class AdminPermissionService
             str_starts_with($route, 'admin.users.'), str_starts_with($route, 'admin.residents.') => DashboardSection::Users,
             str_starts_with($route, 'admin.providers.') => DashboardSection::Providers,
             str_starts_with($route, 'admin.realestate.') => DashboardSection::Realestate,
+            str_starts_with($route, 'admin.regions.') => DashboardSection::Regions,
+            str_starts_with($route, 'admin.cities.') => DashboardSection::Cities,
             str_starts_with($route, 'admin.packages.services.'), str_starts_with($route, 'admin.services.') => DashboardSection::Services,
             str_starts_with($route, 'admin.packages.') => DashboardSection::Packages,
             str_starts_with($route, 'admin.sub-services.'), str_starts_with($route, 'admin.sub_services.') => DashboardSection::SubServices,
             str_starts_with($route, 'admin.service-categories.') => DashboardSection::ServiceCategories, // جديد
+            str_starts_with($route, 'admin.prices.') => DashboardSection::Prices,
 
             str_starts_with($route, 'admin.package-features.') => DashboardSection::Features,
             str_starts_with($route, 'admin.subscriptions.') => DashboardSection::Subscriptions,

@@ -6,8 +6,6 @@
 <main class="col-12 content">
 <div class="mb-4"><div class="small text-secondary">{{ __('Resident app management') }}</div><h1 class="h3 fw-bold">{{ __('Resident operations') }}</h1></div>
 @include('admin.partials.feedback')
-@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-@if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <div class="row g-4">
 <div class="col-xl-6"><div class="panel p-3 p-lg-4"><h2 class="h5 fw-bold">{{ __('Create announcement') }}</h2>
 @adminCan('admin.content.announcements.store','POST')<form method="post" action="{{ route('admin.content.announcements.store') }}">@csrf

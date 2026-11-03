@@ -28,6 +28,13 @@
         </a>
     </li>
     @endadminCan
+    @adminCan('admin.prices.index')
+    <li class="nav-item">
+        <a class="nav-link btn btn-outline-secondary" href="{{ route('admin.prices.index') }}">
+            <i class="fa-solid fa-tags me-1"></i> {{ __('Prices') }}
+        </a>
+    </li>
+    @endadminCan
 </ul>
 <div class="panel p-3 p-lg-4 mb-4"><h2 class="h5 fw-bold">{{ __('Available services') }}</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>#</th><th>{{ __('Service') }}</th><th>{{ __('Category') }}</th><th>{{ __('Base price') }}</th><th>{{ __('Status') }}</th></tr></thead><tbody>
 @forelse($services as $service)<tr><td>{{ $service->id }}</td><td>{{ $service->name ?? $service->code }}<div class="small text-secondary">{{ $service->code }}</div></td><td>{{ $service->category_name ?? '' }}</td><td>@if($service->image_path)<img class="rounded me-2" width="48" height="48" style="object-fit:cover" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($service->image_path) }}" alt="{{ __('Product image') }}">@endif

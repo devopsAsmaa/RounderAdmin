@@ -49,3 +49,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::put('/service-categories/{categoryId}', [$cat, 'update'])->whereNumber('categoryId')->name('service-categories.update');
     Route::delete('/service-categories/{categoryId}', [$cat, 'destroy'])->whereNumber('categoryId')->name('service-categories.destroy');
 });
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    $p = \App\Modules\Catalog\Controllers\Admin\PriceAdminController::class;
+
+    Route::get('/prices', [$p, 'index'])->name('prices.index');
+    Route::get('/prices/create', [$p, 'create'])->name('prices.create');
+    Route::post('/prices', [$p, 'store'])->name('prices.store');
+    Route::get('/prices/{priceId}/edit', [$p, 'edit'])->whereNumber('priceId')->name('prices.edit');
+    Route::put('/prices/{priceId}', [$p, 'update'])->whereNumber('priceId')->name('prices.update');
+    Route::delete('/prices/{priceId}', [$p, 'destroy'])->whereNumber('priceId')->name('prices.destroy');
+
+    Route::get('/prices/ajax/provider-services/{providerId}', [$p, 'getProviderServices'])->whereNumber('providerId')->name('prices.ajax.provider-services');
+    Route::get('/prices/ajax/sub-services/{serviceId}', [$p, 'getSubServices'])->whereNumber('serviceId')->name('prices.ajax.sub-services');
+    Route::get('/prices/ajax/region-cities/{regionId}', [$p, 'getRegionCities'])->whereNumber('regionId')->name('prices.ajax.region-cities');
+    Route::get('/prices/{priceId}/cities', [$p, 'getPriceCities'])->whereNumber('priceId')->name('prices.cities');
+});

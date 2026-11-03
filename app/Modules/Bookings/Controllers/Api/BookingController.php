@@ -63,7 +63,7 @@ class BookingController extends Controller
      */
     public function providers(ApiResidentServiceProvidersRequest $request): \Illuminate\Http\JsonResponse
     {
-        return response()->json($this->service->serviceProviders($request->validated('service_id')), 200);
+        return response()->json($this->service->serviceProviders($request->validated(), $request->user()), 200);
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Modules\Providers\Models\ProviderProfile;
 use App\Modules\Properties\Models\ResidentHome;
 use App\Modules\Catalog\Models\Service;
 use App\Modules\Catalog\Models\SubService;
+use App\Modules\Catalog\Models\SubServicePrice;
 use App\Modules\Identity\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ class Booking extends Model
         'home_id',
         'service_id',
         'sub_service_id',
+        'sub_service_price_id',
         'provider_id',
         'booking_status_id',
         'scheduled_at',
@@ -47,6 +49,7 @@ class Booking extends Model
             'home_id' => 'integer',
             'service_id' => 'integer',
             'sub_service_id' => 'integer',
+            'sub_service_price_id' => 'integer',
             'provider_id' => 'integer',
             'booking_status_id' => 'integer',
             'scheduled_at' => 'datetime',
@@ -90,6 +93,15 @@ class Booking extends Model
     public function subService(): BelongsTo
     {
         return $this->belongsTo(SubService::class, 'sub_service_id');
+    }
+
+    /**
+     * سجل التسعير المرتبط عبر sub_service_price_id.
+     * @return BelongsTo
+     */
+    public function subServicePrice(): BelongsTo
+    {
+        return $this->belongsTo(SubServicePrice::class, 'sub_service_price_id');
     }
 
     /**

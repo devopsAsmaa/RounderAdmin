@@ -6,6 +6,7 @@ use App\Modules\Bookings\Models\BookingProviderAssignment;
 use App\Modules\Emergencies\Models\EmergencyProviderAssignment;
 use App\Modules\Identity\Models\User;
 use App\Modules\Catalog\Models\Service;
+use App\Modules\Catalog\Models\SubServicePrice;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -71,6 +72,15 @@ class ProviderProfile extends Model
     public function providerCommissionEntries(): HasMany
     {
         return $this->hasMany(ProviderCommissionEntry::class, 'provider_profile_id');
+    }
+
+    /**
+     * أسعار الخدمات الفرعية لمزود الخدمة.
+     * @return HasMany
+     */
+    public function prices(): HasMany
+    {
+        return $this->hasMany(SubServicePrice::class, 'provider_profile_id');
     }
 
     /**

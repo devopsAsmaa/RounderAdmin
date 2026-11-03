@@ -102,6 +102,7 @@ class AdminServiceOrderAdminService
                 'service.translations',
                 'service.category.translations',
                 'subService.translations',
+                'subServicePrice',
                 'status.translations',
                 'provider',
                 'serviceProvider.user',

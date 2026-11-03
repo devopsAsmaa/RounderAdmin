@@ -65,7 +65,7 @@
             @endif
 
             {{-- Main Header Hero Panel --}}
-            <div class="panel p-3 p-lg-4 mb-4 border-0" style="background: linear-gradient(135deg, #073B43 0%, #0d5560 100%); color: #fff;">
+            <div class="panel p-3 p-lg-4 mb-4 border-0" style="background: linear-gradient(135deg, var(--petrol) 0%, #034f5d 100%); color: #fff;">
                 <div class="row align-items-center g-3">
                     <div class="col-lg-8">
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -129,7 +129,7 @@
                 <div class="col-6 col-md-3">
                     <div class="panel p-3 h-100">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="kpi-icon" style="background: #DDF3EE; color: #073B43;">
+                            <div class="kpi-icon" style="background: var(--mint); color: var(--petrol);">
                                 <i class="fa-solid fa-clock"></i>
                             </div>
                             <div>
@@ -157,7 +157,7 @@
                 <div class="col-6 col-md-3">
                     <div class="panel p-3 h-100">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="kpi-icon" style="background: #e8f4f0; color: #073B43;">
+                            <div class="kpi-icon" style="background: #e4f2ee; color: var(--petrol);">
                                 <i class="fa-solid fa-user"></i>
                             </div>
                             <div class="text-truncate">
@@ -242,7 +242,7 @@
                                 <i class="fa-regular fa-comment-dots me-1 text-primary"></i>{{ __('Resident instructions') }}
                             </div>
                             @if($booking->notes)
-                                <div class="p-3 rounded-3" style="background:#FFF9EF; border-inline-start:4px solid var(--orange);">
+                                <div class="p-3 rounded-3" style="background:var(--sand); border-inline-start:4px solid var(--orange);">
                                     <div class="fst-italic text-dark">{{ $booking->notes }}</div>
                                 </div>
                             @else
@@ -450,7 +450,7 @@
                                 </h2>
                             </div>
                             @foreach($booking->bookingRatings as $rating)
-                                <div class="p-3 rounded-3" style="background:#FFF9EF; border: 1px solid #ffe8cc;">
+                                <div class="p-3 rounded-3" style="background:var(--sand); border: 1px solid #ffe8cc;">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <div class="d-flex align-items-center gap-1 text-warning fs-5">
                                             @for($i = 1; $i <= 5; $i++)
@@ -603,7 +603,7 @@
 
                         {{-- Commission Entry Details --}}
                         @if($commission)
-                            <div class="p-3 rounded-3" style="background:#FFF9EF; border:1px solid #ffe8cc;">
+                            <div class="p-3 rounded-3" style="background:var(--sand); border:1px solid #ffe8cc;">
                                 <div class="small fw-bold text-dark mb-2">
                                     <i class="fa-solid fa-receipt me-1 text-primary"></i>{{ __('Platform commissions') }}
                                 </div>

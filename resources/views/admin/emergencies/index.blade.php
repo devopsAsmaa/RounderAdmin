@@ -4,10 +4,18 @@
 <div class="container-fluid"><div class="row g-3 p-3 p-lg-4">
 
 <main class="col-12 content">
-<div class="mb-4"><div class="small text-secondary">{{ __('Emergency dispatch') }}</div><h1 class="h3 fw-bold">{{ __('Emergency requests') }}</h1></div>
-@if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
-@if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-@adminCan('admin.emergencies.create')<a class="btn btn-primary mb-3" href="{{ route('admin.emergencies.create') }}">{{ __('Create emergency request') }}</a>@endadminCan
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <div class="small text-secondary">{{ __('Emergency dispatch') }}</div>
+        <h1 class="h3 fw-bold mb-0">{{ __('Emergency requests') }}</h1>
+    </div>
+    @adminCan('admin.emergencies.create')
+    <a class="btn btn-primary" href="{{ route('admin.emergencies.create') }}">
+        <i class="fa-solid fa-plus me-1"></i> {{ __('Create emergency request') }}
+    </a>
+    @endadminCan
+</div>
+@include('admin.partials.feedback')
 <div class="panel p-3 p-lg-4"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ __('Request') }}</th><th>{{ __('Resident and home') }}</th><th>{{ __('Emergency type') }}</th><th>{{ __('Location and details') }}</th><th>{{ __('Status') }}</th><th>{{ __('Dispatch and commission') }}</th></tr></thead><tbody>
 @forelse($requests as $item)
 <tr><td><strong>{{ $item->reference }}</strong><div class="small text-secondary">{{ $item->requested_at }}</div><div class="small">{{ $item->resident_phone }}</div></td>

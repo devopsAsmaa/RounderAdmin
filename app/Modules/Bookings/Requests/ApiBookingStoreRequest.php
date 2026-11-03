@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 
 use App\Modules\Providers\Models\ProviderProfile;
 use App\Modules\Properties\Models\ResidentHome;
+use App\Modules\Catalog\Models\SubService;
 use Carbon\Carbon;
 
 /** التحقق من مدخلات BookingController::store قبل تشغيل الخدمة. */
@@ -56,11 +57,17 @@ class ApiBookingStoreRequest extends ResidentRequest
             $merge['sub_service_id'] = (int) $rawSubService;
             // إذا أرسل العميل الخدمة الفرعية دون service_id، يتم استنتاج الخدمة الأم تلقائياً
             if (!$this->has('service_id')) {
-                $serviceId = \App\Modules\Catalog\Models\SubService::where('id', $rawSubService)->value('service_id');
+                $serviceId = SubService::where('id', $rawSubService)->value('service_id');
                 if ($serviceId) {
                     $merge['service_id'] = $serviceId;
                 }
             }
+        }
+
+        // توحيد معرف التسعير price_id / sub_service_price_id
+        $rawPriceId = $this->input('price_id') ?? $this->input('sub_service_price_id');
+        if ($rawPriceId !== null && $rawPriceId !== '') {
+            $merge['sub_service_price_id'] = (int) $rawPriceId;
         }
 
         if (!empty($merge)) {
@@ -81,6 +88,8 @@ class ApiBookingStoreRequest extends ResidentRequest
             'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where('is_active', true)],
             'sub_service_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sub_services', 'id')->where('is_active', true)],
             'sub_services_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sub_services', 'id')->where('is_active', true)],
+            'price_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sub_service_prices', 'id')->where('is_active', true)],
+            'sub_service_price_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sub_service_prices', 'id')->where('is_active', true)],
             'service_provider_id' => ['sometimes', 'nullable', 'integer', Rule::exists('provider_profiles', 'id')->where('is_approved', true)],
             'scheduled_at' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:2000'],

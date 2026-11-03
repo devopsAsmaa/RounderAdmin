@@ -1,0 +1,355 @@
+<?php
+
+namespace App\Modules\Catalog\Services;
+
+use App\Modules\Catalog\Models\Service;
+use App\Modules\Catalog\Models\SubService;
+use App\Modules\Catalog\Models\SubServicePrice;
+use App\Modules\Properties\Models\City;
+use App\Modules\Properties\Models\Region;
+use App\Modules\Providers\Models\ProviderProfile;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * قواعد عمل إدارة أسعار الخدمات الفرعية للوحة الإدارة.
+ */
+class AdminPriceAdminService
+{
+    /**
+     * استعراض سجلات التسعير مع التصفية والتقسيم على صفحات.
+     *
+     * @param array<string, mixed> $input
+     * @param mixed $actor
+     * @return array<string, mixed>
+     */
+    public function index(array $input, mixed $actor): array
+    {
+        $locale = app()->getLocale();
+
+        $query = SubServicePrice::query()
+            ->with([
+                'provider.user',
+                'subService.translations',
+                'subService.service.translations',
+                'region.translations',
+            ])
+            ->withCount('cities');
+
+        if (!empty($input['provider_profile_id'])) {
+            $query->where('provider_profile_id', (int) $input['provider_profile_id']);
+        }
+
+        if (!empty($input['sub_service_id'])) {
+            $query->where('sub_service_id', (int) $input['sub_service_id']);
+        } elseif (!empty($input['service_id'])) {
+            $query->whereHas('subService', function ($q) use ($input) {
+                $q->where('service_id', (int) $input['service_id']);
+            });
+        }
+
+        if (!empty($input['region_id'])) {
+            $query->where('region_id', (int) $input['region_id']);
+        }
+
+        if (!empty($input['city_id'])) {
+            $query->whereHas('cities', function ($q) use ($input) {
+                $q->where('cities.id', (int) $input['city_id']);
+            });
+        }
+
+        if (isset($input['status']) && $input['status'] !== 'all') {
+            $query->where('is_active', $input['status'] === 'active');
+        }
+
+        if (!empty($input['search'])) {
+            $search = $input['search'];
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('provider', function ($p) use ($search) {
+                    $p->where('company_name', 'like', "%{$search}%");
+                })->orWhereHas('subService.translations', function ($st) use ($search) {
+                    $st->where('name', 'like', "%{$search}%");
+                })->orWhereHas('region.translations', function ($rt) use ($search) {
+                    $rt->where('name', 'like', "%{$search}%");
+                })->orWhereHas('cities.translations', function ($ct) use ($search) {
+                    $ct->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $prices = $query->orderByDesc('id')->paginate(25)->withQueryString();
+
+        $providers = ProviderProfile::query()
+            ->where('is_approved', true)
+            ->orderBy('company_name')
+            ->get();
+
+        $services = Service::query()
+            ->with('translations')
+            ->where('is_active', true)
+            ->get();
+
+        $regions = Region::query()
+            ->with('translations')
+            ->where('is_active', true)
+            ->get();
+
+        return [
+            'prices' => $prices,
+            'providers' => $providers,
+            'services' => $services,
+            'regions' => $regions,
+            'filters' => $input,
+            'locale' => $locale,
+        ];
+    }
+
+    /**
+     * بيانات نموذج إنشاء تسعير جديد.
+     *
+     * @return array<string, mixed>
+     */
+    public function createData(): array
+    {
+        $locale = app()->getLocale();
+
+        $providers = ProviderProfile::query()
+            ->where('is_approved', true)
+            ->with(['services.translations'])
+            ->orderBy('company_name')
+            ->get();
+
+        $regions = Region::query()
+            ->where('is_active', true)
+            ->with(['translations'])
+            ->orderBy('id')
+            ->get();
+
+        return [
+            'providers' => $providers,
+            'regions' => $regions,
+            'locale' => $locale,
+        ];
+    }
+
+    /**
+     * حفظ سجل تسعير وربط المدن التابعة له.
+     *
+     * @param array<string, mixed> $input
+     * @param mixed $actor
+     * @return SubServicePrice
+     */
+    public function store(array $input, mixed $actor): SubServicePrice
+    {
+        return DB::transaction(function () use ($input) {
+            $price = SubServicePrice::create([
+                'provider_profile_id' => (int) $input['provider_profile_id'],
+                'sub_service_id' => (int) $input['sub_service_id'],
+                'region_id' => !empty($input['region_id']) ? (int) $input['region_id'] : null,
+                'price' => $input['price'],
+                'is_active' => isset($input['is_active']) ? (bool) $input['is_active'] : true,
+            ]);
+
+            if (!empty($input['city_ids'])) {
+                $price->cities()->sync($input['city_ids']);
+            }
+
+            return $price;
+        });
+    }
+
+    /**
+     * جلب سجل التسعير مع المدن التابعة له للتعديل.
+     *
+     * @param int $priceId
+     * @return SubServicePrice
+     */
+    public function edit(int $priceId): SubServicePrice
+    {
+        return SubServicePrice::query()
+            ->with([
+                'provider',
+                'subService.translations',
+                'subService.service.translations',
+                'region.translations',
+                'cities.translations',
+            ])
+            ->findOrFail($priceId);
+    }
+
+    /**
+     * تحديث تسعير محدد ومدنه التابعة.
+     *
+     * @param mixed $actor
+     * @param int $priceId
+     * @param array<string, mixed> $input
+     * @return SubServicePrice
+     */
+    public function update(mixed $actor, int $priceId, array $input): SubServicePrice
+    {
+        return DB::transaction(function () use ($priceId, $input) {
+            $priceRecord = SubServicePrice::findOrFail($priceId);
+
+            $dataToUpdate = [
+                'price' => $input['price'],
+                'is_active' => isset($input['is_active']) ? (bool) $input['is_active'] : true,
+            ];
+
+            if (array_key_exists('region_id', $input)) {
+                $dataToUpdate['region_id'] = !empty($input['region_id']) ? (int) $input['region_id'] : null;
+            }
+
+            $priceRecord->update($dataToUpdate);
+
+            if (isset($input['city_ids'])) {
+                $priceRecord->cities()->sync($input['city_ids']);
+            }
+
+            return $priceRecord;
+        });
+    }
+
+    /**
+     * حذف تسعير محدد.
+     *
+     * @param mixed $actor
+     * @param int $priceId
+     * @return void
+     */
+    public function destroy(mixed $actor, int $priceId): void
+    {
+        $priceRecord = SubServicePrice::findOrFail($priceId);
+        $priceRecord->delete();
+    }
+
+    /**
+     * جلب الخدمات المرتبطة بمزود خدمة محدد.
+     *
+     * @param int $providerProfileId
+     * @return Collection
+     */
+    public function getProviderServices(int $providerProfileId): Collection
+    {
+        $provider = ProviderProfile::query()
+            ->with('services.translations')
+            ->findOrFail($providerProfileId);
+
+        $locale = app()->getLocale();
+
+        return $provider->services->map(function ($service) use ($locale) {
+            $name = $service->translations->firstWhere('locale', $locale)?->name
+                ?? $service->translations->firstWhere('locale', 'ar')?->name
+                ?? $service->code;
+
+            return [
+                'id' => $service->id,
+                'name' => $name,
+            ];
+        });
+    }
+
+    /**
+     * جلب الخدمات الفرعية لخدمة رئيسية.
+     *
+     * @param int $serviceId
+     * @return Collection
+     */
+    public function getSubServices(int $serviceId): Collection
+    {
+        $subServices = SubService::query()
+            ->where('service_id', $serviceId)
+            ->where('is_active', true)
+            ->with('translations')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $locale = app()->getLocale();
+
+        return $subServices->map(function ($sub) use ($locale) {
+            $name = $sub->translations->firstWhere('locale', $locale)?->name
+                ?? $sub->translations->firstWhere('locale', 'ar')?->name
+                ?? $sub->code;
+
+            return [
+                'id' => $sub->id,
+                'name' => $name,
+            ];
+        });
+    }
+
+    /**
+     * جلب مدن منطقة جغرافية محددة.
+     *
+     * @param int $regionId
+     * @return Collection
+     */
+    public function getRegionCities(int $regionId): Collection
+    {
+        $cities = City::query()
+            ->where('region_id', $regionId)
+            ->where('is_active', true)
+            ->with('translations')
+            ->orderBy('id')
+            ->get();
+
+        $locale = app()->getLocale();
+
+        return $cities->map(function ($city) use ($locale) {
+            $name = $city->translations->firstWhere('locale', $locale)?->name
+                ?? $city->translations->firstWhere('locale', 'ar')?->name
+                ?? $city->code;
+
+            return [
+                'id' => $city->id,
+                'name' => $name,
+            ];
+        });
+    }
+
+    /**
+     * جلب تفاصيل المدن التابعة لتسعير محدد لعرضها في النافذة المنبثقة.
+     *
+     * @param int $priceId
+     * @return array<string, mixed>
+     */
+    public function getPriceCities(int $priceId): array
+    {
+        $price = SubServicePrice::query()
+            ->with([
+                'provider',
+                'subService.translations',
+                'region.translations',
+                'cities.translations',
+            ])
+            ->findOrFail($priceId);
+
+        $locale = app()->getLocale();
+
+        $cities = $price->cities->map(function ($city) use ($locale) {
+            return [
+                'id' => $city->id,
+                'name' => $city->translations->firstWhere('locale', $locale)?->name
+                    ?? $city->translations->firstWhere('locale', 'ar')?->name
+                    ?? $city->code,
+            ];
+        });
+
+        $providerName = $price->provider?->company_name ?? '—';
+        $subServiceName = $price->subService?->translations->firstWhere('locale', $locale)?->name
+            ?? $price->subService?->translations->firstWhere('locale', 'ar')?->name
+            ?? $price->subService?->code;
+        $regionName = $price->region?->translations->firstWhere('locale', $locale)?->name
+            ?? $price->region?->translations->firstWhere('locale', 'ar')?->name
+            ?? __('All regions');
+
+        return [
+            'price_id' => $price->id,
+            'provider_name' => $providerName,
+            'sub_service_name' => $subServiceName,
+            'region_name' => $regionName,
+            'cities_count' => $cities->count(),
+            'cities' => $cities,
+        ];
+    }
+}

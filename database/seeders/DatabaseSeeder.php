@@ -87,5 +87,6 @@ class DatabaseSeeder extends Seeder {
   }
   $email=env('ROUND_ADMIN_EMAIL'); $password=env('ROUND_ADMIN_PASSWORD');
   if($email&&$password){$admin=Role::where('code','admin')->firstOrFail();\App\Modules\Identity\Models\Admin::updateOrCreate(['email'=>$email],['name'=>env('ROUND_ADMIN_NAME','Rounder Admin'),'is_super_admin'=>true,'is_active'=>true,'locale'=>'ar','password'=>$password]);}
+  $this->call(RegionsSeeder::class);
  }
 }

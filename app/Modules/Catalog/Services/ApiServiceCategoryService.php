@@ -19,7 +19,11 @@ class ApiServiceCategoryService
     public function __invoke(array $input, ?User $actor): mixed
     {
         $locale = app()->getLocale();
-        $categories = ServiceCategory::with([
+        $subServicesLimit = isset($input['sub_services_limit'])
+            ? min(max((int) $input['sub_services_limit'], 1), 50)
+            : 6;
+
+        $query = ServiceCategory::with([
             'translations',
             'services' => fn ($query) => $query->active()->with([
                 'translations',
@@ -28,15 +32,22 @@ class ApiServiceCategoryService
                     ->orderBy('id'),
             ])->orderBy('id'),
         ])
-            ->active()
-            ->orderBy('id')
+            ->active();
+
+        if (!empty($input['service_category_id'])) {
+            $query->where('id', (int) $input['service_category_id']);
+        }
+
+        $categories = $query->orderBy('id')
             ->get()
             ->map(fn (ServiceCategory $category) => [
                 'id' => $category->id,
                 'name' => $category->translations->firstWhere('locale', $locale)?->name ?? $category->code,
                 'image_url' => $category->image_path ? Storage::disk('public')->url($category->image_path) : null,
-                'services' => $category->services->map(function ($service) use ($locale) {
+                'services' => $category->services->map(function ($service) use ($locale, $subServicesLimit) {
                     $translation = $service->translations->firstWhere('locale', $locale);
+                    $totalSubServices = $service->subServices->count();
+                    $previewSubServices = $service->subServices->take($subServicesLimit);
 
                     return [
                         'id' => $service->id,
@@ -48,7 +59,9 @@ class ApiServiceCategoryService
                         'discount_type' => $service->discount_type?->value ?? \App\Modules\Catalog\Enums\DiscountType::None->value,
                         'discount_value' => $service->discount_value ?? '0.00',
                         'image_url' => $service->image_path ? Storage::disk('public')->url($service->image_path) : null,
-                        'sub_services' => $service->subServices->map(function ($subService) use ($locale) {
+                        'sub_services_count' => $totalSubServices,
+                        'has_more' => $totalSubServices > $subServicesLimit,
+                        'sub_services' => $previewSubServices->map(function ($subService) use ($locale) {
                             $translation = $subService->translations->firstWhere('locale', $locale);
 
                             return [

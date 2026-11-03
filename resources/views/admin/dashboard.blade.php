@@ -4,7 +4,23 @@
 <div class="container-fluid"><div class="row g-3 p-3 p-lg-4">
 
 <main class="col-12 content">
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4"><div><div class="small text-secondary">{{ __('Live metrics') }}</div><h1 class="h3 fw-bold mb-1">{{ __('Dashboard') }}</h1><p class="text-secondary mb-0">{{ __('Metrics are queried from MySQL records.') }}</p></div><span class="pill">{{ now()->translatedFormat('d F Y') }}</span></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+<div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge" style="background: rgba(2, 51, 62, 0.08); color: var(--petrol); font-size: 0.75rem; font-weight: 700;">
+            <i class="fa-solid fa-circle text-success me-1" style="font-size: 0.45rem; vertical-align: middle;"></i>{{ __('Live metrics') }}
+        </span>
+    </div>
+    <h1 class="h3 fw-bold mb-1 text-dark">{{ __('Dashboard') }}</h1>
+    <p class="text-secondary small mb-0">{{ __('Metrics are queried from MySQL records.') }}</p>
+</div>
+<div class="d-flex align-items-center gap-2">
+    <span class="pill px-3 py-2" style="font-size: 0.88rem; background: #fff; border: 1px solid #dce6e3; box-shadow: 0 1px 3px rgba(2,51,62,0.03);">
+        <i class="fa-regular fa-calendar-days text-secondary me-1"></i>
+        {{ now()->translatedFormat('d F Y') }}
+    </span>
+</div>
+</div>
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
 @if(array_key_exists('residents',$stats))
 <div class="col"><a href="{{ route('admin.residents.index') }}" class="kpi-card" aria-label="{{ __('Residents') }}">
@@ -73,9 +89,75 @@
 </article></div>@endif
 </div>
 @adminCan('admin.service-orders.index')
-<div class="panel p-3 p-lg-4 mb-4"><h2 class="h5 fw-bold mb-3">{{ __('Recent bookings') }}</h2><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>#</th><th>{{ __('Resident') }}</th><th>{{ __('Service') }}</th><th>{{ __('Status') }}</th><th>{{ __('Date') }}</th></tr></thead><tbody>
-@forelse($recent as $booking)<tr><td>{{ $booking->id }}</td><td>{{ $booking->resident->name }}</td><td>{{ $booking->service->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->service->code }}</td><td><span class="pill">{{ $booking->status->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->status->code }}</span></td><td>{{ $booking->created_at->format('Y-m-d') }}</td></tr>
-@empty<tr><td colspan="5" class="text-center text-secondary py-4">{{ __('No bookings yet') }}</td></tr>@endforelse</tbody></table></div></div>
+<div class="panel p-3 p-lg-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h2 class="h5 fw-bold mb-1">{{ __('Recent bookings') }}</h2>
+            <div class="small text-secondary">{{ __('Latest activity across the system') }}</div>
+        </div>
+        <a href="{{ route('admin.service-orders.index') }}" class="btn btn-sm btn-outline-primary">
+            <span>{{ __('View all') }}</span>
+            <i class="fa-solid {{ app()->getLocale() === 'ar' ? 'fa-arrow-left' : 'fa-arrow-right' }} ms-1"></i>
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ __('Resident') }}</th>
+                    <th>{{ __('Service') }}</th>
+                    <th>{{ __('Status') }}</th>
+                    <th>{{ __('Date') }}</th>
+                    <th class="text-end">{{ __('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recent as $booking)
+                <tr>
+                    <td>
+                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="fw-bold text-decoration-none" style="color: var(--petrol);">
+                            #{{ $booking->id }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-grid place-items-center" style="width: 30px; height: 30px; background: #eaf3f0; color: var(--petrol); font-weight: 700; font-size: 0.78rem;">
+                                {{ mb_substr($booking->resident->name ?? '—', 0, 1) }}
+                            </div>
+                            <span class="fw-semibold">{{ $booking->resident->name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge" style="background: rgba(2, 51, 62, 0.06); color: var(--petrol); font-size: 0.82rem; font-weight: 600;">
+                            {{ $booking->service->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->service->code }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="pill">{{ $booking->status->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->status->code }}</span>
+                    </td>
+                    <td>
+                        <span class="text-secondary small">{{ $booking->created_at->format('Y-m-d') }}</span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="{{ __('View details') }}">
+                            <i class="fa-solid fa-eye"></i>
+                            <span class="d-none d-md-inline">{{ __('View details') }}</span>
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="text-center text-secondary py-4">
+                        <i class="fa-regular fa-folder-open d-block fs-3 mb-2 opacity-50"></i>
+                        {{ __('No bookings yet') }}
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 @endadminCan
 </main></div></div>
 @endsection

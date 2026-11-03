@@ -4,12 +4,20 @@
 <div class="container-fluid"><div class="row g-3 p-3 p-lg-4">
 
 <main class="col-12 content">
-<div class="mb-4"><div class="small text-secondary">{{ __('Provider assignment and commissions') }}</div><h1 class="h3 fw-bold">{{ __('Service orders') }}</h1></div>
-@if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
-@if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-@adminCan('admin.service-orders.create')<a class="btn btn-primary mb-3" href="{{ route('admin.service-orders.create') }}">{{ __('Create service order') }}</a>@endadminCan
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <div class="small text-secondary">{{ __('Provider assignment and commissions') }}</div>
+        <h1 class="h3 fw-bold mb-0">{{ __('Service orders') }}</h1>
+    </div>
+    @adminCan('admin.service-orders.create')
+    <a class="btn btn-primary" href="{{ route('admin.service-orders.create') }}">
+        <i class="fa-solid fa-plus me-1"></i> {{ __('Create service order') }}
+    </a>
+    @endadminCan
+</div>
+@include('admin.partials.feedback')
 <div class="panel p-3 p-lg-4"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ __('Order') }}</th><th>{{ __('Resident and home') }}</th><th>{{ __('Service') }}</th><th>{{ __('Photos') }}</th><th>{{ __('Status') }}</th><th>{{ __('Assignment and commission') }}</th></tr></thead><tbody>
-@forelse($orders as $order)<tr><td><a href="{{ route('admin.service-orders.show', $order->id) }}" class="fw-bold text-decoration-none text-primary fs-6">#{{ $order->id }}</a><div class="small text-secondary">{{ $order->scheduled_at }}</div>@if($order->notes)<div class="small text-muted mt-1 text-truncate" style="max-width:180px" title="{{ $order->notes }}">{{ $order->notes }}</div>@endif<div class="mt-1"><a href="{{ route('admin.service-orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.75rem"><i class="fa-solid fa-eye me-1"></i>{{ __('View details') }}</a></div></td>
+@forelse($orders as $order)<tr><td><a href="{{ route('admin.service-orders.show', $order->id) }}" class="fw-bold text-decoration-none fs-6" style="color: var(--petrol);">#{{ $order->id }}</a><div class="small text-secondary">{{ $order->scheduled_at }}</div>@if($order->notes)<div class="small text-muted mt-1 text-truncate" style="max-width:180px" title="{{ $order->notes }}">{{ $order->notes }}</div>@endif<div class="mt-1"><a href="{{ route('admin.service-orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.75rem"><i class="fa-solid fa-eye me-1"></i>{{ __('View details') }}</a></div></td>
 <td>{{ $order->resident_name }}<div class="small text-secondary">{{ $order->home_name }}</div></td>
 <td>{{ $order->service_name ?? $order->service_code }}@if($order->sub_service_name || $order->sub_service_code)<div class="small text-primary">{{ $order->sub_service_name ?? $order->sub_service_code }}</div>@endif<div class="small text-secondary">{{ number_format($order->total_amount,2) }} SAR</div></td>
 <td>

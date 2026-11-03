@@ -64,6 +64,15 @@ class SubService extends Model
     }
 
     /**
+     * أسعار الخدمة الفرعية لمزودي الخدمة في مختلف المدن.
+     * @return HasMany
+     */
+    public function prices(): HasMany
+    {
+        return $this->hasMany(SubServicePrice::class, 'sub_service_id');
+    }
+
+    /**
      * إخفاء الخدمات الفرعية الموقوفة عن الاختيارات الجديدة.
      * @param Builder $query
      * @return Builder

@@ -8,9 +8,12 @@ enum DashboardSection: string
     case Users = 'users';
     case Providers = 'providers';
     case Realestate = 'realestate';
+    case Regions = 'regions';
+    case Cities = 'cities';
     case Services = 'services';
     case SubServices = 'sub_services';   // جديد
     case ServiceCategories = 'service_categories'; // جديد
+    case Prices = 'prices';
 
     case Packages = 'packages';
     case Features = 'features';
@@ -29,9 +32,12 @@ enum DashboardSection: string
             self::Users => __('Users'),
             self::Providers => __('Providers and contracts'),
             self::Realestate => __('Homes'),
+            self::Regions => __('Regions'),
+            self::Cities => __('Cities'),
             self::Services => __('Available services'),
             self::SubServices => __('Sub services'),   // جديد
             self::ServiceCategories => __('Service categories'), // جديد
+            self::Prices => __('Prices'),
             self::Packages => __('Customer packages'),
             self::Features => __('Package comparison features'),
             self::Subscriptions => __('Customer subscriptions'),

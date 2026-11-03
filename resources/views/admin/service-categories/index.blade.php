@@ -31,6 +31,13 @@
         </a>
     </li>
     @endadminCan
+    @adminCan('admin.prices.index')
+    <li class="nav-item">
+        <a class="nav-link btn btn-outline-secondary" href="{{ route('admin.prices.index') }}">
+            <i class="fa-solid fa-tags me-1"></i> {{ __('Prices') }}
+        </a>
+    </li>
+    @endadminCan
 </ul>
 
 <div class="panel p-3 p-lg-4 mb-4">

@@ -10,22 +10,6 @@
 <div class="col-md-3"><label class="form-label">{{ __('Sub service code') }}</label><input name="code" value="{{ old('code', $subService?->code) }}" class="form-control" required maxlength="100" pattern="[A-Za-z0-9_-]+"></div>
 <div class="col-md-2"><label class="form-label">{{ __('Sort order') }}</label><input name="sort_order" type="number" min="0" value="{{ old('sort_order', $subService?->sort_order ?? 0) }}" class="form-control"></div>
 <div class="col-md-3"><label class="form-label">{{ __('Status') }}</label><select name="is_active" class="form-select"><option value="1" @selected((int) old('is_active', $subService?->is_active ?? 1)===1)>{{ __('Active') }}</option><option value="0" @selected((int) old('is_active', $subService?->is_active ?? 1)===0)>{{ __('Inactive') }}</option></select></div>
-<div class="col-md-6">
-    <label class="form-label">{{ __('Price - Eastern region') }}</label>
-    <div class="input-group">
-        <input name="price_eastern" type="number" step="0.01" min="0"
-               value="{{ old('price_eastern', $subService?->price_eastern) }}" class="form-control">
-        <span class="input-group-text">{{ __('SAR') }}</span>
-    </div>
-</div>
-<div class="col-md-6">
-    <label class="form-label">{{ __('Price - Qassim, Madinah & Kharj') }}</label>
-    <div class="input-group">
-        <input name="price_qassim_madinah_kharj" type="number" step="0.01" min="0"
-               value="{{ old('price_qassim_madinah_kharj', $subService?->price_qassim_madinah_kharj) }}" class="form-control">
-        <span class="input-group-text">{{ __('SAR') }}</span>
-    </div>
-</div>
 @foreach(['ar'=>'العربية','en'=>'English','ur'=>'اردو'] as $code=>$label)
 <div class="col-md-4"><label class="form-label">{{ __('Sub service name') }} · {{ $label }}</label><input name="name_{{ $code }}" value="{{ old('name_'.$code, $names[$code] ?? '') }}" class="form-control" @required($code==='ar') maxlength="255"></div>
 <div class="col-md-4"><label class="form-label">{{ __('Description') }} · {{ $label }}</label><textarea name="description_{{ $code }}" class="form-control" rows="2" maxlength="2000">{{ old('description_'.$code, $descriptions[$code] ?? '') }}</textarea></div>

@@ -9,6 +9,9 @@ use App\Modules\Bookings\Models\Booking;
 use App\Modules\Bookings\Models\BookingProviderAssignment;
 use App\Modules\Bookings\Models\BookingStatus;
 use App\Modules\Catalog\Models\Service;
+use App\Modules\Catalog\Models\SubService;
+use App\Modules\Catalog\Models\SubServicePrice;
+use App\Modules\Properties\Models\Home;
 use App\Modules\Properties\Models\ResidentHome;
 use App\Modules\Providers\Enums\ContractStatusCode;
 use App\Modules\Providers\Models\ProviderContract;
@@ -106,23 +109,72 @@ class ApiBookingService
     }
 
     /**
-     * جلب قائمة مزودي الخدمة المعتمدين لتطبيق الجوال.
+     * جلب قائمة مزودي الخدمة المعتمدين لتطبيق الجوال مع السعر بحسب المدينة والخدمة الفرعية.
+     * @param array|int|null $input
+     * @param ?User $actor
      * @return array<string, mixed>
      */
-    public function serviceProviders(?int $serviceId = null): array
+    public function serviceProviders(array|int|null $input = null, ?User $actor = null): array
     {
+        if (is_int($input)) {
+            $input = ['service_id' => $input];
+        } else {
+            $input = (array) $input;
+        }
+
+        $serviceId = !empty($input['service_id']) ? (int) $input['service_id'] : null;
+        $subServiceRaw = $input['sub_service'] ?? $input['sub_service_id'] ?? null;
+        $homeId = !empty($input['home_id']) ? (int) $input['home_id'] : null;
+
+        $subServiceId = null;
+        if (!empty($subServiceRaw)) {
+            if (is_numeric($subServiceRaw)) {
+                $subServiceId = (int) $subServiceRaw;
+            } else {
+                $subServiceId = SubService::where('code', $subServiceRaw)->value('id');
+            }
+        }
+
+        if (!$serviceId && $subServiceId) {
+            $serviceId = SubService::where('id', $subServiceId)->value('service_id');
+        }
+
+        $cityId = null;
+        if ($homeId) {
+            $cityId = Home::where('id', $homeId)->value('city_id');
+        } elseif ($actor) {
+            $cityId = ResidentHome::with('home')->where('user_id', $actor->id)->first()?->home?->city_id;
+        }
+
+        // جلب الأسعار المخصصة إذا توفرت الخدمة الفرعية والمدينة
+        $prices = collect();
+        if ($subServiceId && $cityId) {
+            $prices = SubServicePrice::query()
+                ->where('sub_service_id', $subServiceId)
+                ->where('is_active', true)
+                ->whereHas('cities', fn ($q) => $q->where('cities.id', $cityId))
+                ->get()
+                ->keyBy('provider_profile_id');
+        }
+
         $providers = ProviderProfile::query()
             ->where('is_approved', true)
             ->when($serviceId, fn ($query) => $query->whereHas('services', fn ($services) => $services->whereKey($serviceId)))
             ->with('user:id,name,phone')
             ->orderBy('company_name')
             ->get()
-            ->map(fn (ProviderProfile $p) => [
-                'id' => $p->id,
-                'company_name' => $p->company_name,
-                'contact_name' => $p->user?->name,
-                'phone' => $p->user?->phone,
-            ]);
+            ->map(function (ProviderProfile $p) use ($prices) {
+                $priceRecord = $prices->get($p->id);
+
+                return [
+                    'id' => $p->id,
+                    'company_name' => $p->company_name,
+                    'contact_name' => $p->user?->name,
+                    'phone' => $p->user?->phone,
+                    'price' => $priceRecord ? (float) $priceRecord->price : null,
+                    'price_id' => $priceRecord?->id,
+                ];
+            });
 
         return ['data' => $providers];
     }
@@ -190,9 +242,47 @@ class ApiBookingService
                     ->value('id');
             }
 
+            $subServicePriceId = $data['sub_service_price_id'] ?? $data['price_id'] ?? null;
+            $dynamicPrice = null;
+
+            if ($subServicePriceId) {
+                $priceRecord = SubServicePrice::query()
+                    ->where('id', $subServicePriceId)
+                    ->where('is_active', true)
+                    ->first();
+                if ($priceRecord) {
+                    $dynamicPrice = $priceRecord->price;
+                    $subServicePriceId = $priceRecord->id;
+                } else {
+                    $subServicePriceId = null;
+                }
+            }
+
+            if ($dynamicPrice === null && !empty($data['sub_service_id']) && $serviceProviderId) {
+                $cityId = null;
+                if (!empty($data['home_id'])) {
+                    $cityId = Home::where('id', $data['home_id'])->value('city_id');
+                } elseif ($residentHomeId) {
+                    $cityId = ResidentHome::with('home')->find($residentHomeId)?->home?->city_id;
+                }
+                if ($cityId) {
+                    $priceRecord = SubServicePrice::query()
+                        ->where('provider_profile_id', $serviceProviderId)
+                        ->where('sub_service_id', $data['sub_service_id'])
+                        ->where('is_active', true)
+                        ->whereHas('cities', fn ($q) => $q->where('cities.id', $cityId))
+                        ->first();
+                    if ($priceRecord) {
+                        $dynamicPrice = $priceRecord->price;
+                        $subServicePriceId = $priceRecord->id;
+                    }
+                }
+            }
+
             $booking = $actor->bookings()->create($data + [
                 'booking_status_id' => $pending->id,
-                'total_amount' => $service->base_price,
+                'total_amount' => $dynamicPrice ?? $service->base_price,
+                'sub_service_price_id' => $subServicePriceId,
                 'provider_id' => $providerUserId,
                 'service_provider_id' => $serviceProviderId,
                 'resident_home_id' => $residentHomeId,
