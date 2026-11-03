@@ -6,6 +6,10 @@ use App\Http\Middleware\{EnsureAdmin,EnsureResident,SetApiLocale,SetLocale};
 return Application::configure(basePath: dirname(__DIR__))
  ->withRouting(web:__DIR__.'/../routes/web.php',api:__DIR__.'/../routes/api.php',commands:__DIR__.'/../routes/console.php',health:'/up')
  ->withMiddleware(function(Middleware $middleware):void{
+  $middleware->redirectTo(
+      guests: '/admin/login',
+      users: '/admin/dashboard',
+  );
   $middleware->web(append:[SetLocale::class]);
   $middleware->api(append:[SetApiLocale::class]);
   $middleware->alias(['admin'=>EnsureAdmin::class,'resident'=>EnsureResident::class]);

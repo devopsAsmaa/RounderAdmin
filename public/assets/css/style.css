@@ -119,6 +119,8 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
 .header-partner { color: #d1e4e3; font-size: .8rem; padding: 0; white-space: nowrap; }
 .header-partner:hover { color: #ff9a56; }
 .header-partner .icon { width: 16px; }
+.admin-portal-btn { background: rgba(255, 255, 255, 0.1); color: #d9eeeb !important; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; font-weight: 600; font-size: 0.82rem; padding: 0.38rem 0.95rem; text-decoration: none; transition: all 0.2s ease; display: inline-flex; align-items: center; }
+.admin-portal-btn:hover { background: #ffffff !important; color: var(--rounder-petrol) !important; border-color: #ffffff !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
 .navbar-toggler { background: #ffffff10; border: 0; padding: 8px; border-radius: 50%; color: #d9eeeb; }
 .navbar-toggler .icon { width: 21px; height: 21px; }
 .navbar-toggler:focus { box-shadow: 0 0 0 3px #ffffff30; }

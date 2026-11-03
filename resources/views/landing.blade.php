@@ -49,9 +49,17 @@
             <img class="wordmark" src="assets/images/rounder-wordmark.png" width="2172" height="724" alt="rounder — راوندر">
           </a>
           <div class="site-actions d-flex align-items-center gap-2 gap-lg-3 order-lg-3">
-            <a class="btn btn-outline-light btn-sm d-none d-md-inline-flex align-items-center" href="{{ route('admin.login') }}" style="border-radius: 999px; font-weight: 600; font-size: 0.82rem; border-color: rgba(255,255,255,0.35); color: #fff; padding: 0.35rem 0.85rem;">
-              <span>دخول الإدارة</span>
-            </a>
+            @auth
+              <a class="btn btn-sm d-none d-md-inline-flex align-items-center gap-1 admin-portal-btn" href="{{ route('admin.dashboard') }}">
+                <svg class="icon" aria-hidden="true" style="width: 14px; height: 14px;"><use href="#i-grid"></use></svg>
+                <span>لوحة التحكم</span>
+              </a>
+            @else
+              <a class="btn btn-sm d-none d-md-inline-flex align-items-center gap-1 admin-portal-btn" href="{{ route('admin.login') }}">
+                <svg class="icon" aria-hidden="true" style="width: 14px; height: 14px;"><use href="#i-shield"></use></svg>
+                <span>دخول الإدارة</span>
+              </a>
+            @endauth
             <button class="btn btn-link header-partner d-none d-xl-inline-flex" type="button" data-modal="provider">
               انضم كمزود خدمة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
             </button>
@@ -69,7 +77,11 @@
               <li class="nav-item"><a class="nav-link" href="#business">للأعمال</a></li>
               <li class="nav-item"><a class="nav-link" href="#how">كيف نعمل</a></li>
               <li class="nav-item"><a class="nav-link" href="#faq">الأسئلة الشائعة</a></li>
-              <li class="nav-item d-md-none"><a class="nav-link text-warning" href="{{ route('admin.login') }}">دخول الإدارة</a></li>
+              @auth
+                <li class="nav-item d-md-none"><a class="nav-link text-warning fw-bold" href="{{ route('admin.dashboard') }}">لوحة التحكم</a></li>
+              @else
+                <li class="nav-item d-md-none"><a class="nav-link text-warning fw-bold" href="{{ route('admin.login') }}">دخول الإدارة</a></li>
+              @endauth
             </ul>
           </div>
         </div>
@@ -423,7 +435,7 @@
             <a href="#" aria-label="راوندر — الرئيسية"><img class="wordmark" src="assets/images/rounder-wordmark.png" alt="rounder — راوندر" width="2172" height="724" loading="lazy"></a>
             <p>عناية للمنزل. راحة لك.</p>
           </div>
-          <div class="col-6 col-lg-3"><h3>اكتشف راوندر</h3><ul class="list-unstyled footer-links"><li><a href="#services">الخدمات المنزلية</a></li><li><a href="#business">حلول الأعمال</a></li><li><button type="button" data-modal="provider">مزودو الخدمات</button></li><li><a href="{{ route('admin.login') }}">دخول الإدارة</a></li></ul></div>
+          <div class="col-6 col-lg-3"><h3>اكتشف راوندر</h3><ul class="list-unstyled footer-links"><li><a href="#services">الخدمات المنزلية</a></li><li><a href="#business">حلول الأعمال</a></li><li><button type="button" data-modal="provider">مزودو الخدمات</button></li>@auth<li><a href="{{ route('admin.dashboard') }}">لوحة التحكم</a></li>@else<li><a href="{{ route('admin.login') }}">دخول الإدارة</a></li>@endauth</ul></div>
           <div class="col-6 col-lg-3"><h3>كيف نقدر نساعدك؟</h3><ul class="list-unstyled footer-links"><li><a href="#how">طريقة الحجز</a></li><li><a href="#faq">الأسئلة الشائعة</a></li><li><button type="button" data-modal="help">اختيار الخدمة المناسبة</button></li></ul></div>
           <div class="col-12 col-lg-3 footer-note"><span class="concept-label">نسخة تصميم تجريبية</span><p>واجهة راوندر للخدمات المنزلية.<br>المحتوى والطلبات لأغراض المعاينة.</p></div>
         </div>
