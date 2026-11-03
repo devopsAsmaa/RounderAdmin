@@ -215,13 +215,12 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 @media(max-width:575.98px){.topbar .notification-dropdown{position:fixed!important;top:70px!important;inset-inline-end:12px!important;inset-inline-start:auto!important;transform:none!important}}
 </style></head>
 <body>
-<nav class="navbar topbar px-3 px-lg-4 {{ auth()->user() instanceof \App\Modules\Identity\Models\Admin ? 'topbar-with-sidebar' : '' }}">
-<div class="d-flex align-items-center gap-2">
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
+<nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar">
+<div class="d-flex align-items-center gap-2">
 <button class="topbar-btn topbar-icon-btn d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
 <i class="fa-solid fa-bars-staggered"></i>
 </button>
-@endif
 <a class="navbar-brand brand d-lg-none d-flex align-items-center gap-2 m-0 text-decoration-none" href="{{ route('admin.dashboard') }}">
 <span class="brand-text text-rounder-orange">rounder</span>
 </a>
@@ -311,6 +310,7 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 @endif
 </div>
 </nav>
+@endif
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 @php
     $permService = app(\App\Modules\Access\Services\AdminPermissionService::class);
