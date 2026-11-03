@@ -209,15 +209,8 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 .topbar-status-dot{width:8px;height:8px;border-radius:50%;background-color:#10b981;display:inline-block;box-shadow:0 0 0 0 rgba(16,185,129,0.5);animation:topbarPulse 2s infinite}
 @keyframes topbarPulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,0.6)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 
-/* Global Command Search Bar */
-.topbar-search-wrap{flex:1;max-width:440px;position:relative}
-.topbar-search-input{height:42px;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;padding-inline-start:2.65rem;padding-inline-end:4.2rem;font-size:.84rem;color:var(--petrol);transition:all .18s ease}
-.topbar-search-input:focus{background:#fff;border-color:var(--orange)!important;box-shadow:0 0 0 3px rgba(251,130,47,0.15)!important;outline:none}
-.topbar-search-icon{position:absolute;inset-inline-start:.95rem;top:50%;transform:translateY(-50%);color:#8ea3a8;font-size:.85rem;pointer-events:none;z-index:2}
-.topbar-search-kbd{position:absolute;inset-inline-end:.65rem;top:50%;transform:translateY(-50%);font-family:monospace;font-size:.68rem;font-weight:700;padding:.2rem .45rem;border-radius:6px;background:#e5eee9;border:1px solid #cfded9;color:#5a767d;pointer-events:none;line-height:1}
-
 /* Topbar Buttons & Pills */
-.topbar-circle-btn{width:42px;height:42px;padding:0;display:inline-grid;place-items:center;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.92rem;transition:all .18s ease;cursor:pointer}
+.topbar-circle-btn{width:42px;height:42px;padding:0;display:inline-grid;place-items:center;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.92rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
 .topbar-circle-btn:hover,.topbar-circle-btn:focus{background:#eaf4f0;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
 .topbar-pill-btn{height:42px;padding:0 .9rem;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.45rem;transition:all .18s ease;cursor:pointer}
 .topbar-pill-btn:hover,.topbar-pill-btn:focus{background:#eaf4f0;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
@@ -244,7 +237,7 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <body>
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 <nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar">
-<div class="d-flex align-items-center gap-2 gap-md-3 shrink-0">
+<div class="d-flex align-items-center gap-2 gap-md-3">
 <button class="topbar-btn topbar-icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
 <i class="fa-solid fa-bars-staggered"></i>
 </button>
@@ -256,23 +249,27 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <span class="opacity-30">/</span>
 <span class="fw-bold text-dark">@yield('title', __('Rounder admin'))</span>
 </div>
-<span class="badge rounded-pill d-none d-xl-inline-flex align-items-center gap-1.5 px-2.5 py-1" style="background:#eef8f4; color:#0e6c51; border:1px solid #bde4d5; font-size:0.75rem; font-weight:600;">
+
+{{-- Live Date Badge --}}
+<span class="badge rounded-pill d-none d-md-inline-flex align-items-center gap-1.5 px-3 py-1.5" style="background:#f4f7f6; color:#405b61; border:1px solid #dce7e4; font-size:0.78rem; font-weight:600;">
+<i class="fa-regular fa-calendar text-muted"></i>
+{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('l، d F Y') }}
+</span>
+
+{{-- Live Online Status Badge --}}
+<span class="badge rounded-pill d-none d-xl-inline-flex align-items-center gap-1.5 px-2.5 py-1.5" style="background:#eef8f4; color:#0e6c51; border:1px solid #bde4d5; font-size:0.75rem; font-weight:600;">
 <span class="topbar-status-dot"></span>
 {{ __('System online') }}
 </span>
 </div>
 
-{{-- Center: Global Command Search Bar --}}
-<div class="topbar-search-wrap d-none d-md-flex align-items-center mx-3 mx-lg-4">
-<div class="position-relative w-100">
-<i class="fa-solid fa-magnifying-glass topbar-search-icon"></i>
-<input type="text" id="topbarGlobalSearch" class="form-control topbar-search-input" placeholder="{{ __('Search in dashboard, residents, bookings... (Ctrl+K)') }}" aria-label="{{ __('Search') }}" autocomplete="off">
-<kbd class="topbar-search-kbd">Ctrl K</kbd>
-</div>
-</div>
+{{-- Left Side: Refresh, Notifications, Language Pill, User Pill --}}
+<div class="d-flex align-items-center gap-2 gap-sm-2.5">
+{{-- Quick Refresh Button --}}
+<a href="{{ url()->current() }}" class="topbar-circle-btn d-none d-sm-inline-grid" title="{{ __('Refresh') }}" aria-label="{{ __('Refresh') }}">
+<i class="fa-solid fa-arrows-rotate"></i>
+</a>
 
-{{-- Left Side: Actions, Notifications, Language Pill, User Pill --}}
-<div class="d-flex align-items-center gap-2 gap-sm-2.5 shrink-0">
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 @include('admin.partials.notifications')
 @endif
@@ -671,65 +668,6 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
     node.addEventListener('hidden.bs.modal', () => {
         pendingForm = null; document.getElementById('confirm-delete').disabled = false;
     });
-})();
-</script>
-<script>
-(() => {
-    const searchInput = document.getElementById('topbarGlobalSearch');
-    if (searchInput) {
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-                e.preventDefault();
-                searchInput.focus();
-                searchInput.select();
-            }
-        });
-
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.trim().toLowerCase();
-            const sidebarNav = document.querySelector('.sidebar-links');
-            if (!sidebarNav) return;
-
-            const links = sidebarNav.querySelectorAll('a.nav-link, a.dashboard-link');
-            if (!query) {
-                links.forEach(l => {
-                    l.style.opacity = '1';
-                    l.style.background = '';
-                });
-                return;
-            }
-
-            let firstMatch = null;
-            links.forEach(l => {
-                const text = (l.textContent || '').trim().toLowerCase();
-                const match = text.includes(query);
-                if (match) {
-                    l.style.opacity = '1';
-                    l.style.background = 'rgba(251, 130, 47, 0.18)';
-                    const parentCollapse = l.closest('.collapse');
-                    if (parentCollapse && !parentCollapse.classList.contains('show')) {
-                        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(parentCollapse, { toggle: false });
-                        bsCollapse.show();
-                    }
-                    if (!firstMatch) firstMatch = l;
-                } else {
-                    l.style.opacity = '0.35';
-                    l.style.background = '';
-                }
-            });
-
-            searchInput.onkeydown = (e) => {
-                if (e.key === 'Enter' && firstMatch) {
-                    e.preventDefault();
-                    window.location.href = firstMatch.href;
-                } else if (e.key === 'Escape') {
-                    searchInput.value = '';
-                    searchInput.dispatchEvent(new Event('input'));
-                    searchInput.blur();
-                }
-            };
-        });
-    }
 })();
 </script>
 @stack('scripts')</body></html>
