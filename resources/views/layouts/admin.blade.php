@@ -205,13 +205,35 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 .dashboard-intro{padding:1.25rem 0}.dashboard-intro h1{font-weight:800}
 @media(max-width:575.98px){.kpi-card{min-height:132px}.kpi-value{font-size:1.85rem}}
 
-.topbar{position:sticky;top:0;z-index:1030;height:68px;min-height:68px;background:#fff;border-bottom:1px solid #e7eeeb;box-shadow:0 2px 10px rgba(2,51,62,0.03)}
-.topbar-circle-btn{width:40px;height:40px;padding:0;display:inline-grid;place-items:center;border-radius:50%;background:#f4f7f6;border:1px solid #e2ece9;color:var(--petrol);font-size:.95rem;transition:all .18s ease;cursor:pointer}
-.topbar-circle-btn:hover,.topbar-circle-btn:focus{background:#e6f0ed;border-color:#b4dad0;color:var(--petrol);transform:scale(1.04)}
-.topbar-avatar-btn{padding:0;border:none;background:transparent;border-radius:50%;cursor:pointer;transition:transform .18s ease}
-.topbar-avatar-btn:hover{transform:scale(1.05)}
-.topbar-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--petrol),var(--petrol-light));color:#fff;font-weight:800;font-size:.95rem;display:grid;place-items:center;text-transform:uppercase;box-shadow:0 2px 8px rgba(2,51,62,0.18);border:2px solid #fff}
-.topbar-user-dropdown{min-width:220px;border-radius:14px;box-shadow:0 12px 32px rgba(2,51,62,0.12)!important}
+.topbar{position:sticky;top:0;z-index:1030;height:70px;min-height:70px;background:#fff;border-bottom:1px solid #e7eeeb;box-shadow:0 2px 14px rgba(2,51,62,0.035)}
+.topbar-status-dot{width:8px;height:8px;border-radius:50%;background-color:#10b981;display:inline-block;box-shadow:0 0 0 0 rgba(16,185,129,0.5);animation:topbarPulse 2s infinite}
+@keyframes topbarPulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,0.6)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+
+/* Global Command Search Bar */
+.topbar-search-wrap{flex:1;max-width:440px;position:relative}
+.topbar-search-input{height:42px;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;padding-inline-start:2.65rem;padding-inline-end:4.2rem;font-size:.84rem;color:var(--petrol);transition:all .18s ease}
+.topbar-search-input:focus{background:#fff;border-color:var(--orange)!important;box-shadow:0 0 0 3px rgba(251,130,47,0.15)!important;outline:none}
+.topbar-search-icon{position:absolute;inset-inline-start:.95rem;top:50%;transform:translateY(-50%);color:#8ea3a8;font-size:.85rem;pointer-events:none;z-index:2}
+.topbar-search-kbd{position:absolute;inset-inline-end:.65rem;top:50%;transform:translateY(-50%);font-family:monospace;font-size:.68rem;font-weight:700;padding:.2rem .45rem;border-radius:6px;background:#e5eee9;border:1px solid #cfded9;color:#5a767d;pointer-events:none;line-height:1}
+
+/* Topbar Buttons & Pills */
+.topbar-circle-btn{width:42px;height:42px;padding:0;display:inline-grid;place-items:center;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.92rem;transition:all .18s ease;cursor:pointer}
+.topbar-circle-btn:hover,.topbar-circle-btn:focus{background:#eaf4f0;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
+.topbar-pill-btn{height:42px;padding:0 .9rem;border-radius:12px;background:#f5f8f7;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.45rem;transition:all .18s ease;cursor:pointer}
+.topbar-pill-btn:hover,.topbar-pill-btn:focus{background:#eaf4f0;border-color:#b4dad0;color:var(--petrol);transform:translateY(-1px)}
+
+/* User Profile Pill */
+.topbar-user-pill{height:44px;padding:0;padding-inline-start:.32rem;padding-inline-end:.75rem;border-radius:13px;background:#f5f8f7;border:1px solid #dce7e4;display:inline-flex;align-items:center;gap:.55rem;transition:all .18s ease;cursor:pointer;text-decoration:none}
+.topbar-user-pill:hover,.topbar-user-pill:focus{background:#eaf4f0;border-color:#b4dad0;box-shadow:0 3px 12px rgba(2,51,62,0.06);transform:translateY(-1px)}
+.topbar-user-avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--petrol),#035163);color:#fff;font-weight:800;font-size:.92rem;display:grid;place-items:center;text-transform:uppercase;box-shadow:0 2px 6px rgba(2,51,62,0.18)}
+.topbar-user-name{font-size:.82rem;font-weight:700;color:var(--petrol);line-height:1.2;white-space:nowrap}
+.topbar-user-role{font-size:.68rem;font-weight:500;color:#78949a;line-height:1.1;white-space:nowrap}
+.topbar-user-chevron{font-size:.68rem;color:#8ea3a8;transition:transform .18s ease}
+.topbar-divider{width:1px;height:26px;background:#e2ece9;margin:0 .2rem}
+
+/* Notifications Badge Styling */
+#notification-count{background:var(--orange)!important;color:#fff!important;font-size:.65rem;font-weight:800;padding:.22em .5em;border-radius:50rem;box-shadow:0 2px 6px rgba(251,130,47,0.4);border:2px solid #fff}
+.topbar-user-dropdown{min-width:230px;border-radius:14px;box-shadow:0 14px 34px rgba(2,51,62,0.12)!important}
 .topbar-user-dropdown .dropdown-item{font-size:.88rem;border-radius:8px;margin:2px 6px;width:calc(100% - 12px);transition:all .15s ease}
 .topbar-user-dropdown .dropdown-item:hover{background:#f0f7f5;color:var(--petrol)}
 .topbar-user-dropdown .dropdown-item.text-danger:hover{background:#fff0f0;color:#dc3545!important}
@@ -222,8 +244,8 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <body>
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 <nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar">
-<div class="d-flex align-items-center gap-2">
-<button class="topbar-btn topbar-icon-btn d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
+<div class="d-flex align-items-center gap-2 gap-md-3 shrink-0">
+<button class="topbar-btn topbar-icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
 <i class="fa-solid fa-bars-staggered"></i>
 </button>
 <a class="navbar-brand brand d-lg-none d-flex align-items-center gap-2 m-0 text-decoration-none" href="{{ route('admin.dashboard') }}">
@@ -234,24 +256,40 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <span class="opacity-30">/</span>
 <span class="fw-bold text-dark">@yield('title', __('Rounder admin'))</span>
 </div>
+<span class="badge rounded-pill d-none d-xl-inline-flex align-items-center gap-1.5 px-2.5 py-1" style="background:#eef8f4; color:#0e6c51; border:1px solid #bde4d5; font-size:0.75rem; font-weight:600;">
+<span class="topbar-status-dot"></span>
+{{ __('System online') }}
+</span>
 </div>
 
-<div class="d-flex align-items-center gap-2 gap-sm-3">
+{{-- Center: Global Command Search Bar --}}
+<div class="topbar-search-wrap d-none d-md-flex align-items-center mx-3 mx-lg-4">
+<div class="position-relative w-100">
+<i class="fa-solid fa-magnifying-glass topbar-search-icon"></i>
+<input type="text" id="topbarGlobalSearch" class="form-control topbar-search-input" placeholder="{{ __('Search in dashboard, residents, bookings... (Ctrl+K)') }}" aria-label="{{ __('Search') }}" autocomplete="off">
+<kbd class="topbar-search-kbd">Ctrl K</kbd>
+</div>
+</div>
+
+{{-- Left Side: Actions, Notifications, Language Pill, User Pill --}}
+<div class="d-flex align-items-center gap-2 gap-sm-2.5 shrink-0">
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 @include('admin.partials.notifications')
 @endif
 
 <div class="dropdown">
-<button class="topbar-circle-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Language') }}" title="{{ __('Language') }}">
-<i class="fa-solid fa-globe"></i>
+<button class="topbar-pill-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Language') }}" title="{{ __('Language') }}">
+<i class="fa-solid fa-globe opacity-75"></i>
+<span>{{ app()->getLocale() === 'ar' ? 'العربية' : 'English' }}</span>
+<i class="fa-solid fa-chevron-down small opacity-50" style="font-size:0.7rem;"></i>
 </button>
-<ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="min-width:140px;border-radius:12px;">
+<ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="min-width:145px;border-radius:12px;">
 <li>
 <form method="post" action="{{ route('locale.update') }}">
 @csrf
 <input type="hidden" name="locale" value="ar">
 <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ app()->getLocale() === 'ar' ? 'fw-bold text-success active' : '' }}">
-<span>العربية</span>
+<span class="d-flex align-items-center gap-2"><span>🇸🇦</span> <span>العربية</span></span>
 @if(app()->getLocale() === 'ar')<i class="fa-solid fa-check small"></i>@endif
 </button>
 </form>
@@ -261,7 +299,7 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 @csrf
 <input type="hidden" name="locale" value="en">
 <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ app()->getLocale() === 'en' ? 'fw-bold text-success active' : '' }}">
-<span>English</span>
+<span class="d-flex align-items-center gap-2"><span>🇬🇧</span> <span>English</span></span>
 @if(app()->getLocale() === 'en')<i class="fa-solid fa-check small"></i>@endif
 </button>
 </form>
@@ -274,9 +312,16 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
     $currentUserTop = auth()->user();
     $initialLetter = mb_substr($currentUserTop->name, 0, 1);
 @endphp
+<div class="topbar-divider d-none d-sm-block"></div>
+
 <div class="dropdown">
-<button class="topbar-avatar-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ $currentUserTop->name }}" title="{{ $currentUserTop->name }}">
-<div class="topbar-avatar">{{ $initialLetter }}</div>
+<button class="topbar-user-pill" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ $currentUserTop->name }}" title="{{ $currentUserTop->name }}">
+<div class="topbar-user-avatar">{{ $initialLetter }}</div>
+<div class="d-none d-sm-block" style="text-align: {{ app()->getLocale() === 'ar' ? 'right' : 'left' }};">
+<div class="topbar-user-name">{{ $currentUserTop->name }}</div>
+<div class="topbar-user-role">{{ __('Administrator') }}</div>
+</div>
+<i class="fa-solid fa-chevron-down topbar-user-chevron ms-1"></i>
 </button>
 <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 topbar-user-dropdown">
 <li class="px-3 py-2 border-bottom mb-1">
@@ -626,6 +671,65 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
     node.addEventListener('hidden.bs.modal', () => {
         pendingForm = null; document.getElementById('confirm-delete').disabled = false;
     });
+})();
+</script>
+<script>
+(() => {
+    const searchInput = document.getElementById('topbarGlobalSearch');
+    if (searchInput) {
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        });
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            const sidebarNav = document.querySelector('.sidebar-links');
+            if (!sidebarNav) return;
+
+            const links = sidebarNav.querySelectorAll('a.nav-link, a.dashboard-link');
+            if (!query) {
+                links.forEach(l => {
+                    l.style.opacity = '1';
+                    l.style.background = '';
+                });
+                return;
+            }
+
+            let firstMatch = null;
+            links.forEach(l => {
+                const text = (l.textContent || '').trim().toLowerCase();
+                const match = text.includes(query);
+                if (match) {
+                    l.style.opacity = '1';
+                    l.style.background = 'rgba(251, 130, 47, 0.18)';
+                    const parentCollapse = l.closest('.collapse');
+                    if (parentCollapse && !parentCollapse.classList.contains('show')) {
+                        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(parentCollapse, { toggle: false });
+                        bsCollapse.show();
+                    }
+                    if (!firstMatch) firstMatch = l;
+                } else {
+                    l.style.opacity = '0.35';
+                    l.style.background = '';
+                }
+            });
+
+            searchInput.onkeydown = (e) => {
+                if (e.key === 'Enter' && firstMatch) {
+                    e.preventDefault();
+                    window.location.href = firstMatch.href;
+                } else if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input'));
+                    searchInput.blur();
+                }
+            };
+        });
+    }
 })();
 </script>
 @stack('scripts')</body></html>
