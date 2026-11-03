@@ -7,4 +7,6 @@ foreach (glob(app_path('Modules/*/Routes/web.php')) as $moduleRoutes) {
 }
 Route::redirect('/login', '/admin/login')->name('login');
 Route::redirect('/admin', '/admin/dashboard')->middleware(['auth']);
-Route::redirect('/', '/admin/login');
+Route::get('/', function () {
+    return view('landing');
+})->name('home');
