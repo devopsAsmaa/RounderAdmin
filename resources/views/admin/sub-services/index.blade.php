@@ -57,9 +57,9 @@
 @endif
 </td>
 <td class="text-end">
-<div class="d-inline-flex gap-1.5 align-items-center">
+<div class="d-inline-flex align-items-center" style="gap: 10px;">
 @adminCan('admin.sub-services.edit')
-<a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" href="{{ route('admin.sub-services.edit', $sub->id) }}" style="border-radius:8px; font-weight:600; padding:0.32rem 0.65rem; font-size:0.82rem;">
+<a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" href="{{ route('admin.sub-services.edit', $sub->id) }}" style="border-radius:8px; font-weight:600; padding:0.35rem 0.75rem; font-size:0.82rem;">
 <i class="fa-solid fa-pen-to-square"></i>
 <span>{{ __('Edit') }}</span>
 </a>
