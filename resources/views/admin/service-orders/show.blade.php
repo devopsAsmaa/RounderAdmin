@@ -27,15 +27,22 @@
 
     $isCancelled = $statusCode === 'cancelled';
 
-    // تسلسل الحالات الفعلي للنظام (booking_statuses)
+    // مراحل وتتبع الطلب المتوافقة مع تطبيق الموبايل (تصميم الفيجما)
     $sequenceCodes = ['pending', 'confirmed', 'in_progress', 'completed'];
     $sequenceIndex = array_search($statusCode, $sequenceCodes, true);
     if ($sequenceIndex === false) {
         $sequenceIndex = -1;
     }
 
+    $stageTitles = [
+        'pending' => __('Order Submitted'),
+        'confirmed' => __('Order Accepted'),
+        'in_progress' => __('Technician On The Way'),
+        'completed' => __('Service Completed'),
+    ];
+
     $stageIcons = [
-        'pending' => 'fa-hourglass-half',
+        'pending' => 'fa-paper-plane',
         'confirmed' => 'fa-calendar-check',
         'in_progress' => 'fa-truck-fast',
         'completed' => 'fa-check-double',
@@ -44,7 +51,7 @@
     $stages = [];
     foreach ($sequenceCodes as $idx => $code) {
         $st = $statuses->firstWhere('code', $code);
-        $stName = $st?->name ?? $code;
+        $stName = $stageTitles[$code] ?? ($st?->name ?? $code);
         $stId = $st?->id;
 
         $timestamp = match($code) {

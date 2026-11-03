@@ -71,7 +71,14 @@ class ApiBookingService
             'service_provider_id' => $booking->service_provider_id,
             'service_provider_name' => $booking->serviceProvider?->company_name,
             'can_cancel' => in_array($booking->status?->code, [BookingStatusCode::Pending->value, BookingStatusCode::Confirmed->value], true),
-            'stages' => $this->formatStages($booking),
+            'status_id' => $booking->booking_status_id,
+            'status_code' => $booking->status?->code,
+            'status_name' => $this->formatStageName($booking->status?->code, $locale),
+            'current_stage' => [
+                'id' => $booking->booking_status_id,
+                'code' => $booking->status?->code,
+                'name' => $this->formatStageName($booking->status?->code, $locale),
+            ],
             'images' => $booking->bookingMedia->map(fn ($m) => [
                 'id' => $m->id,
                 'url' => $m->url,
@@ -110,8 +117,7 @@ class ApiBookingService
 
         $locale = app()->getLocale();
         $code = $booking->status?->code ?? 'pending';
-
-        $statusName = $booking->status?->translations->firstWhere('locale', $locale)?->name ?? $booking->status?->code;
+        $stageName = $this->formatStageName($code, $locale);
 
         return [
             'data' => [
@@ -122,11 +128,11 @@ class ApiBookingService
                 'sub_service_name' => $booking->subService?->translations->firstWhere('locale', $locale)?->name ?? $booking->subService?->code,
                 'status_id' => $booking->booking_status_id,
                 'status_code' => $code,
-                'status_name' => $statusName,
+                'status_name' => $stageName,
                 'current_stage' => [
                     'id' => $booking->booking_status_id,
                     'code' => $code,
-                    'name' => $statusName,
+                    'name' => $stageName,
                 ],
                 'scheduled_at' => $booking->scheduled_at,
                 'total_amount' => $booking->total_amount,
@@ -150,6 +156,46 @@ class ApiBookingService
     }
 
     /**
+     * ترجمة اسم المرحلة/الحالة بحسب تصميم الفيجما المعتمد لتطبيق الموبايل.
+     * @param ?string $code
+     * @param string $locale
+     * @return string
+     */
+    public function formatStageName(?string $code, string $locale = 'ar'): string
+    {
+        $code = $code ?? BookingStatusCode::Pending->value;
+        $names = [
+            BookingStatusCode::Pending->value => [
+                'ar' => 'تم إرسال طلبك',
+                'en' => 'Order Submitted',
+                'ur' => 'آپ کا آرڈر جمع کر دیا گیا ہے',
+            ],
+            BookingStatusCode::Confirmed->value => [
+                'ar' => 'تم قبول الطلب',
+                'en' => 'Order Accepted',
+                'ur' => 'آرڈر قبول کر لیا گیا ہے',
+            ],
+            BookingStatusCode::InProgress->value => [
+                'ar' => 'الفني في الطريق',
+                'en' => 'Technician On The Way',
+                'ur' => 'ٹیکنیشن راستے میں ہے',
+            ],
+            BookingStatusCode::Completed->value => [
+                'ar' => 'اكتملت الخدمة',
+                'en' => 'Service Completed',
+                'ur' => 'سروس مکمل ہو گئی ہے',
+            ],
+            BookingStatusCode::Cancelled->value => [
+                'ar' => 'تم إلغاء الحجز',
+                'en' => 'Booking Cancelled',
+                'ur' => 'بکنگ منسوخ کر دی گئی',
+            ],
+        ];
+
+        return $names[$code][$locale] ?? ($names[$code]['ar'] ?? $code);
+    }
+
+    /**
      * جلب قائمة حالات الحجوزات لتطبيق الجوال مع ترجمة الاسم بحسب لغة المستخدم.
      * @return array<string, mixed>
      */
@@ -163,9 +209,7 @@ class ApiBookingService
             ->map(fn (BookingStatus $status) => [
                 'id' => $status->id,
                 'code' => $status->code,
-                'name' => $status->translations->firstWhere('locale', $locale)?->name
-                    ?? $status->translations->first()?->name
-                    ?? $status->code,
+                'name' => $this->formatStageName($status->code, $locale),
             ])
             ->values();
 
