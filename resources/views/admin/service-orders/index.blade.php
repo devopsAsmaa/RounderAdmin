@@ -37,17 +37,17 @@
             <!-- ========================================== -->
             <div id="ordersTableView" class="orders-view-pane">
                 <div class="panel p-3 p-lg-4 mb-4" style="border-radius: 14px;">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0" style="table-layout: fixed; width: 100%; min-width: 1020px;">
+                    <div class="table-responsive" style="overflow: visible;">
+                        <table class="table align-middle mb-0" style="width: 100%;">
                             <thead>
                                 <tr style="border-bottom: 2px solid #e5ede9;">
                                     <th style="width: 14%;">{{ __('Order') }}</th>
                                     <th style="width: 16%;">{{ __('Resident and home') }}</th>
-                                    <th style="width: 17%;">{{ __('Service') }}</th>
-                                    <th style="width: 17%;">{{ __('Assigned provider') }}</th>
-                                    <th style="width: 7%;">{{ __('Photos') }}</th>
-                                    <th style="width: 9%;">{{ __('Status') }}</th>
-                                    <th style="width: 20%;" class="text-end">{{ __('Actions') }}</th>
+                                    <th style="width: 18%;">{{ __('Service') }}</th>
+                                    <th style="width: 22%;">{{ __('Assigned provider') }}</th>
+                                    <th style="width: 8%;">{{ __('Photos') }}</th>
+                                    <th style="width: 11%;">{{ __('Status') }}</th>
+                                    <th style="width: 11%;" class="text-end">{{ __('Actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -156,28 +156,42 @@
                                         </td>
 
                                         <!-- 7. Actions -->
-                                        <td class="py-3 text-end" style="white-space: nowrap;">
-                                            <div class="d-inline-flex align-items-center gap-1.5 flex-nowrap" style="white-space: nowrap;">
-                                                @adminCan('admin.service-orders.update','PUT')
-                                                <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 text-nowrap shadow-sm" data-bs-toggle="modal" data-bs-target="#orderUpdateModal-{{ $order->id }}" style="border-radius: 8px; font-weight: 600; padding: 0.38rem 0.72rem; font-size: 0.78rem; white-space: nowrap;" title="{{ __('Assign & Update') }}">
-                                                    <i class="fa-solid fa-sliders"></i>
-                                                    <span>{{ __('Assign & Update') }}</span>
+                                        <td class="py-3 text-end">
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-inline-flex align-items-center gap-1.5 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}' style="border-radius: 9px; font-weight: 600; font-size: 0.8rem; padding: 0.38rem 0.85rem; border-color: #d1dfda; background: #ffffff; color: var(--petrol); white-space: nowrap;">
+                                                    <i class="fa-solid fa-sliders text-rounder-orange"></i>
+                                                    <span>{{ __('Actions') }}</span>
                                                 </button>
-                                                @endadminCan
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 12px; font-size: 0.84rem; min-width: 185px; padding: 0.45rem; box-shadow: 0 10px 25px rgba(0,0,0,0.12) !important; z-index: 1060;">
+                                                    @adminCan('admin.service-orders.update','PUT')
+                                                    <li>
+                                                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" data-bs-toggle="modal" data-bs-target="#orderUpdateModal-{{ $order->id }}">
+                                                            <i class="fa-solid fa-sliders text-rounder-orange" style="width: 16px;"></i>
+                                                            <span class="fw-semibold">{{ __('Assign & Update') }}</span>
+                                                        </button>
+                                                    </li>
+                                                    @endadminCan
 
-                                                <a href="{{ route('admin.service-orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 text-nowrap shadow-sm" style="border-radius: 8px; font-weight: 600; padding: 0.38rem 0.68rem; font-size: 0.78rem; white-space: nowrap; border-color: #d1dfda; background: #fff;" title="{{ __('View details') }}">
-                                                    <i class="fa-solid fa-eye text-rounder-orange"></i>
-                                                    <span>{{ __('View details') }}</span>
-                                                </a>
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="{{ route('admin.service-orders.show', $order->id) }}">
+                                                            <i class="fa-solid fa-eye text-primary" style="width: 16px;"></i>
+                                                            <span class="fw-semibold">{{ __('View details') }}</span>
+                                                        </a>
+                                                    </li>
 
-                                                @adminCan('admin.service-orders.destroy','DELETE')
-                                                <form method="post" action="{{ route('admin.service-orders.destroy', $order->id) }}" class="d-inline-flex m-0 delete-record-form">
-                                                    @csrf @method('DELETE')
-                                                    <button type="button" data-confirm-delete class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center shadow-sm" title="{{ __('Delete') }}" style="width: 33px; height: 33px; border-radius: 8px; padding: 0; border-color: #fca5a5;">
-                                                        <i class="fa-solid fa-trash-can"></i>
-                                                    </button>
-                                                </form>
-                                                @endadminCan
+                                                    @adminCan('admin.service-orders.destroy','DELETE')
+                                                    <li><hr class="dropdown-divider my-1" style="border-color: #edf3f0;"></li>
+                                                    <li>
+                                                        <form method="post" action="{{ route('admin.service-orders.destroy', $order->id) }}" class="m-0 delete-record-form">
+                                                            @csrf @method('DELETE')
+                                                            <button type="button" data-confirm-delete class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger">
+                                                                <i class="fa-solid fa-trash-can" style="width: 16px;"></i>
+                                                                <span class="fw-semibold">{{ __('Delete') }}</span>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    @endadminCan
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
