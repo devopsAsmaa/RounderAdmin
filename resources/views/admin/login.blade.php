@@ -5,7 +5,9 @@
 <style>
 .login-wrapper {
     min-height: 100vh;
-    background: radial-gradient(circle at 50% 30%, rgba(2, 89, 104, 0.35) 0%, transparent 65%), linear-gradient(180deg, #02333E 0%, #023945 50%, #01242C 100%);
+    background: radial-gradient(circle at 50% 25%, rgba(2, 89, 104, 0.45) 0%, transparent 65%),
+                radial-gradient(circle at 80% 80%, rgba(251, 130, 47, 0.12) 0%, transparent 50%),
+                linear-gradient(180deg, #011d24 0%, #02333E 50%, #01161b 100%);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -39,10 +41,36 @@
     max-width: 420px;
     margin: auto;
     background: #ffffff;
-    border-radius: 24px;
-    padding: 2.6rem 2.2rem;
-    box-shadow: 0 24px 64px rgba(1, 36, 44, 0.45), 0 0 50px rgba(2, 89, 104, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 26px;
+    padding: 3rem 2.2rem 2.2rem;
+    box-shadow: 0 25px 70px rgba(1, 29, 36, 0.5), 0 4px 20px rgba(2, 51, 62, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    position: relative;
+    margin-top: 3.5rem;
+}
+.login-brand-emblem-wrap {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+}
+.login-brand-emblem {
+    background: linear-gradient(145deg, #02333E 0%, #024554 60%, #01242C 100%);
+    border: 4px solid #ffffff;
+    box-shadow: 0 10px 28px rgba(1, 36, 44, 0.35);
+    border-radius: 20px;
+    padding: 0.65rem 1.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.login-brand-emblem .brand-text {
+    font-size: 2.15rem;
+    letter-spacing: -0.03em;
+    line-height: 1;
 }
 .login-input-wrap {
     position: relative;
@@ -63,12 +91,14 @@
     height: 48px;
     border-radius: 12px !important;
     border: 1px solid #d8e4e0;
+    background-color: #fafcfb;
     font-size: 0.92rem;
     transition: all .18s ease;
 }
 .login-input:focus {
+    background-color: #ffffff;
     border-color: var(--orange) !important;
-    box-shadow: 0 0 0 3.5px rgba(251, 130, 47, 0.16) !important;
+    box-shadow: 0 0 0 3.5px rgba(251, 130, 47, 0.18) !important;
 }
 .login-password-toggle {
     position: absolute;
@@ -94,13 +124,13 @@
     background: var(--orange) !important;
     border-color: var(--orange) !important;
     color: #fff !important;
-    box-shadow: 0 4px 16px rgba(251, 130, 47, 0.35);
+    box-shadow: 0 4px 18px rgba(251, 130, 47, 0.38);
     transition: all .2s ease;
 }
 .login-submit-btn:hover, .login-submit-btn:focus {
     background: var(--orange-hover) !important;
     border-color: var(--orange-hover) !important;
-    box-shadow: 0 6px 20px rgba(251, 130, 47, 0.45);
+    box-shadow: 0 6px 22px rgba(251, 130, 47, 0.48);
     transform: translateY(-1px);
     color: #fff !important;
 }
@@ -146,14 +176,17 @@
         </div>
     </div>
 
-    {{-- Center: Clean Minimalist Login Card --}}
+    {{-- Center: Floating Brand Emblem Login Card --}}
     <div class="login-card">
-        <div class="text-center mb-4">
-            <div class="brand-text text-rounder-orange" style="font-size: 2.8rem; letter-spacing: -0.03em; line-height: 1;">rounder</div>
-            <div class="mt-2">
-                <span class="badge rounded-pill brand-badge-mint" style="background: rgba(2, 51, 62, 0.06); color: var(--petrol); border-color: rgba(2, 51, 62, 0.1); font-size: 0.76rem; font-weight: 600;">{{ __('Rounder admin') }}</span>
+        {{-- Floating Brand Emblem --}}
+        <div class="login-brand-emblem-wrap">
+            <div class="login-brand-emblem">
+                <span class="brand-text text-rounder-orange">rounder</span>
             </div>
-            <h1 class="h4 fw-bold mt-3 mb-1 text-dark">{{ __('Welcome back') }}</h1>
+        </div>
+
+        <div class="text-center mb-4 mt-2">
+            <h1 class="h4 fw-bold text-dark mb-1">{{ __('Welcome back') }}</h1>
             <p class="text-secondary small mb-0">{{ __('Enter your credentials to access the admin portal') }}</p>
         </div>
 
@@ -194,6 +227,13 @@
                 <i class="fa-solid {{ app()->getLocale() === 'ar' ? 'fa-arrow-left' : 'fa-arrow-right' }} ms-1"></i>
             </button>
         </form>
+
+        <div class="text-center mt-4 pt-3 border-top border-light">
+            <span class="small text-muted d-inline-flex align-items-center gap-1" style="font-size: 0.78rem;">
+                <i class="fa-solid fa-shield-halved text-success"></i>
+                {{ __('Secure connection') }}
+            </span>
+        </div>
     </div>
 
     {{-- Bottom subtle copyright --}}
@@ -220,3 +260,5 @@
 })();
 </script>
 @endpush
+
+
