@@ -10,6 +10,7 @@ use App\Modules\Properties\Requests\ApiResidentHomeLinkRequest;
 use App\Modules\Properties\Requests\ApiAddUnitRequest;
 use App\Modules\Properties\Requests\ApiAddPropertyRequest;
 use App\Modules\Properties\Requests\ApiSetPrimaryHomeRequest;
+use App\Modules\Properties\Requests\ApiDeleteUnitRequest;
 
 /** متحكم HTTP لمجال Properties؛ يفوض جميع العمليات إلى الخدمة. */
 class ResidentHomeController extends Controller
@@ -74,5 +75,15 @@ class ResidentHomeController extends Controller
     public function setPrimary(ApiSetPrimaryHomeRequest $request): \Illuminate\Http\JsonResponse
     {
         return response()->json($this->service->setPrimary($request->validated(), $request->user()), 200);
+    }
+
+    /**
+     * حذف السكن أو إلغاء ربط الوحدة بحساب الساكن.
+     * @param ApiDeleteUnitRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteUnit(ApiDeleteUnitRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->deleteUnit($request->validated(), $request->user()), 200);
     }
 }

@@ -10,6 +10,7 @@ enum Operation: string
     case ApiAddUnit = 'ApiResidentHomeService.addUnit';
     case ApiAddProperty = 'ApiResidentHomeService.addProperty';
     case ApiSetPrimaryHome = 'ApiResidentHomeService.setPrimary';
+    case ApiDeleteUnit = 'ApiResidentHomeService.deleteUnit';
     case ApiVisitCreateVisit = 'ApiVisitService.createVisit';
     case ApiVisitCancelVisit = 'ApiVisitService.cancelVisit';
 }

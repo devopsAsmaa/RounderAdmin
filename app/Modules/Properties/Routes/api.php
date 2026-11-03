@@ -11,11 +11,21 @@ Route::prefix('v1/resident')->middleware(['auth:sanctum', 'resident'])->group(fu
     Route::post('/homes/set-primary', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'setPrimary'])->middleware('throttle:10,1');
     Route::post('/homes/link', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'link'])->middleware('throttle:10,1');
 
+    // مسارات حذف السكن والوحدات للساكن
+    Route::delete('/homes/remove-unit', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+    Route::post('/homes/remove-unit', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+    Route::delete('/homes/delete-unit', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+    Route::post('/homes/delete-unit', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+    Route::delete('/homes/unit/{id}', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+    Route::delete('/homes/{id}', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+
     // مسارات العقارات (Properties) - إضافة العقار وربطه بالمستخدم وعرض عقاراته
     Route::get('/properties', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'index']);
     Route::post('/properties', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'addProperty'])->middleware('throttle:10,1');
     Route::post('/properties/add', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'addProperty'])->middleware('throttle:10,1');
     Route::post('/properties/link', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'link'])->middleware('throttle:10,1');
+    Route::delete('/properties/{id}', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
+    Route::post('/properties/delete', [\App\Modules\Properties\Controllers\Api\ResidentHomeController::class, 'deleteUnit'])->middleware('throttle:10,1');
 
     Route::get('/visits', [\App\Modules\Properties\Controllers\Api\VisitController::class, 'visits']);
     Route::post('/visits', [\App\Modules\Properties\Controllers\Api\VisitController::class, 'createVisit'])->middleware('throttle:10,1');

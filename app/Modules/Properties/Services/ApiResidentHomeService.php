@@ -351,4 +351,109 @@ class ApiResidentHomeService
             ];
         });
     }
+
+    /**
+     * حذف السكن أو إلغاء ربط الوحدة بحساب الساكن.
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     * @throws \Throwable
+     */
+    public function deleteUnit(array $input, ?User $actor): array
+    {
+        return DB::transaction(function () use ($input, $actor) {
+            $residentHomeId = $input['resident_home_id'] ?? null;
+            $homeId = $input['home_id'] ?? $input['property_id'] ?? $input['id'] ?? null;
+
+            $query = ResidentHome::where('user_id', $actor->id);
+            if ($residentHomeId) {
+                $query->where('id', $residentHomeId);
+            } elseif ($homeId) {
+                $query->where(function ($q) use ($homeId) {
+                    $q->where('id', $homeId)->orWhere('home_id', $homeId);
+                });
+            } else {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'home_id' => 'معرف السكن أو الوحدة مطلوب للحذف.',
+                ]);
+            }
+
+            $residentHome = $query->first();
+
+            if (!$residentHome) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'home_id' => 'السكن أو الوحدة غير موجودة أو غير مرتبطة بحسابك.',
+                ]);
+            }
+
+            // التحقق من وجود طلبات خدمة نشطة مرتبطة بالسكن
+            $hasActiveBookings = $residentHome->bookings()
+                ->whereHas('status', fn ($q) => $q->whereIn('code', ['pending', 'in_progress', 'accepted']))
+                ->exists();
+            if ($hasActiveBookings) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'home_id' => 'لا يمكن حذف السكن لوجود طلبات خدمة نشطة مرتبطة به حالياً.',
+                ]);
+            }
+
+            // التحقق من وجود بلاغات طوارئ جارية
+            $hasActiveEmergencies = $residentHome->emergencyRequests()
+                ->whereHas('status', fn ($q) => $q->whereNotIn('code', ['resolved', 'cancelled']))
+                ->exists();
+            if ($hasActiveEmergencies) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'home_id' => 'لا يمكن حذف السكن لوجود بلاغات طوارئ جارية مرتبطة به.',
+                ]);
+            }
+
+            // التحقق من وجود اشتراك ساري
+            $hasActiveSubscriptions = $residentHome->residentSubscriptions()
+                ->where('ends_at', '>', now())
+                ->whereHas('status', fn ($q) => $q->where('code', 'active'))
+                ->exists();
+            if ($hasActiveSubscriptions) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'home_id' => 'لا يمكن حذف السكن لوجود اشتراك باقة ساري مرتبط به.',
+                ]);
+            }
+
+            // فك ارتباط الطلبات السابقة حتى لا تتعارض مع قيد المفتاح الأجنبي RESTRICT
+            $residentHome->bookings()->update(['resident_home_id' => null]);
+
+            $wasPrimary = (bool) $residentHome->is_primary;
+            $deletedHomeId = $residentHome->home_id;
+            $deletedResidentHomeId = $residentHome->id;
+
+            $residentHome->delete();
+
+            // إذا كان السكن المحذوف هو الأساسي، نعين سكناً آخر كأساسي إن وجد
+            if ($wasPrimary) {
+                $nextPrimary = ResidentHome::where('user_id', $actor->id)->latest()->first();
+                if ($nextPrimary) {
+                    $nextPrimary->update(['is_primary' => true]);
+                }
+            }
+
+            // إذا لم يعد هناك أي ساكن مرتبط بهذا السكن، ولا توجد طلبات مرتبطة به، نحذف السكن الفردي المؤقت
+            $otherResidents = ResidentHome::where('home_id', $deletedHomeId)->exists();
+            if (!$otherResidents) {
+                $hasBookings = \App\Modules\Bookings\Models\Booking::where('home_id', $deletedHomeId)->exists();
+                if (!$hasBookings) {
+                    Home::where('id', $deletedHomeId)->delete();
+                }
+            }
+
+            DB::afterCommit(fn () => event(new PropertiesChanged(Operation::ApiDeleteUnit, $actor?->id)));
+
+            return [
+                'status' => true,
+                'message' => 'تم حذف السكن بنجاح.',
+                'data' => [
+                    'deleted_id' => $deletedResidentHomeId,
+                    'home_id' => $deletedHomeId,
+                    'resident_home_id' => $deletedResidentHomeId,
+                ],
+            ];
+        });
+    }
 }
