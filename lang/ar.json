@@ -503,5 +503,9 @@
     "Table view": "عرض الجدول",
     "Quick assignment & update": "التعيين وتحديث الطلب",
     "Final amount": "المبلغ النهائي",
-    "Total amount": "إجمالي المبلغ"
+    "Total amount": "إجمالي المبلغ",
+    "Assign & Update": "تعيين وتحديث",
+    "Assigned provider": "المزود المعيّن",
+    "Select the approved service provider to assign this order to.": "اختر مزود الخدمة المعتمد لتعيين هذا الطلب إليه.",
+    "Not assigned yet": "لم يُعيّن بعد"
 }

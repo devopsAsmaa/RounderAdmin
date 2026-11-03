@@ -419,5 +419,9 @@
     "Table view": "Table view",
     "Quick assignment & update": "Quick assignment & update",
     "Final amount": "Final amount",
-    "Total amount": "Total amount"
+    "Total amount": "Total amount",
+    "Assign & Update": "Assign & Update",
+    "Assigned provider": "Assigned provider",
+    "Select the approved service provider to assign this order to.": "Select the approved service provider to assign this order to.",
+    "Not assigned yet": "Not assigned yet"
 }
