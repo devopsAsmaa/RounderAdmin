@@ -14,12 +14,6 @@
     <h1 class="h3 fw-bold mb-1 text-dark">{{ __('Dashboard') }}</h1>
     <p class="text-secondary small mb-0">{{ __('Metrics are queried from MySQL records.') }}</p>
 </div>
-<div class="d-flex align-items-center gap-2">
-    <span class="pill px-3 py-2" style="font-size: 0.88rem; background: #fff; border: 1px solid #dce6e3; box-shadow: 0 1px 3px rgba(2,51,62,0.03);">
-        <i class="fa-regular fa-calendar-days text-secondary me-1"></i>
-        {{ now()->translatedFormat('d F Y') }}
-    </span>
-</div>
 </div>
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
 @if(array_key_exists('residents',$stats))

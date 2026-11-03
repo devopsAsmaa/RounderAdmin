@@ -255,6 +255,12 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 </span>
 <span class="fw-bold text-dark fs-6">{{ $cleanTitle }}</span>
 </div>
+
+{{-- Topbar Date Pill --}}
+<span class="badge rounded-pill d-none d-sm-inline-flex align-items-center gap-1.5 px-3 py-1.5" style="background:#f6f9f8; color:#4a656c; border:1px solid #dce7e4; font-size:0.8rem; font-weight:600;">
+<i class="fa-regular fa-calendar-days text-secondary"></i>
+{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('d F Y') }}
+</span>
 </div>
 
 {{-- Left Side: Notifications, Language Pill, User Pill (Refresh removed) --}}
