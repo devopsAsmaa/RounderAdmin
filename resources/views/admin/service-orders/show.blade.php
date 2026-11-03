@@ -27,44 +27,44 @@
 
     $isCancelled = $statusCode === 'cancelled';
 
-    $stages = [
-        [
-            'key' => 'submitted',
-            'title' => __('Order Submitted'),
-            'desc' => __('Order received from resident'),
-            'is_done' => true,
-            'is_current' => $statusCode === 'pending',
-            'timestamp' => $submittedAt,
-            'icon' => 'fa-paper-plane',
-        ],
-        [
-            'key' => 'accepted',
-            'title' => __('Order Accepted'),
-            'desc' => __('Provider assigned and confirmed'),
-            'is_done' => in_array($statusCode, ['confirmed', 'in_progress', 'completed'], true),
-            'is_current' => $statusCode === 'confirmed',
-            'timestamp' => $confirmedAt ?? ($assignment?->accepted_at ?? $assignment?->assigned_at),
-            'icon' => 'fa-calendar-check',
-        ],
-        [
-            'key' => 'on_the_way',
-            'title' => __('Technician On The Way'),
-            'desc' => __('Technician dispatched to property'),
-            'is_done' => in_array($statusCode, ['in_progress', 'completed'], true),
-            'is_current' => $statusCode === 'in_progress',
-            'timestamp' => $inProgressAt,
-            'icon' => 'fa-truck-fast',
-        ],
-        [
-            'key' => 'completed',
-            'title' => __('Service Completed'),
-            'desc' => __('Service executed and finished'),
-            'is_done' => $statusCode === 'completed',
-            'is_current' => $statusCode === 'completed',
-            'timestamp' => $completedAt,
-            'icon' => 'fa-check-double',
-        ],
+    // تسلسل الحالات الفعلي للنظام (booking_statuses)
+    $sequenceCodes = ['pending', 'confirmed', 'in_progress', 'completed'];
+    $sequenceIndex = array_search($statusCode, $sequenceCodes, true);
+    if ($sequenceIndex === false) {
+        $sequenceIndex = -1;
+    }
+
+    $stageIcons = [
+        'pending' => 'fa-hourglass-half',
+        'confirmed' => 'fa-calendar-check',
+        'in_progress' => 'fa-truck-fast',
+        'completed' => 'fa-check-double',
     ];
+
+    $stages = [];
+    foreach ($sequenceCodes as $idx => $code) {
+        $st = $statuses->firstWhere('code', $code);
+        $stName = $st?->name ?? $code;
+        $stId = $st?->id;
+
+        $timestamp = match($code) {
+            'pending' => $submittedAt,
+            'confirmed' => $confirmedAt ?? ($assignment?->accepted_at ?? $assignment?->assigned_at),
+            'in_progress' => $inProgressAt,
+            'completed' => $completedAt,
+            default => null,
+        };
+
+        $stages[] = [
+            'id' => $stId,
+            'code' => $code,
+            'title' => $stName,
+            'is_done' => ($statusCode === 'completed') ? true : ($sequenceIndex >= 0 && $idx <= $sequenceIndex),
+            'is_current' => ($statusCode === $code),
+            'timestamp' => $timestamp,
+            'icon' => $stageIcons[$code] ?? 'fa-circle-dot',
+        ];
+    }
 @endphp
 
 <div class="container-fluid">
@@ -295,8 +295,9 @@
                                         </div>
                                     </div>
 
-                                    <div class="text-secondary small mt-1" style="font-size:0.78rem; min-height:2.4em;">
-                                        {{ $stage['desc'] }}
+                                    <div class="text-secondary small mt-1 d-flex align-items-center gap-1" style="font-size:0.78rem;">
+                                        <span class="badge bg-light text-secondary border font-monospace" style="font-size:0.7rem;">{{ $stage['code'] }}</span>
+                                        <span class="text-muted" style="font-size:0.72rem;">#{{ $stage['id'] }}</span>
                                     </div>
 
                                     <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between" style="font-size:0.73rem;">
