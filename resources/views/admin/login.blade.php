@@ -39,10 +39,10 @@
     max-width: 420px;
     margin: auto;
     background: #ffffff;
-    border-radius: 22px;
-    padding: 2.5rem 2.2rem;
-    box-shadow: 0 20px 60px rgba(1, 36, 44, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    padding: 2.6rem 2.2rem;
+    box-shadow: 0 24px 64px rgba(1, 36, 44, 0.45), 0 0 50px rgba(2, 89, 104, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 .login-input-wrap {
     position: relative;
@@ -67,8 +67,8 @@
     transition: all .18s ease;
 }
 .login-input:focus {
-    border-color: var(--petrol-light) !important;
-    box-shadow: 0 0 0 3.5px rgba(2, 51, 62, 0.12) !important;
+    border-color: var(--orange) !important;
+    box-shadow: 0 0 0 3.5px rgba(251, 130, 47, 0.16) !important;
 }
 .login-password-toggle {
     position: absolute;
@@ -87,11 +87,22 @@
     color: var(--petrol);
 }
 .login-submit-btn {
-    height: 48px;
+    height: 50px;
     border-radius: 12px;
     font-weight: 700;
-    font-size: 0.96rem;
-    box-shadow: 0 4px 14px rgba(2, 51, 62, 0.22);
+    font-size: 1rem;
+    background: var(--orange) !important;
+    border-color: var(--orange) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(251, 130, 47, 0.35);
+    transition: all .2s ease;
+}
+.login-submit-btn:hover, .login-submit-btn:focus {
+    background: var(--orange-hover) !important;
+    border-color: var(--orange-hover) !important;
+    box-shadow: 0 6px 20px rgba(251, 130, 47, 0.45);
+    transform: translateY(-1px);
+    color: #fff !important;
 }
 .login-footer {
     text-align: center;
