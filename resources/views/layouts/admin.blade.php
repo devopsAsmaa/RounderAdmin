@@ -230,6 +230,12 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 .topbar-user-dropdown .dropdown-item{font-size:.88rem;border-radius:8px;margin:2px 6px;width:calc(100% - 12px);transition:all .15s ease}
 .topbar-user-dropdown .dropdown-item:hover{background:#f0f7f5;color:var(--petrol)}
 .topbar-user-dropdown .dropdown-item.text-danger:hover{background:#fff0f0;color:#dc3545!important}
+.lang-dropdown-menu{min-width:165px;border-radius:14px;padding:6px;box-shadow:0 12px 32px rgba(2,51,62,0.12)!important;border:1px solid #e3ece9!important}
+.lang-dropdown-item{border-radius:9px;padding:.55rem .85rem;font-size:.86rem;color:var(--petrol);transition:all .15s ease;display:flex;align-items:center;justify-content:space-between;width:100%;border:none;background:transparent;text-decoration:none;font-weight:500;cursor:pointer}
+.lang-dropdown-item:hover{background:#f0f6f4;color:var(--petrol)}
+.lang-dropdown-item.is-active{background:#e8f4f0;color:var(--petrol);font-weight:700}
+.lang-dropdown-item.is-active .lang-check{color:var(--orange);font-size:.8rem}
+
 .notification-dropdown{width:min(360px,calc(100vw - 24px))}
 #notification-list{max-height:380px;overflow-y:auto;overflow-wrap:anywhere}
 @media(max-width:575.98px){.topbar .notification-dropdown{position:fixed!important;top:70px!important;inset-inline-end:12px!important;inset-inline-start:auto!important;transform:none!important}}
@@ -278,14 +284,14 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <span>{{ app()->getLocale() === 'ar' ? 'العربية' : 'English' }}</span>
 <i class="fa-solid fa-chevron-down small opacity-50" style="font-size:0.7rem;"></i>
 </button>
-<ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1" style="min-width:145px;border-radius:12px;">
+<ul class="dropdown-menu dropdown-menu-end shadow border-0 p-1.5 lang-dropdown-menu">
 <li>
 <form method="post" action="{{ route('locale.update') }}">
 @csrf
 <input type="hidden" name="locale" value="ar">
-<button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ app()->getLocale() === 'ar' ? 'fw-bold text-success active' : '' }}">
+<button type="submit" class="lang-dropdown-item {{ app()->getLocale() === 'ar' ? 'is-active' : '' }}">
 <span class="d-flex align-items-center gap-2"><span>🇸🇦</span> <span>العربية</span></span>
-@if(app()->getLocale() === 'ar')<i class="fa-solid fa-check small"></i>@endif
+@if(app()->getLocale() === 'ar')<i class="fa-solid fa-check lang-check"></i>@endif
 </button>
 </form>
 </li>
@@ -293,9 +299,9 @@ a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}
 <form method="post" action="{{ route('locale.update') }}">
 @csrf
 <input type="hidden" name="locale" value="en">
-<button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ app()->getLocale() === 'en' ? 'fw-bold text-success active' : '' }}">
+<button type="submit" class="lang-dropdown-item {{ app()->getLocale() === 'en' ? 'is-active' : '' }}">
 <span class="d-flex align-items-center gap-2"><span>🇬🇧</span> <span>English</span></span>
-@if(app()->getLocale() === 'en')<i class="fa-solid fa-check small"></i>@endif
+@if(app()->getLocale() === 'en')<i class="fa-solid fa-check lang-check"></i>@endif
 </button>
 </form>
 </li>
