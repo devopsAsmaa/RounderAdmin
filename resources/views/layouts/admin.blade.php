@@ -194,9 +194,15 @@ a.kpi-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(2,51,62,
 .kpi-card .kpi-label{font-size:.94rem;font-weight:600;color:#4f686e;line-height:1.5}
 .kpi-icon{flex-shrink:0;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:var(--petrol);background:#e4f2ee;font-size:1.18rem;transition:background-color .18s ease,transform .18s ease}
 a.kpi-card:hover .kpi-icon{background:var(--petrol);color:#fff;transform:scale(1.06)}
+.kpi-card.kpi-orange{border-top:3.5px solid var(--orange)!important}
+.kpi-card.kpi-orange .kpi-icon{background:#fff3eb;color:var(--orange)}
+a.kpi-card.kpi-orange:hover{border-color:#ffd4b8;box-shadow:0 12px 28px rgba(251,130,47,0.16)}
+a.kpi-card.kpi-orange:hover .kpi-icon{background:var(--orange);color:#fff}
+.kpi-card.financial{border-top:3.5px solid #d97706!important}
 .kpi-card.financial .kpi-icon{background:#fff1e5;color:#b6530b}
 a.kpi-card.financial:hover{border-color:#ffd4b8;box-shadow:0 12px 28px rgba(251,130,47,0.12)}
 a.kpi-card.financial:hover .kpi-icon{background:#b6530b;color:#fff}
+.kpi-card.urgent{border-top:3.5px solid #dc2626!important}
 .kpi-card.urgent .kpi-icon{background:#fff0f0;color:#c54848}
 a.kpi-card.urgent:hover{border-color:#ffc5c5;box-shadow:0 12px 28px rgba(197,48,48,0.12)}
 a.kpi-card.urgent:hover .kpi-icon{background:#c54848;color:#fff}

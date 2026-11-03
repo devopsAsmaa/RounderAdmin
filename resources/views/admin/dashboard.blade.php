@@ -7,12 +7,20 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 <div>
     <div class="d-flex align-items-center gap-2 mb-1">
-        <span class="badge" style="background: rgba(2, 51, 62, 0.08); color: var(--petrol); font-size: 0.75rem; font-weight: 700;">
-            <i class="fa-solid fa-circle text-success me-1" style="font-size: 0.45rem; vertical-align: middle;"></i>{{ __('Live metrics') }}
+        <span class="badge rounded-pill" style="background: rgba(251, 130, 47, 0.1); color: #d05e0c; border: 1px solid rgba(251, 130, 47, 0.25); font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.8rem;">
+            <i class="fa-solid fa-bolt me-1 text-rounder-orange"></i>{{ __('Live metrics') }}
         </span>
     </div>
     <h1 class="h3 fw-bold mb-1 text-dark">{{ __('Dashboard') }}</h1>
     <p class="text-secondary small mb-0">{{ __('Metrics are queried from MySQL records.') }}</p>
+</div>
+<div class="d-flex align-items-center gap-2 flex-wrap">
+    @adminCan('admin.service-orders.create')
+    <a class="btn btn-brand d-inline-flex align-items-center gap-1.5 shadow-sm" href="{{ route('admin.service-orders.create') }}" style="border-radius: 11px; padding: 0.5rem 1.15rem; font-weight: 700;">
+        <i class="fa-solid fa-plus"></i>
+        <span>{{ __('Create service order') }}</span>
+    </a>
+    @endadminCan
 </div>
 </div>
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
@@ -27,14 +35,14 @@
 <div class="kpi-value">{{ number_format($stats['providers'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('bookings',$stats))
-<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card" aria-label="{{ __('All bookings') }}">
+<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card kpi-orange" aria-label="{{ __('All bookings') }}">
 <div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('All bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></span></div>
 <div class="kpi-value">{{ number_format($stats['bookings'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('pending_bookings',$stats))
-<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card" aria-label="{{ __('Pending bookings') }}">
-<div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label">{{ __('Pending bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
-<div class="kpi-value">{{ number_format($stats['pending_bookings'],0) }}</div>
+<div class="col"><a href="{{ route('admin.service-orders.index') }}" class="kpi-card kpi-orange" aria-label="{{ __('Pending bookings') }}">
+<div class="d-flex justify-content-between align-items-start gap-3"><span class="kpi-label fw-bold">{{ __('Pending bookings') }}</span><span class="kpi-icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
+<div class="kpi-value" style="color: var(--orange);">{{ number_format($stats['pending_bookings'],0) }}</div>
 </a></div>@endif
 @if(array_key_exists('revenue',$stats))
 <div class="col"><article class="kpi-card financial" aria-label="{{ __('Collected payments') }}">
@@ -128,14 +136,26 @@
                         </span>
                     </td>
                     <td>
-                        <span class="pill">{{ $booking->status->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->status->code }}</span>
+                        @php
+                            $stCode = $booking->status->code ?? 'pending';
+                            $stColor = match($stCode) {
+                                'completed' => ['bg' => '#eef8f4', 'color' => '#0e6c51', 'border' => '#bde4d5', 'dot' => '#10b981'],
+                                'cancelled' => ['bg' => '#fdf2f2', 'color' => '#b32a2a', 'border' => '#f4c7c7', 'dot' => '#ef4444'],
+                                'in_progress', 'accepted' => ['bg' => '#e8f4f8', 'color' => '#035368', 'border' => '#bce3eb', 'dot' => '#06b6d4'],
+                                default => ['bg' => '#fff8ec', 'color' => '#b45309', 'border' => '#fed7aa', 'dot' => '#f59e0b'],
+                            };
+                        @endphp
+                        <span class="badge rounded-pill d-inline-flex align-items-center gap-1.5" style="background: {{ $stColor['bg'] }}; color: {{ $stColor['color'] }}; border: 1px solid {{ $stColor['border'] }}; font-size: 0.78rem; font-weight: 600; padding: 0.3rem 0.7rem;">
+                            <span style="width: 5px; height: 5px; border-radius: 50%; background: {{ $stColor['dot'] }};"></span>
+                            {{ $booking->status->translations->firstWhere('locale',app()->getLocale())?->name ?? $booking->status->code }}
+                        </span>
                     </td>
                     <td>
                         <span class="text-secondary small">{{ $booking->created_at->format('Y-m-d') }}</span>
                     </td>
                     <td class="text-end">
-                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="{{ __('View details') }}">
-                            <i class="fa-solid fa-eye"></i>
+                        <a href="{{ route('admin.service-orders.show', $booking->id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1" title="{{ __('View details') }}" style="border-radius: 7px; font-size: 0.8rem;">
+                            <i class="fa-solid fa-eye text-rounder-orange"></i>
                             <span class="d-none d-md-inline">{{ __('View details') }}</span>
                         </a>
                     </td>
