@@ -28,7 +28,6 @@
 
     $isCancelled = $statusCode === 'cancelled';
 
-    // مراحل وتتبع الطلب المتوافقة مع تطبيق الموبايل (تصميم الفيجما)
     $sequenceCodes = ['pending', 'confirmed', 'in_progress', 'completed'];
     $sequenceIndex = array_search($statusCode, $sequenceCodes, true);
     if ($sequenceIndex === false) {
@@ -63,17 +62,34 @@
             default => null,
         };
 
+        $isCurrent = ($statusCode === $code);
+        $isDone = ($statusCode === 'completed') ? true : ($sequenceIndex >= 0 && $idx < $sequenceIndex);
+
         $stages[] = [
             'id' => $stId,
             'code' => $code,
             'title' => $stName,
-            'is_done' => ($statusCode === 'completed') ? true : ($sequenceIndex >= 0 && $idx <= $sequenceIndex),
-            'is_current' => ($statusCode === $code),
+            'is_done' => $isDone,
+            'is_current' => $isCurrent,
             'timestamp' => $timestamp,
             'icon' => $stageIcons[$code] ?? 'fa-circle-dot',
         ];
     }
 @endphp
+
+<style>
+    .place-items-center {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    .rounded-circle i {
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
 
 <div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4">
     <div class="row g-3">
@@ -220,7 +236,7 @@
             <div class="panel p-3 p-lg-4 mb-4">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle d-grid place-items-center" style="width:36px; height:36px; background:var(--mint); color:var(--petrol);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:var(--mint); color:var(--petrol);">
                             <i class="fa-solid fa-route"></i>
                         </div>
                         <div>
@@ -272,23 +288,23 @@
                                     
                                     <div class="d-flex align-items-center gap-2 mb-2">
                                         @if($isCancelled && !$stage['is_done'])
-                                            <div class="rounded-circle d-grid place-items-center text-muted"
-                                                 style="width:38px; height:38px; background:#f1f5f9; border: 2px dashed #cbd5e1; flex-shrink:0;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-muted flex-shrink-0"
+                                                 style="width:38px; height:38px; background:#f1f5f9; border: 2px dashed #cbd5e1;">
                                                 <i class="fa-solid fa-xmark"></i>
                                             </div>
-                                        @elseif($stage['is_done'] && !$isCancelled)
-                                            <div class="rounded-circle d-grid place-items-center"
-                                                 style="width:38px; height:38px; background:var(--mint); color:var(--petrol); border: 2px solid #025968; flex-shrink:0;">
-                                                <i class="fa-solid fa-check"></i>
-                                            </div>
                                         @elseif($stage['is_current'] && !$isCancelled)
-                                            <div class="rounded-circle d-grid place-items-center text-white"
-                                                 style="width:38px; height:38px; background:var(--orange); box-shadow: 0 0 0 4px rgba(251,130,47,0.22); flex-shrink:0;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                 style="width:38px; height:38px; background:var(--orange); box-shadow: 0 0 0 4px rgba(251,130,47,0.22);">
                                                 <i class="fa-solid {{ $stage['icon'] }}"></i>
                                             </div>
+                                        @elseif($stage['is_done'] && !$isCancelled)
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                 style="width:38px; height:38px; background:var(--mint); color:var(--petrol); border: 2px solid #025968;">
+                                                <i class="fa-solid fa-check"></i>
+                                            </div>
                                         @else
-                                            <div class="rounded-circle d-grid place-items-center text-muted"
-                                                 style="width:38px; height:38px; background:#f8faf9; border: 2px dashed #cbd5e1; flex-shrink:0;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-muted flex-shrink-0"
+                                                 style="width:38px; height:38px; background:#f8faf9; border: 2px dashed #cbd5e1;">
                                                 <i class="fa-solid {{ $stage['icon'] }}"></i>
                                             </div>
                                         @endif
@@ -303,9 +319,22 @@
                                         </div>
                                     </div>
 
-                                    <div class="text-secondary small mt-1 d-flex align-items-center gap-1" style="font-size:0.78rem;">
-                                        <span class="badge bg-light text-secondary border font-monospace" style="font-size:0.7rem;">{{ $stage['code'] }}</span>
-                                        <span class="text-muted" style="font-size:0.72rem;">#{{ $stage['id'] }}</span>
+                                    <div class="small mt-1 d-flex align-items-center gap-1" style="font-size:0.76rem;">
+                                        @if($stage['is_current'] && !$isCancelled)
+                                            <span class="text-warning-emphasis fw-bold d-inline-flex align-items-center gap-1">
+                                                <span class="spinner-grow spinner-grow-sm text-warning" style="width:7px; height:7px;" role="status"></span>
+                                                {{ __('In progress') }}
+                                            </span>
+                                        @elseif($stage['is_done'] && !$isCancelled)
+                                            <span class="text-success fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                {{ __('Completed') }}
+                                            </span>
+                                        @elseif($isCancelled)
+                                            <span class="text-muted">{{ __('Cancelled') }}</span>
+                                        @else
+                                            <span class="text-muted">{{ __('Pending') }}</span>
+                                        @endif
                                     </div>
 
                                     <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between" style="font-size:0.73rem;">
@@ -331,7 +360,7 @@
                 <div class="col-6 col-md-3">
                     <div class="panel p-3 h-100">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-grid place-items-center flex-shrink-0"
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                                  style="width:44px; height:44px; background: var(--mint); color: var(--petrol); font-size:1.15rem;">
                                 <i class="fa-solid fa-clock"></i>
                             </div>
@@ -346,7 +375,7 @@
                 <div class="col-6 col-md-3">
                     <div class="panel p-3 h-100">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-grid place-items-center flex-shrink-0"
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                                  style="width:44px; height:44px; background: #fff3ea; color: var(--orange); font-size:1.15rem;">
                                 <i class="fa-solid fa-coins"></i>
                             </div>
@@ -361,14 +390,25 @@
                 <div class="col-6 col-md-3">
                     <div class="panel p-3 h-100">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-grid place-items-center flex-shrink-0"
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                                  style="width:44px; height:44px; background: #eaf2f4; color: var(--petrol); font-size:1.15rem;">
                                 <i class="fa-solid fa-user"></i>
                             </div>
                             <div class="overflow-hidden">
                                 <div class="small text-secondary text-truncate">{{ __('Resident') }}</div>
                                 <div class="fw-bold fs-6 text-dark text-truncate">{{ $booking->resident?->name ?? '—' }}</div>
-                                <div class="text-muted text-truncate" style="font-size:0.75rem;">{{ $booking->residentHome?->unit_label ?? $booking->home?->name ?? '—' }}</div>
+                                <div class="text-muted text-truncate" style="font-size:0.75rem;">
+                                    @if($booking->residentHome?->unit_label)
+                                        <span class="text-dark fw-semibold">{{ __('Unit') }}: {{ $booking->residentHome->unit_label }}</span>
+                                    @elseif($booking->home?->name)
+                                        <span>{{ $booking->home->name }}</span>
+                                    @else
+                                        <span>—</span>
+                                    @endif
+                                    @if($booking->resident?->phone)
+                                        <span class="ms-1" dir="ltr">· {{ $booking->resident->phone }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -376,13 +416,13 @@
                 <div class="col-6 col-md-3">
                     <div class="panel p-3 h-100">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-grid place-items-center flex-shrink-0"
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                                  style="width:44px; height:44px; background: #edf5f8; color: #025968; font-size:1.15rem;">
                                 <i class="fa-solid fa-building-shield"></i>
                             </div>
                             <div class="overflow-hidden">
                                 <div class="small text-secondary text-truncate">{{ __('Assigned provider') }}</div>
-                                <div class="fw-bold fs-6 text-dark text-truncate">
+                                <div class="fw-bold fs-6 text-dark text-truncate" title="{{ $providerProfile?->company_name ?? __('Not assigned yet') }}">
                                     {{ $providerProfile?->company_name ?? __('Not assigned yet') }}
                                 </div>
                                 <div class="text-muted text-truncate" style="font-size:0.75rem;">
@@ -390,6 +430,9 @@
                                         <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>{{ __('Assigned') }}</span>
                                     @else
                                         <span class="text-warning"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ __('Needs assignment') }}</span>
+                                    @endif
+                                    @if($providerProfile?->user?->phone)
+                                        <span class="ms-1" dir="ltr">· {{ $providerProfile->user->phone }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -472,8 +515,8 @@
                             <div class="col-md-6">
                                 <div class="p-3 rounded-3 h-100" style="background: #f8faf9; border: 1px solid #e8efed;">
                                     <div class="d-flex align-items-center gap-3 mb-3">
-                                        <div class="rounded-circle d-grid place-items-center"
-                                             style="width:42px; height:42px; background:var(--mint); color:var(--petrol); font-size:1.15rem; flex-shrink:0;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                             style="width:42px; height:42px; background:var(--mint); color:var(--petrol); font-size:1.15rem;">
                                             <i class="fa-solid fa-user"></i>
                                         </div>
                                         <div class="overflow-hidden">
@@ -516,8 +559,8 @@
                             <div class="col-md-6">
                                 <div class="p-3 rounded-3 h-100" style="background: #f8faf9; border: 1px solid #e8efed;">
                                     <div class="d-flex align-items-center gap-3 mb-3">
-                                        <div class="rounded-circle d-grid place-items-center"
-                                             style="width:42px; height:42px; background:#fff3ea; color:var(--orange); font-size:1.15rem; flex-shrink:0;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                             style="width:42px; height:42px; background:#fff3ea; color:var(--orange); font-size:1.15rem;">
                                             <i class="fa-solid fa-building"></i>
                                         </div>
                                         <div class="overflow-hidden">
@@ -691,6 +734,15 @@
                                     @if($rating->comment)
                                         <div class="text-dark fst-italic mt-2">"{{ $rating->comment }}"</div>
                                     @endif
+                                    @if(!empty($rating->tags))
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            @foreach($rating->tags as $tag)
+                                                <span class="badge bg-white text-dark border px-2 py-1 rounded-pill" style="font-size: 0.78rem;">
+                                                    <i class="fa-solid fa-check text-success me-1"></i>{{ $tag }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     <div class="small text-muted mt-2">
                                         <i class="fa-solid fa-user me-1"></i>{{ $rating->resident?->name ?? __('Resident') }}
                                     </div>
@@ -707,7 +759,7 @@
                         <div class="panel p-3 p-lg-4 mb-4 shadow-sm" style="border: 2px solid var(--petrol); border-radius: 18px;">
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle d-grid place-items-center" style="width:34px; height:34px; background:var(--mint); color:var(--petrol);">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:var(--mint); color:var(--petrol);">
                                         <i class="fa-solid fa-sliders"></i>
                                     </div>
                                     <h2 class="h5 fw-bold mb-0 text-dark">
@@ -744,7 +796,7 @@
                                         <option value="">{{ __('Choose provider') }}</option>
                                         @foreach($providers as $provider)
                                             <option value="{{ $provider->id }}" @selected(($assignment?->provider_profile_id ?? $booking->service_provider_id) === $provider->id)>
-                                                {{ $provider->company_name }} · {{ $provider->name }}
+                                                {{ $provider->company_name }}
                                             </option>
                                         @endforeach
                                     </select>

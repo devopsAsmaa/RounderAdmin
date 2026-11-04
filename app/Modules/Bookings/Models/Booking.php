@@ -186,6 +186,15 @@ class Booking extends Model
     }
 
     /**
+     * التقييم الفردي للطلب عبر booking_id.
+     * @return HasOne
+     */
+    public function rating(): HasOne
+    {
+        return $this->hasOne(BookingRating::class, 'booking_id');
+    }
+
+    /**
      * السجلات التابعة عبر booking_id.
      * @return HasMany
      */

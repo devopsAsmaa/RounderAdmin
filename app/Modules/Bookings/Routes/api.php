@@ -9,6 +9,7 @@ Route::prefix('v1/resident')->middleware(['auth:sanctum', 'resident'])->group(fu
     Route::get('/bookings/{bookingId}', [\App\Modules\Bookings\Controllers\Api\BookingController::class, 'show'])->whereNumber('bookingId');
     Route::post('/bookings', [\App\Modules\Bookings\Controllers\Api\BookingController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/bookings/{bookingId}/cancel', [\App\Modules\Bookings\Controllers\Api\BookingController::class, 'cancel'])->middleware('throttle:10,1');
-    Route::post('/bookings/{bookingId}/rating', [\App\Modules\Bookings\Controllers\Api\BookingRatingController::class, 'rateBooking']);
+    Route::get('/bookings/{bookingId}/rating', [\App\Modules\Bookings\Controllers\Api\BookingRatingController::class, 'show'])->whereNumber('bookingId');
+    Route::post('/bookings/{bookingId}/rating', [\App\Modules\Bookings\Controllers\Api\BookingRatingController::class, 'rateBooking'])->whereNumber('bookingId');
     Route::get('/service-providers', [\App\Modules\Bookings\Controllers\Api\BookingController::class, 'providers']);
 });
