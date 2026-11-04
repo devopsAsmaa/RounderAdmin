@@ -9,13 +9,13 @@ use App\Modules\Catalog\Models\SubService;
 use App\Modules\Catalog\Models\SubServiceTranslation;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ResidentServiceCategoryCatalogTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_categories_include_active_services_and_their_active_subservices(): void
     {

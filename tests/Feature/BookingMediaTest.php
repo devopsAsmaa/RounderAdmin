@@ -10,7 +10,7 @@ use App\Modules\Catalog\Models\ServiceCategory;
 use App\Modules\Identity\Models\Admin;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +19,7 @@ use Tests\TestCase;
 
 class BookingMediaTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private User $resident;
     private Admin $admin;

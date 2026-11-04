@@ -15,13 +15,13 @@
 
 <ul class="nav nav-pills mb-4 gap-2">
     <li class="nav-item">
-        <a class="nav-link active" href="{{ route('admin.regions.index') }}">
+        <a class="nav-link {{ request()->routeIs('admin.regions.*') ? 'active' : '' }}" href="{{ route('admin.regions.index') }}">
             <i class="fa-solid fa-map-location-dot me-1"></i> {{ __('Regions') }}
         </a>
     </li>
     @adminCan('admin.cities.index')
     <li class="nav-item">
-        <a class="nav-link btn btn-outline-secondary" href="{{ route('admin.cities.index') }}">
+        <a class="nav-link {{ request()->routeIs('admin.cities.*') ? 'active' : '' }}" href="{{ route('admin.cities.index') }}">
             <i class="fa-solid fa-tree-city me-1"></i> {{ __('Cities') }}
         </a>
     </li>

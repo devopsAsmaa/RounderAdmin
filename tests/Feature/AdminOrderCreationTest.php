@@ -2,13 +2,13 @@
 namespace Tests\Feature;
 
 use App\Modules\Identity\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AdminOrderCreationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private \App\Modules\Identity\Models\Admin $admin;
     private User $resident;

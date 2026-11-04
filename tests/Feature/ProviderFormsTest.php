@@ -7,14 +7,14 @@ use App\Modules\Catalog\Models\Service;
 use App\Modules\Catalog\Models\ServiceCategory;
 use App\Modules\Providers\Models\ProviderProfile;
 use App\Services\RichTextSanitizer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /** تغطية رحلة الإضافة والتعديل وعزل بيانات العقود على MySQL. */
 class ProviderFormsTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @return User */
     private function admin(): \App\Modules\Identity\Models\Admin

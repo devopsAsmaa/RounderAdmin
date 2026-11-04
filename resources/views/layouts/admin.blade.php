@@ -21,6 +21,11 @@
   --mint:#DDF3EE;
   --sand:#F8FAFB;
 }
+html,body{
+  overflow-x:hidden;
+  max-width:100vw;
+  -webkit-text-size-adjust:100%;
+}
 body{
   background:#F8FAFB;
   color:#17343a;
@@ -88,8 +93,17 @@ body{
 .form-control-sm,.form-select-sm{border-radius:8px;padding:.38rem .68rem;font-size:.82rem}
 .form-label{font-weight:600;font-size:.86rem;color:#233d43;margin-bottom:.35rem}
 .form-check-input{border-radius:6px;border-color:#cedbd7;cursor:pointer}
-.form-check-input:checked{background-color:var(--petrol);border-color:var(--petrol)}
-.form-check-input:focus{box-shadow:0 0 0 3px rgba(2,51,62,.15);border-color:var(--petrol)}
+.form-check-input:checked{background-color:var(--orange);border-color:var(--orange)}
+.form-check-input:focus{box-shadow:0 0 0 3px rgba(251,130,47,.2);border-color:var(--orange)}
+
+/* Service Checkbox Cards */
+.service-checkbox-card{background:#fff;border:1.5px solid #e2ece9;cursor:pointer;transition:all .18s cubic-bezier(0.16,1,0.3,1);border-radius:14px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.service-checkbox-card:hover{background:#fafdfc;border-color:#ffd4b8;transform:translateY(-2px);box-shadow:0 4px 14px rgba(2,51,62,0.06)}
+.service-checkbox-card.is-selected,.service-checkbox-card:has(.form-check-input:checked){background:#fff9f4!important;border-color:var(--orange)!important;box-shadow:0 4px 14px rgba(251,130,47,0.15)}
+.service-checkbox-card .service-icon{width:34px;height:34px;border-radius:9px;background:#f1f6f4;color:var(--petrol);display:inline-grid;place-items:center;font-size:.85rem;transition:all .18s ease}
+.service-checkbox-card.is-selected .service-icon,.service-checkbox-card:has(.form-check-input:checked) .service-icon{background:#fff0e6;color:var(--orange)}
+.service-checkbox-card .form-check-input{width:20px;height:20px;border-radius:6px;margin:0;cursor:pointer}
+.service-checkbox-card .form-check-input:checked{background-color:var(--orange);border-color:var(--orange)}
 
 /* Modern Luxury Buttons */
 .btn{border-radius:10px;font-weight:600;font-size:.88rem;padding:.52rem 1.05rem;transition:all .18s cubic-bezier(0.16,1,0.3,1);display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
@@ -106,11 +120,11 @@ body{
 .btn-outline-danger:hover{background:#fdf2f2!important;border-color:#c53030!important;color:#c53030!important}
 
 /* Modern Tables */
-.table-responsive{border-radius:14px;background:#fff}
+.table-responsive{border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}
 .table{margin-bottom:0;--bs-table-bg:transparent}
 .table>thead{background:#f4f8f7;border-bottom:1.5px solid #dce7e4}
 .table>thead th{font-size:.82rem;font-weight:700;color:var(--petrol);padding:.95rem 1rem;border-bottom:1.5px solid #dce7e4;white-space:nowrap;letter-spacing:.01em}
-.table>tbody td{padding:.92rem 1rem;vertical-align:middle;border-bottom:1px solid #edf4f1;font-size:.88rem;color:#243f45}
+.table>tbody td{padding:.92rem 1rem;vertical-align:middle;border-bottom:1px solid #edf4f1;font-size:.88rem;color:#243f45;white-space:nowrap}
 .table>tbody tr{transition:background-color .15s ease}
 .table>tbody tr:hover{background-color:#f8fcfa}
 .table>tbody tr:last-child td{border-bottom:none}
@@ -177,16 +191,44 @@ body{
 }
 
 @media(max-width:991.98px){
-  .admin-sidebar{min-height:auto}
-  .admin-main{margin:0}
-  .admin-main .container{padding:1rem}
+  .admin-sidebar{min-height:auto;--bs-offcanvas-width:280px}
+  .admin-main{margin:0!important;width:100%!important;overflow-x:hidden}
+  .admin-main .container,.admin-main .container-fluid{padding-left:.85rem!important;padding-right:.85rem!important;padding-top:1rem!important}
   .content{padding:0!important}
-  .panel{padding:1rem!important}
-  .table-responsive{max-width:100%}
-  .navbar{gap:.5rem}
-  .navbar-brand{font-size:1rem}
-  input,select,textarea{max-width:100%}
+  .panel{padding:1rem .85rem!important;border-radius:14px!important}
+  .table-responsive{width:100%;-webkit-overflow-scrolling:touch}
 }
+
+@media(max-width:767.98px){
+  .nav-pills{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;gap:.45rem!important;padding-bottom:6px;margin-bottom:1rem!important;scrollbar-width:none}
+  .nav-pills::-webkit-scrollbar{display:none}
+  .nav-pills .nav-item{flex-shrink:0!important}
+  .nav-pills .nav-link{white-space:nowrap!important;padding:.42rem .82rem!important;font-size:.84rem!important}
+  .table>thead th{padding:.65rem .65rem!important;font-size:.78rem!important;white-space:nowrap}
+  .table>tbody td{padding:.65rem .65rem!important;font-size:.82rem!important}
+  .table .btn-sm{padding:.28rem .55rem!important;font-size:.76rem!important}
+  .form-control,.form-select{font-size:16px!important;border-radius:10px}
+  .form-control-sm,.form-select-sm{font-size:14px!important}
+}
+
+@media(max-width:575.98px){
+  .topbar{height:58px!important;min-height:58px!important;padding-left:.75rem!important;padding-right:.75rem!important}
+  .brand-text{font-size:1.35rem!important}
+  .topbar-circle-btn{width:38px!important;height:38px!important;font-size:.9rem}
+  .topbar-pill-btn{height:38px!important;padding:0 .65rem!important;font-size:.82rem!important;gap:.35rem!important}
+  .topbar-user-pill{height:38px!important;padding:0!important;background:transparent!important;border:none!important}
+  .topbar-user-avatar{width:36px!important;height:36px!important;font-size:.88rem;border-radius:11px!important}
+  .topbar-divider{display:none!important}
+  .topbar .notification-dropdown{position:fixed!important;top:62px!important;inset-inline-end:10px!important;inset-inline-start:auto!important;transform:none!important;width:calc(100vw - 20px)!important}
+  .admin-main h1{font-size:1.3rem!important}
+  .pagination{justify-content:center!important;gap:3px!important}
+  .pagination .page-link{padding:.35rem .65rem!important;font-size:.78rem!important}
+  .modal-dialog{margin:.75rem}
+  .modal-header,.modal-body,.modal-footer{padding:1rem!important}
+}
+
+.topbar-actions-group{display:flex;align-items:center;gap:12px;flex-shrink:0}
+@media(max-width:575.98px){.topbar-actions-group{gap:10px!important}}
 
 body,button,input,select,textarea{font-family:"Tajawal",system-ui,sans-serif}
 .kpi-card{height:100%;min-height:154px;padding:1.35rem 1.3rem;background:#fff;border:1px solid #e2ece9;border-radius:18px;box-shadow:0 3px 16px rgba(2,51,62,0.035);display:flex;flex-direction:column;justify-content:space-between;gap:1.15rem;text-decoration:none;color:inherit;position:relative;overflow:hidden;transition:transform .2s cubic-bezier(0.16,1,0.3,1),box-shadow .2s ease,border-color .2s ease}
@@ -199,7 +241,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 .dashboard-intro{padding:1.25rem 0}.dashboard-intro h1{font-weight:800}
 @media(max-width:575.98px){.kpi-card{min-height:132px}.kpi-value{font-size:1.85rem}}
 
-.topbar{position:sticky;top:0;z-index:1030;height:64px;min-height:64px;background:#fff;border-bottom:1px solid #eef2f1;box-shadow:0 1px 3px rgba(2,51,62,0.03)}
+.topbar{position:sticky;top:0;z-index:1030;height:64px;min-height:64px;background:#fff;border-bottom:1px solid #eef2f1;box-shadow:0 1px 3px rgba(2,51,62,0.03);display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important}
 
 /* Topbar Buttons & Pills */
 .topbar-date-pill{height:40px;padding:0 .9rem;border-radius:11px;background:#f6f9f8;border:1px solid #dce7e4;color:var(--petrol);font-size:.84rem;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;transition:all .18s ease}
@@ -244,8 +286,8 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     }
 @endphp
 <nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar">
-<div class="d-flex align-items-center gap-2 gap-md-3">
-<button class="topbar-btn topbar-icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
+<div class="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
+<button class="topbar-circle-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
 <i class="fa-solid fa-bars-staggered"></i>
 </button>
 <a class="navbar-brand brand d-lg-none d-flex align-items-center gap-2 m-0 text-decoration-none" href="{{ route('admin.dashboard') }}">
@@ -260,7 +302,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 </div>
 
 {{-- Left Side: Date Pill, Divider, Notifications, Language Pill, Divider, User Pill --}}
-<div class="d-flex align-items-center gap-2 gap-sm-2.5">
+<div class="topbar-actions-group">
 <div class="topbar-date-pill d-none d-md-inline-flex">
 <i class="fa-regular fa-calendar-days text-rounder-orange"></i>
 <span>{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('d F Y') }}</span>
@@ -273,10 +315,11 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 @endif
 
 <div class="dropdown">
-<button class="topbar-pill-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Language') }}" title="{{ __('Language') }}">
+<button class="topbar-pill-btn px-2 px-sm-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Language') }}" title="{{ __('Language') }}">
 <i class="fa-solid fa-globe opacity-75"></i>
-<span>{{ app()->getLocale() === 'ar' ? 'العربية' : 'English' }}</span>
-<i class="fa-solid fa-chevron-down small opacity-50" style="font-size:0.7rem;"></i>
+<span class="d-none d-sm-inline">{{ app()->getLocale() === 'ar' ? 'العربية' : 'English' }}</span>
+<span class="d-sm-none fw-bold small">{{ strtoupper(app()->getLocale()) }}</span>
+<i class="fa-solid fa-chevron-down small opacity-50 d-none d-sm-inline" style="font-size:0.7rem;"></i>
 </button>
 <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-1.5 lang-dropdown-menu">
 <li>
@@ -312,11 +355,11 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 <div class="dropdown">
 <button class="topbar-user-pill" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ $currentUserTop->name }}" title="{{ $currentUserTop->name }}">
 <div class="topbar-user-avatar">{{ $initialLetter }}</div>
-<div class="d-none d-sm-block" style="text-align: {{ app()->getLocale() === 'ar' ? 'right' : 'left' }};">
+<div class="d-none d-md-block" style="text-align: {{ app()->getLocale() === 'ar' ? 'right' : 'left' }};">
 <div class="topbar-user-name">{{ $currentUserTop->name }}</div>
 <div class="topbar-user-role">{{ __('Administrator') }}</div>
 </div>
-<i class="fa-solid fa-chevron-down topbar-user-chevron ms-1"></i>
+<i class="fa-solid fa-chevron-down topbar-user-chevron ms-1 d-none d-md-inline"></i>
 </button>
 <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 topbar-user-dropdown">
 <li class="px-3 py-2 border-bottom mb-1">
@@ -641,12 +684,29 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 @yield('body')
 </div>
 <div class="modal fade" id="delete-confirmation" tabindex="-1" aria-labelledby="delete-confirmation-title" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-<div class="modal-header"><h2 class="modal-title fs-5" id="delete-confirmation-title">{{ __('Confirm deletion') }}</h2></div>
-<div class="modal-body">{{ __('Are you sure you want to delete this record?') }}</div>
-<div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('No') }}</button>
-<button type="button" class="btn btn-danger" id="confirm-delete">{{ __('Yes') }}</button></div>
-</div></div></div>
+<div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+<div class="modal-content border-0 shadow-lg text-center" style="border-radius: 24px; overflow: hidden; background: #ffffff;">
+    <div style="height: 5px; background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);"></div>
+    <div class="p-4 pt-4 pb-3">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 50%; background: #fee2e2; color: #dc2626; box-shadow: 0 0 0 8px #fef2f2;">
+            <i class="fa-solid fa-trash-can" style="font-size: 1.85rem;"></i>
+        </div>
+        <h2 class="h5 fw-bold text-dark mb-2" id="delete-confirmation-title">{{ __('Confirm deletion') }}</h2>
+        <p class="text-secondary small mb-4 px-2" style="line-height: 1.65; font-size: 0.92rem;">
+            {{ __('Are you sure you want to delete this record? This action cannot be undone.') }}
+        </p>
+        <div class="d-flex align-items-center justify-content-center gap-2">
+            <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold" data-bs-dismiss="modal" style="border-radius: 12px; min-width: 120px;">
+                <i class="fa-solid fa-xmark me-1"></i> {{ __('Cancel') }}
+            </button>
+            <button type="button" class="btn btn-danger px-4 py-2 fw-bold shadow-sm" id="confirm-delete" style="border-radius: 12px; min-width: 130px; background: #dc2626; border-color: #dc2626; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28);">
+                <i class="fa-solid fa-trash-can me-1"></i> {{ __('Yes, delete') }}
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script><script>
 (() => {
     let pendingForm = null;

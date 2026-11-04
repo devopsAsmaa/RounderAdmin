@@ -55,7 +55,19 @@ class AdminProviderService
                 'provider_contracts.starts_on', 'provider_contract_statuses.code as contract_status'
             )->selectSub(ProviderCommissionEntry::query()->selectRaw('COALESCE(SUM(commission_amount), 0)')
                 ->whereColumn('provider_commission_entries.provider_profile_id', 'provider_profiles.id'), 'commission_total')
-            ->orderByDesc('provider_profiles.id')->paginate(20);
+            ->when(!empty($input['q']), function ($q) use ($input) {
+                $term = trim($input['q']);
+                $q->where(function ($w) use ($term) {
+                    $w->where('provider_profiles.company_name', 'like', "%{$term}%")
+                        ->orWhere('users.name', 'like', "%{$term}%")
+                        ->orWhere('users.email', 'like', "%{$term}%")
+                        ->orWhere('users.phone', 'like', "%{$term}%")
+                        ->orWhere('provider_contracts.reference', 'like', "%{$term}%");
+                });
+            })
+            ->orderByDesc('provider_profiles.id')
+            ->paginate((int) ($input['per_page'] ?? 20))
+            ->withQueryString();
 
         return compact('providers');
     }

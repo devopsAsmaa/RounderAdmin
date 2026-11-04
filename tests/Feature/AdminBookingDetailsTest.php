@@ -5,13 +5,13 @@ namespace Tests\Feature;
 use App\Modules\Bookings\Models\Booking;
 use App\Modules\Identity\Models\Admin;
 use App\Modules\Identity\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AdminBookingDetailsTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private Admin $admin;
     private User $resident;

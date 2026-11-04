@@ -12,26 +12,26 @@
 <ul class="nav nav-pills mb-4 gap-2">
     @adminCan('admin.service-categories.index')
     <li class="nav-item">
-        <a class="nav-link btn btn-outline-secondary" href="{{ route('admin.service-categories.index') }}">
+        <a class="nav-link {{ request()->routeIs('admin.service-categories.*') ? 'active' : '' }}" href="{{ route('admin.service-categories.index') }}">
             <i class="fa-solid fa-layer-group me-1"></i> {{ __('Service categories') }}
         </a>
     </li>
     @endadminCan
     @adminCan('admin.services.index')
     <li class="nav-item">
-        <a class="nav-link btn btn-outline-secondary" href="{{ route('admin.services.index') }}">
+        <a class="nav-link {{ request()->routeIs('admin.services.*') ? 'active' : '' }}" href="{{ route('admin.services.index') }}">
             <i class="fa-solid fa-screwdriver-wrench me-1"></i> {{ __('Available services') }}
         </a>
     </li>
     @endadminCan
     <li class="nav-item">
-        <a class="nav-link active" href="{{ route('admin.sub-services.index') }}">
+        <a class="nav-link {{ request()->routeIs('admin.sub-services.*') ? 'active' : '' }}" href="{{ route('admin.sub-services.index') }}">
             <i class="fa-solid fa-list-check me-1"></i> {{ __('Sub services') }}
         </a>
     </li>
     @adminCan('admin.prices.index')
     <li class="nav-item">
-        <a class="nav-link btn btn-outline-secondary" href="{{ route('admin.prices.index') }}">
+        <a class="nav-link {{ request()->routeIs('admin.prices.*') ? 'active' : '' }}" href="{{ route('admin.prices.index') }}">
             <i class="fa-solid fa-tags me-1"></i> {{ __('Prices') }}
         </a>
     </li>
