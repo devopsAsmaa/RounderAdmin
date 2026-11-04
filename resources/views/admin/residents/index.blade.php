@@ -61,7 +61,7 @@
 
         {{-- Table --}}
         <div class="table-responsive">
-            <table class="table align-middle">
+            <table class="table align-middle" style="min-width: 680px;">
                 <thead>
                     <tr>
                         <th style="width: 60px;">#</th>

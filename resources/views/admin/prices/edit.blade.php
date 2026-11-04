@@ -2,15 +2,6 @@
 @section('title', __('Edit price').' · Rounder')
 @section('body')
 <main class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-        <h1 class="h3 mb-0">{{ __('Edit price') }}</h1>
-        <a class="btn btn-outline-secondary" href="{{ route('admin.prices.index') }}">
-            <i class="fa-solid fa-arrow-right me-1"></i> {{ __('Prices') }}
-        </a>
-    </div>
-
-    @include('admin.partials.feedback')
-
     @php
         $locale = app()->getLocale();
         $subName = $price->subService?->translations->firstWhere('locale', $locale)?->name
@@ -19,10 +10,30 @@
         $serviceName = $price->subService?->service?->translations->firstWhere('locale', $locale)?->name
             ?? $price->subService?->service?->translations->firstWhere('locale', 'ar')?->name
             ?? $price->subService?->service?->code;
-        $selectedCityIds = old('city_ids', $price->cities->pluck('id')->all());
+        $selectedCityIds = old('city_ids', $price->region_id ? \Illuminate\Support\Facades\DB::table('sub_service_price_cities')->where('sub_service_price_id', $price->id)->pluck('city_id')->all() : []);
     @endphp
 
-    <div class="panel p-3 p-lg-4 mb-4">
+    {{-- Top Header & Navigation --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="{{ route('admin.prices.index') }}">
+                    <i class="fa-solid fa-arrow-right me-1"></i> {{ __('Prices') }}
+                </a>
+                <span class="text-muted">/</span>
+                <span class="text-secondary small fw-semibold">{{ __('Edit price') }}</span>
+            </div>
+            <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-tags text-rounder-orange"></i>
+                <span>{{ __('Edit price') }}: {{ $price->provider?->company_name ?? '' }} · {{ $subName }}</span>
+            </h1>
+            <p class="text-secondary mb-0 small">{{ __('Update price configuration, covered cities, and provider rates.') }}</p>
+        </div>
+    </div>
+
+    @include('admin.partials.feedback')
+
+    <div class="panel p-3 p-lg-4 shadow-sm mb-4" style="border-top: 3px solid var(--orange, #fb822f); border-radius: 14px;">
         {{-- كرت معلومات الخدمة والمزود --}}
         <div class="alert alert-light border mb-4">
             <div class="row g-3">
@@ -44,14 +55,15 @@
         <form method="post" action="{{ route('admin.prices.update', $price->id) }}" id="editPriceForm">
             @csrf
             @method('PUT')
+            <input type="hidden" name="city_ids_json" id="cityIdsJson">
 
             <div class="row g-3">
                 {{-- المنطقة --}}
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">
-                        <i class="fa-solid fa-map text-primary me-1"></i> {{ __('Region') }}
+                        <i class="fa-solid fa-map text-primary me-1"></i> {{ __('Region') }} <span class="text-danger">*</span>
                     </label>
-                    <select name="region_id" id="regionSelect" class="form-select @error('region_id') is-invalid @enderror">
+                    <select name="region_id" id="regionSelect" class="form-select @error('region_id') is-invalid @enderror" required>
                         <option value="">-- {{ __('Select region') }} --</option>
                         @foreach($regions as $region)
                             @php
@@ -59,7 +71,7 @@
                                     ?? $region->translations->firstWhere('locale', 'ar')?->name
                                     ?? $region->code;
                             @endphp
-                            <option value="{{ $region->id }}" @selected(old('region_id', $price->region_id) == $region->id)>
+                            <option value="{{ $region->id }}" @selected(old('region_id', (string) $price->region_id) == (string) $region->id)>
                                 {{ $rName }}
                             </option>
                         @endforeach
@@ -69,8 +81,22 @@
                     @enderror
                 </div>
 
+                {{-- السعر --}}
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        <i class="fa-solid fa-coins text-warning me-1"></i> {{ __('Price') }} ({{ __('SAR') }}) <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <input type="number" step="0.01" min="0" max="999999.99" name="price" value="{{ old('price', $price->price) }}" class="form-control @error('price') is-invalid @enderror" required>
+                        <span class="input-group-text">{{ __('SAR') }}</span>
+                    </div>
+                    @error('price')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 {{-- اختيار المدن التابعة للتسعير --}}
-                <div class="col-12">
+                <div class="col-12" id="citiesCardWrapper">
                     <div class="card border">
                         <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
                             <div class="d-flex align-items-center gap-2">
@@ -109,29 +135,14 @@
                             </div>
 
                             <div id="citiesContainer" class="d-flex flex-wrap gap-2 pt-2" style="max-height: 280px; overflow-y: auto;">
-                                {{-- تعبئة المدن --}}
+                                {{-- تعبئة المدن هنا --}}
                             </div>
-                            <input type="hidden" name="city_ids_json" id="cityIdsJson">
 
                             @error('city_ids')
                                 <div class="text-danger small mt-2">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                </div>
-
-                {{-- السعر --}}
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">
-                        <i class="fa-solid fa-coins text-warning me-1"></i> {{ __('Price') }} ({{ __('SAR') }}) <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                        <input type="number" step="0.01" min="0" max="999999.99" name="price" value="{{ old('price', $price->price) }}" class="form-control @error('price') is-invalid @enderror" required>
-                        <span class="input-group-text">{{ __('SAR') }}</span>
-                    </div>
-                    @error('price')
-                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                    @enderror
                 </div>
 
                 {{-- الحالة --}}
@@ -149,11 +160,12 @@
                 </div>
 
                 <div class="col-12 mt-4 text-end">
-                    <a href="{{ route('admin.prices.index') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ route('admin.prices.index') }}" class="btn btn-outline-secondary px-4 me-2" style="border-radius: 10px;">
                         {{ __('Cancel') }}
                     </a>
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fa-solid fa-check me-1"></i> {{ __('Save changes') }}
+                    <button type="submit" class="btn btn-brand px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="border-radius: 10px;">
+                        <i class="fa-solid fa-check"></i>
+                        <span>{{ __('Save changes') }}</span>
                     </button>
                 </div>
             </div>
@@ -176,20 +188,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const preSelectedCityIds = @json($selectedCityIds);
 
     regionSelect.addEventListener('change', function () {
-        loadCities(this.value, false);
+        const regionId = this.value;
+        if (!regionId) {
+            citiesContainer.innerHTML = '';
+            citiesPlaceholder.classList.remove('d-none');
+            btnSelectAll.disabled = true;
+            btnDeselectAll.disabled = true;
+            citySearchInput.disabled = true;
+            updateCitiesCount();
+            return;
+        }
+        loadCities(regionId, false);
     });
 
     function loadCities(regionId, isInitialLoad) {
         citiesContainer.innerHTML = '';
         updateCitiesCount();
-
-        if (!regionId) {
-            citiesPlaceholder.classList.remove('d-none');
-            btnSelectAll.disabled = true;
-            btnDeselectAll.disabled = true;
-            citySearchInput.disabled = true;
-            return;
-        }
 
         citiesPlaceholder.classList.add('d-none');
         citiesLoading.classList.remove('d-none');
@@ -219,9 +233,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const fragment = document.createDocumentFragment();
         cities.forEach(city => {
-            const isSelected = isInitialLoad
-                ? preSelectedCityIds.includes(Number(city.id)) || preSelectedCityIds.includes(String(city.id))
+            const isSelected = isInitialLoad && preSelectedCityIds.length
+                ? (preSelectedCityIds.includes(Number(city.id)) || preSelectedCityIds.includes(String(city.id)))
                 : true;
 
             const chip = document.createElement('div');
@@ -240,9 +255,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 toggleCity(chip);
             });
 
-            citiesContainer.appendChild(chip);
+            fragment.appendChild(chip);
         });
 
+        citiesContainer.appendChild(fragment);
         updateCitiesCount();
     }
 
@@ -309,6 +325,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     editPriceForm.addEventListener('submit', function (e) {
+        if (!regionSelect.value) {
+            e.preventDefault();
+            alert('{{ __('Please select a region.') }}');
+            return false;
+        }
+
         const checkedBoxes = citiesContainer.querySelectorAll('.city-checkbox:checked');
         const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
         if (ids.length === 0) {
@@ -319,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('cityIdsJson').value = JSON.stringify(ids);
     });
 
-    // تحميل المدن الأولية إذا كانت المنطقة محددة
+    // تحميل الحالة الأولية
     if (regionSelect.value) {
         loadCities(regionSelect.value, true);
     }

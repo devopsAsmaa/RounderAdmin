@@ -19,11 +19,12 @@
     $commission = $booking->providerCommissionEntries->first();
 
     $statusHistory = $booking->bookingStatusHistory ?? collect();
-    $submittedAt = $statusHistory->firstWhere('booking_status_id', 81)?->created_at ?? $booking->created_at;
-    $confirmedAt = $statusHistory->firstWhere('booking_status_id', 82)?->created_at;
-    $inProgressAt = $statusHistory->firstWhere('booking_status_id', 83)?->created_at;
-    $completedAt = $statusHistory->firstWhere('booking_status_id', 84)?->created_at ?? $booking->completed_at;
-    $cancelledAt = $statusHistory->firstWhere('booking_status_id', 85)?->created_at;
+    $statusMap = \App\Modules\Bookings\Models\BookingStatus::pluck('id', 'code');
+    $submittedAt = $statusHistory->firstWhere('booking_status_id', $statusMap['pending'] ?? 6)?->created_at ?? $booking->created_at;
+    $confirmedAt = $statusHistory->firstWhere('booking_status_id', $statusMap['confirmed'] ?? 7)?->created_at;
+    $inProgressAt = $statusHistory->firstWhere('booking_status_id', $statusMap['in_progress'] ?? 8)?->created_at;
+    $completedAt = $statusHistory->firstWhere('booking_status_id', $statusMap['completed'] ?? 9)?->created_at ?? $booking->completed_at;
+    $cancelledAt = $statusHistory->firstWhere('booking_status_id', $statusMap['cancelled'] ?? 10)?->created_at;
 
     $isCancelled = $statusCode === 'cancelled';
 
@@ -74,8 +75,8 @@
     }
 @endphp
 
-<div class="container-fluid">
-    <div class="row g-3 p-3 p-lg-4">
+<div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4">
+    <div class="row g-3">
         <main class="col-12 content">
             {{-- Breadcrumb & Top Actions --}}
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -619,7 +620,7 @@
                             @if($booking->bookingAdditionalWork->isNotEmpty())
                                 <h3 class="h6 fw-bold text-dark mt-2 mb-2">{{ __('Additional work') }}</h3>
                                 <div class="table-responsive mb-3">
-                                    <table class="table table-sm align-middle">
+                                    <table class="table table-sm align-middle" style="min-width: 480px;">
                                         <thead>
                                             <tr>
                                                 <th>{{ __('Record number') }}</th>

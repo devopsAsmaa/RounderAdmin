@@ -37,8 +37,8 @@
             <!-- ========================================== -->
             <div id="ordersTableView" class="orders-view-pane">
                 <div class="panel p-3 p-lg-4 mb-4" style="border-radius: 14px;">
-                    <div class="table-responsive" style="overflow: visible;">
-                        <table class="table align-middle mb-0" style="width: 100%;">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="min-width: 860px;">
                             <thead>
                                 <tr style="border-bottom: 2px solid #e5ede9;">
                                     <th style="width: 14%;">{{ __('Order') }}</th>

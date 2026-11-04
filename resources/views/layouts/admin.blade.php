@@ -120,7 +120,8 @@ body{
 .btn-outline-danger:hover{background:#fdf2f2!important;border-color:#c53030!important;color:#c53030!important}
 
 /* Modern Tables */
-.table-responsive{border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}
+.table-responsive{border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch;overflow-x:auto}
+.table-responsive > .table{min-width:650px}
 .table{margin-bottom:0;--bs-table-bg:transparent}
 .table>thead{background:#f4f8f7;border-bottom:1.5px solid #dce7e4}
 .table>thead th{font-size:.82rem;font-weight:700;color:var(--petrol);padding:.95rem 1rem;border-bottom:1.5px solid #dce7e4;white-space:nowrap;letter-spacing:.01em}

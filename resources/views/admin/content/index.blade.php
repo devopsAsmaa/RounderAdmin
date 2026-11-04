@@ -299,7 +299,7 @@
 
                 {{-- Announcements Table --}}
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" style="min-width: 650px;">
                         <thead class="bg-light-subtle">
                             <tr class="text-secondary small fw-bold">
                                 <th style="width: 70px;">#</th>
@@ -538,7 +538,7 @@
 
                 {{-- Initiatives Table --}}
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" style="min-width: 650px;">
                         <thead class="bg-light-subtle">
                             <tr class="text-secondary small fw-bold">
                                 <th style="width: 70px;">#</th>
@@ -635,7 +635,7 @@
 
                 {{-- Facility Reports Table --}}
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" style="min-width: 650px;">
                         <thead class="bg-light-subtle">
                             <tr class="text-secondary small fw-bold">
                                 <th style="width: 70px;">#</th>

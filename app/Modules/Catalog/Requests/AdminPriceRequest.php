@@ -52,7 +52,7 @@ class AdminPriceRequest extends FormRequest
                 'provider_profile_id' => ['required', 'integer', 'exists:provider_profiles,id'],
                 'service_id' => ['required', 'integer', 'exists:services,id'],
                 'sub_service_id' => ['required', 'integer', 'exists:sub_services,id'],
-                'region_id' => ['nullable', 'integer', 'exists:regions,id'],
+                'region_id' => ['required', 'integer', 'exists:regions,id'],
                 'city_ids' => ['required', 'array', 'min:1'],
                 'city_ids.*' => ['required', 'integer', 'exists:cities,id'],
                 'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
@@ -64,8 +64,8 @@ class AdminPriceRequest extends FormRequest
         return [
             'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'is_active' => ['nullable', 'boolean'],
-            'region_id' => ['nullable', 'integer', 'exists:regions,id'],
-            'city_ids' => ['nullable', 'array'],
+            'region_id' => ['required', 'integer', 'exists:regions,id'],
+            'city_ids' => ['required', 'array', 'min:1'],
             'city_ids.*' => ['required', 'integer', 'exists:cities,id'],
         ];
     }

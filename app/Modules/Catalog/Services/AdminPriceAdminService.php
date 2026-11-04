@@ -145,7 +145,7 @@ class AdminPriceAdminService
             $price = SubServicePrice::create([
                 'provider_profile_id' => (int) $input['provider_profile_id'],
                 'sub_service_id' => (int) $input['sub_service_id'],
-                'region_id' => !empty($input['region_id']) ? (int) $input['region_id'] : null,
+                'region_id' => (int) $input['region_id'],
                 'price' => $input['price'],
                 'is_active' => isset($input['is_active']) ? (bool) $input['is_active'] : true,
             ]);
@@ -159,7 +159,7 @@ class AdminPriceAdminService
     }
 
     /**
-     * جلب سجل التسعير مع المدن التابعة له للتعديل.
+     * جلب سجل التسعير مع تفاصيل الخدمة والمزود للتعديل.
      *
      * @param int $priceId
      * @return SubServicePrice
@@ -172,8 +172,8 @@ class AdminPriceAdminService
                 'subService.translations',
                 'subService.service.translations',
                 'region.translations',
-                'cities.translations',
             ])
+            ->withCount('cities')
             ->findOrFail($priceId);
     }
 
@@ -195,8 +195,8 @@ class AdminPriceAdminService
                 'is_active' => isset($input['is_active']) ? (bool) $input['is_active'] : true,
             ];
 
-            if (array_key_exists('region_id', $input)) {
-                $dataToUpdate['region_id'] = !empty($input['region_id']) ? (int) $input['region_id'] : null;
+            if (array_key_exists('region_id', $input) && !empty($input['region_id'])) {
+                $dataToUpdate['region_id'] = (int) $input['region_id'];
             }
 
             $priceRecord->update($dataToUpdate);
@@ -320,20 +320,25 @@ class AdminPriceAdminService
                 'provider',
                 'subService.translations',
                 'region.translations',
-                'cities.translations',
             ])
             ->findOrFail($priceId);
 
         $locale = app()->getLocale();
 
-        $cities = $price->cities->map(function ($city) use ($locale) {
-            return [
-                'id' => $city->id,
-                'name' => $city->translations->firstWhere('locale', $locale)?->name
-                    ?? $city->translations->firstWhere('locale', 'ar')?->name
-                    ?? $city->code,
-            ];
-        });
+        $cities = DB::table('sub_service_price_cities')
+            ->join('cities', 'cities.id', '=', 'sub_service_price_cities.city_id')
+            ->leftJoin('city_translations', function ($join) use ($locale) {
+                $join->on('city_translations.city_id', '=', 'cities.id')
+                    ->where('city_translations.locale', '=', $locale);
+            })
+            ->leftJoin('city_translations as ct_ar', function ($join) {
+                $join->on('ct_ar.city_id', '=', 'cities.id')
+                    ->where('ct_ar.locale', '=', 'ar');
+            })
+            ->where('sub_service_price_cities.sub_service_price_id', $priceId)
+            ->select('cities.id', DB::raw('COALESCE(city_translations.name, ct_ar.name, cities.code) as name'))
+            ->orderBy('name')
+            ->get();
 
         $providerName = $price->provider?->company_name ?? '—';
         $subServiceName = $price->subService?->translations->firstWhere('locale', $locale)?->name

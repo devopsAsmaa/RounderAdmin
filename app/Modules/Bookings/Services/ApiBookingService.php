@@ -247,10 +247,10 @@ class ApiBookingService
             $serviceId = SubService::where('id', $subServiceId)->value('service_id');
         }
 
-        $cityId = null;
-        if ($homeId) {
+        $cityId = !empty($input['city_id']) ? (int) $input['city_id'] : null;
+        if (!$cityId && $homeId) {
             $cityId = Home::where('id', $homeId)->value('city_id');
-        } elseif ($actor) {
+        } elseif (!$cityId && $actor) {
             $cityId = ResidentHome::with('home')->where('user_id', $actor->id)->first()?->home?->city_id;
         }
 

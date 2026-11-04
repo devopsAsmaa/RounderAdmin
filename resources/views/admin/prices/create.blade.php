@@ -2,16 +2,27 @@
 @section('title', __('Add price').' · Rounder')
 @section('body')
 <main class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-        <h1 class="h3 mb-0">{{ __('Add price') }}</h1>
-        <a class="btn btn-outline-secondary" href="{{ route('admin.prices.index') }}">
-            <i class="fa-solid fa-arrow-right me-1"></i> {{ __('Prices') }}
-        </a>
+    {{-- Top Header & Navigation --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="{{ route('admin.prices.index') }}">
+                    <i class="fa-solid fa-arrow-right me-1"></i> {{ __('Prices') }}
+                </a>
+                <span class="text-muted">/</span>
+                <span class="text-secondary small fw-semibold">{{ __('Add price') }}</span>
+            </div>
+            <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-tags text-rounder-orange"></i>
+                <span>{{ __('Add price') }}</span>
+            </h1>
+            <p class="text-secondary mb-0 small">{{ __('Configure service pricing by provider, sub-service, and covered geographic cities.') }}</p>
+        </div>
     </div>
 
     @include('admin.partials.feedback')
 
-    <div class="panel p-3 p-lg-4 mb-4">
+    <div class="panel p-3 p-lg-4 shadow-sm mb-4" style="border-top: 3px solid var(--orange, #fb822f); border-radius: 14px;">
         <form method="post" action="{{ route('admin.prices.store') }}" id="priceForm">
             @csrf
 
@@ -65,7 +76,7 @@
                     <label class="form-label fw-semibold">
                         <i class="fa-solid fa-map text-primary me-1"></i> {{ __('Region') }} <span class="text-danger">*</span>
                     </label>
-                    <select name="region_id" id="regionSelect" class="form-select @error('region_id') is-invalid @enderror">
+                    <select name="region_id" id="regionSelect" class="form-select @error('region_id') is-invalid @enderror" required>
                         <option value="">-- {{ __('Select region') }} --</option>
                         @foreach($regions as $region)
                             @php
@@ -84,7 +95,7 @@
                 </div>
 
                 {{-- 5. اختيار المدن (تحديد الكل تلقائياً مع إمكانية حذف أي مدينة) --}}
-                <div class="col-12">
+                <div class="col-12" id="citiesCardWrapper">
                     <div class="card border">
                         <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
                             <div class="d-flex align-items-center gap-2">
@@ -163,11 +174,12 @@
                 </div>
 
                 <div class="col-12 mt-4 text-end">
-                    <a href="{{ route('admin.prices.index') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ route('admin.prices.index') }}" class="btn btn-outline-secondary px-4 me-2" style="border-radius: 10px;">
                         {{ __('Cancel') }}
                     </a>
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fa-solid fa-check me-1"></i> {{ __('Save price') }}
+                    <button type="submit" class="btn btn-brand px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="border-radius: 10px;">
+                        <i class="fa-solid fa-check"></i>
+                        <span>{{ __('Save price') }}</span>
                     </button>
                 </div>
             </div>
@@ -407,6 +419,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const priceForm = document.getElementById('priceForm');
     priceForm.addEventListener('submit', function (e) {
+        if (!regionSelect.value) {
+            e.preventDefault();
+            alert('{{ __('Please select a region.') }}');
+            return false;
+        }
+
         const checkedBoxes = citiesContainer.querySelectorAll('.city-checkbox:checked');
         const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
         if (ids.length === 0) {

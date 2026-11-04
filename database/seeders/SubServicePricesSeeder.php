@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\DB;
 class SubServicePricesSeeder extends Seeder
 {
     /**
-     * تشغيل بذر الأسعار لجميع الخدمات الفرعية في كل المناطق لمزود الخدمة المعتمد.
+     * تشغيل بذر الأسعار لجميع الخدمات الفرعية مقسمة لكل منطقة جغرافية على حدة
+     * وتغطية كافة مدن كل منطقة بنسبة 100%.
      */
     public function run(): void
     {
@@ -24,37 +25,54 @@ class SubServicePricesSeeder extends Seeder
             return;
         }
 
-        // ربط المزود بجميع الخدمات المتاحة
+        // 1. ربط المزود بجميع الخدمات الـ 16 المتاحة
         $allServiceIds = Service::where('is_active', true)->pluck('id')->all();
         $provider->services()->syncWithoutDetaching($allServiceIds);
 
-        // المناطق التي تحتوي على مدن
-        $regions = Region::whereHas('cities')->pluck('id')->all();
+        // 2. تفريغ الجداول القديمة لإعادة الهيكلة المنظمة
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('sub_service_price_cities')->truncate();
+        DB::table('sub_service_prices')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // جميع الخدمات الفرعية النشطة
+        // 3. جلب المناطق الأربعة النشطة التي تحتوي على مدن
+        $regions = Region::where('is_active', true)
+            ->whereHas('cities')
+            ->orderBy('id')
+            ->get();
+
+        // 4. جلب جميع الخدمات الفرعية النشطة
         $subServices = SubService::with('service')->where('is_active', true)->get();
 
         $basePrices = [
-            'plumbing' => 150,
-            'electrical' => 180,
-            'home_cleaning' => 250,
+            'plumbing' => 120,
+            'electrical' => 110,
+            'home_cleaning' => 220,
             'appliances' => 140,
-            'pest_control' => 200,
+            'pest_control' => 180,
             'carpentry' => 130,
             'water_heaters' => 120,
-            'ikea' => 90,
-            'water_filters' => 100,
+            'ikea' => 85,
+            'water_filters' => 95,
             'blacksmith' => 150,
-            'ac_split' => 160,
-            'ac_window' => 130,
+            'ac_split' => 140,
+            'ac_window' => 100,
             'ac_central' => 280,
-            'ac_concealed' => 220,
-            'refrigerators' => 170,
-            'ovens' => 140,
-            'washing_machines' => 150,
+            'ac_concealed' => 200,
+            'refrigerators' => 150,
+            'ovens' => 130,
+            'washing_machines' => 140,
         ];
 
-        $this->command?->info("بدء إضافة الأسعار لـ {$subServices->count()} خدمة فرعية في " . count($regions) . " مناطق...");
+        // فروق بسيطة واقعية بين المناطق
+        $regionPriceAdjustments = [
+            5 => 0,    // المنطقة الوسطى (الأساس)
+            7 => 10,   // المنطقة الغربية
+            6 => 5,    // المنطقة الشرقية
+            8 => -5,   // المنطقة الشمالية
+        ];
+
+        $this->command?->info("بدء إضافة الأسعار لـ {$subServices->count()} خدمة فرعية عبر " . $regions->count() . " مناطق جغرافية...");
 
         $createdCount = 0;
 
@@ -62,36 +80,32 @@ class SubServicePricesSeeder extends Seeder
             $serviceCode = $subService->service?->code ?? '';
             $base = $basePrices[$serviceCode] ?? ($subService->service?->base_price > 0 ? (float) $subService->service->base_price : 120);
 
-            // تدرج واقعي في السعر لكل خدمة فرعية
-            $variation = (($subService->id * 17) % 75) - 20;
-            $price = max(50, round(($base + $variation) / 5) * 5);
+            // تدرج تسعيري واقعي لكل خدمة فرعية
+            $subVariation = (($subService->id * 17) % 65) - 15;
 
-            foreach ($regions as $regionId) {
-                $priceRecord = SubServicePrice::where('provider_profile_id', $provider->id)
-                    ->where('sub_service_id', $subService->id)
-                    ->where('region_id', $regionId)
-                    ->first();
+            foreach ($regions as $region) {
+                $regionAdj = $regionPriceAdjustments[$region->id] ?? 0;
+                $finalPrice = max(50, round(($base + $subVariation + $regionAdj) / 5) * 5);
 
-                if (!$priceRecord) {
-                    $priceRecord = SubServicePrice::create([
-                        'provider_profile_id' => $provider->id,
-                        'sub_service_id' => $subService->id,
-                        'region_id' => $regionId,
-                        'price' => $price,
-                        'is_active' => true,
-                    ]);
-                    $createdCount++;
-                }
+                $priceRecord = SubServicePrice::create([
+                    'provider_profile_id' => $provider->id,
+                    'sub_service_id' => $subService->id,
+                    'region_id' => $region->id,
+                    'price' => $finalPrice,
+                    'is_active' => true,
+                ]);
 
-                // ربط مدن المنطقة بالتسعير
+                $createdCount++;
+
+                // ربط كافة مدن هذه المنطقة بالسجل
                 DB::statement(
-                    'INSERT IGNORE INTO sub_service_price_cities (sub_service_price_id, city_id) SELECT ?, id FROM cities WHERE region_id = ?',
-                    [$priceRecord->id, $regionId]
+                    'INSERT IGNORE INTO sub_service_price_cities (sub_service_price_id, city_id) 
+                     SELECT ?, id FROM cities WHERE region_id = ? AND is_active = 1',
+                    [$priceRecord->id, $region->id]
                 );
             }
         }
 
-        $this->command?->info("تم بنجاح! إجمالي سجلات التسعير الجديدة: {$createdCount}");
+        $this->command?->info("تم بنجاح! تم إنشاء {$createdCount} تسعيرة مقسمة ومربوطة بجميع مدن كل منطقة.");
     }
 }
-

@@ -2,13 +2,27 @@
 @section('title', __('Prices').' · Rounder')
 @section('body')
 <main class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-        <h1 class="h3 mb-0">{{ __('Prices') }}</h1>
-        @adminCan('admin.prices.create')
-        <a class="btn btn-primary" href="{{ route('admin.prices.create') }}">
-            <i class="fa-solid fa-plus me-1"></i> {{ __('Add price') }}
-        </a>
-        @endadminCan
+    {{-- Top Header --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-tags text-rounder-orange" style="font-size: 1.4rem;"></i>
+                <span>{{ __('Prices') }}</span>
+            </h1>
+            <p class="text-secondary mb-0 small">{{ __('Manage pricing configurations by service provider, sub-services, and covered cities.') }}</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="pill px-3 py-2 fw-semibold" style="font-size: 0.88rem;">
+                <i class="fa-solid fa-tags me-1 text-primary"></i>
+                {{ __('Total prices') }}: <strong class="text-dark">{{ $prices->total() }}</strong>
+            </span>
+            @adminCan('admin.prices.create')
+            <a class="btn btn-brand d-inline-flex align-items-center gap-2 shadow-sm" href="{{ route('admin.prices.create') }}" style="border-radius: 10px;">
+                <i class="fa-solid fa-plus"></i>
+                <span>{{ __('Add price') }}</span>
+            </a>
+            @endadminCan
+        </div>
     </div>
 
     @include('admin.partials.feedback')
@@ -109,7 +123,7 @@
         </form>
 
         <div class="table-responsive">
-            <table class="table align-middle">
+            <table class="table align-middle" style="min-width: 820px;">
                 <thead>
                     <tr>
                         <th style="width: 60px;">#</th>
@@ -282,13 +296,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
+                const fragment = document.createDocumentFragment();
                 data.cities.forEach(city => {
                     const chip = document.createElement('span');
                     chip.className = 'badge bg-light text-dark border p-2 modal-city-chip d-inline-flex align-items-center gap-1';
                     chip.dataset.name = city.name.toLowerCase();
                     chip.innerHTML = `<i class="fa-solid fa-location-dot text-primary me-1" style="font-size:0.8rem;"></i>${city.name}`;
-                    modalCitiesList.appendChild(chip);
+                    fragment.appendChild(chip);
                 });
+                modalCitiesList.appendChild(fragment);
 
                 modalCitiesList.classList.remove('d-none');
             })
