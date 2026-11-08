@@ -425,7 +425,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $isOrdersActive = request()->routeIs('admin.service-orders.*') || request()->routeIs('admin.emergencies.*') || request()->routeIs('admin.bookings.*') || request()->routeIs('admin.order-statuses.*');
     $isPackagesActive = request()->routeIs('admin.packages.*') || request()->routeIs('admin.package-features.*') || request()->routeIs('admin.subscriptions.*');
     $isPropertiesActive = request()->routeIs('admin.realestate.*') || request()->routeIs('admin.regions.*') || request()->routeIs('admin.cities.*');
-    $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*');
+    $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*') || request()->routeIs('admin.support-tickets.*');
     $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.pages.*') || request()->routeIs('admin.content.*') || request()->routeIs('admin.company-settings.*');
 @endphp
 <aside class="offcanvas-lg offcanvas-start admin-sidebar d-print-none" tabindex="-1" id="admin-menu" aria-labelledby="admin-menu-title">
@@ -618,7 +618,8 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 @if(
     $permService->allowsRoute($currentUser, 'admin.providers.index', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.providers.create', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.residents.index', 'GET')
+    $permService->allowsRoute($currentUser, 'admin.residents.index', 'GET') ||
+    $permService->allowsRoute($currentUser, 'admin.support-tickets.index', 'GET')
 )
 <div class="sidebar-group">
     <button class="sidebar-group-btn {{ $isUsersActive ? 'has-active-child' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#menu-users" aria-expanded="{{ $isUsersActive ? 'true' : 'false' }}" aria-controls="menu-users">
@@ -638,6 +639,10 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 
             @if($permService->allowsRoute($currentUser, 'admin.residents.index', 'GET'))
                 <a class="{{ request()->routeIs('admin.residents.*') ? 'active' : '' }}" href="{{ route('admin.residents.index') }}"><i class="fa-solid fa-users me-2" aria-hidden="true"></i>{{ __('Residents') }}</a>
+            @endif
+
+            @if($permService->allowsRoute($currentUser, 'admin.support-tickets.index', 'GET'))
+                <a class="{{ request()->routeIs('admin.support-tickets.*') ? 'active' : '' }}" href="{{ route('admin.support-tickets.index') }}"><i class="fa-solid fa-headset me-2" aria-hidden="true"></i>تذاكر ودعم السكان</a>
             @endif
         </div>
     </div>

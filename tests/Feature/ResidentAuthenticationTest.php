@@ -230,14 +230,14 @@ class ResidentAuthenticationTest extends TestCase
         ])->assertCreated();
 
         // 4. Send OTP again for registered user
-        $this->postJson('/api/v1/auth/send-otp', [
+        $sendRespExisting = $this->postJson('/api/v1/auth/send-otp', [
             'mobile' => '0566667777',
         ])->assertOk();
 
         // 5. Verify OTP for registered user -> logs in and issues token
         $verifyRespExist = $this->postJson('/api/v1/auth/verify-otp', [
             'mobile' => '0566667777',
-            'otp' => '123456',
+            'otp' => $sendRespExisting->json('data.otp'),
         ]);
         $verifyRespExist->assertOk()
             ->assertJsonPath('status', true)

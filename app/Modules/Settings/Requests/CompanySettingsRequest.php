@@ -28,6 +28,10 @@ class CompanySettingsRequest extends AdminRequest
             'representative_title' => ['required', 'string', 'min:2', 'max:191'],
             'stamp_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:4096'],
             'remove_stamp' => ['nullable', 'boolean'],
+            'support_phone' => ['nullable', 'string', 'max:50'],
+            'support_email' => ['nullable', 'email', 'max:190'],
+            'support_working_hours' => ['nullable', 'string', 'max:190'],
+            'support_chat_enabled' => ['nullable', 'boolean'],
         ];
     }
 

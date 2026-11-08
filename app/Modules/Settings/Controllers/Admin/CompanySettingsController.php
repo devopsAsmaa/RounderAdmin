@@ -50,6 +50,10 @@ class CompanySettingsController extends Controller
             $settings->trademark_registration = $validated['trademark_registration'] ?? null;
             $settings->legal_representative = $validated['legal_representative'];
             $settings->representative_title = $validated['representative_title'];
+            $settings->support_phone = $validated['support_phone'] ?? '920000488';
+            $settings->support_email = $validated['support_email'] ?? 'support@rounder.sa';
+            $settings->support_working_hours = $validated['support_working_hours'] ?? 'الأحد إلى الخميس، 9 ص - 6 م';
+            $settings->support_chat_enabled = $request->boolean('support_chat_enabled');
 
             // حذف الختم الحالي إن طُلب ذلك
             if ($request->boolean('remove_stamp') && $settings->stamp_path) {

@@ -234,6 +234,87 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Card 3: Support & Contact Methods --}}
+                <div class="settings-card mb-4" id="contact-settings">
+                    <div class="settings-card-header d-flex align-items-center gap-3">
+                        <span class="form-section-icon bg-white text-primary border" style="color: #0f4c5c !important;">
+                            <i class="fa-solid fa-headset"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0 text-dark">طرق التواصل والدعم الفني (تطبيق الجوال)</h2>
+                            <small class="text-secondary">البيانات التي تظهر للسكان في شاشة "تواصل معنا" داخل تطبيق الجوال</small>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="support_phone" class="form-label fw-semibold small text-dark mb-1">
+                                    هاتف الدعم (اتصال) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="fa-solid fa-phone"></i></span>
+                                    <input type="text" 
+                                           class="form-control border-start-0 @error('support_phone') is-invalid @enderror" 
+                                           id="support_phone" 
+                                           name="support_phone" 
+                                           value="{{ old('support_phone', $settings->support_phone ?? '920000488') }}" 
+                                           placeholder="920000488" 
+                                           dir="ltr">
+                                </div>
+                                @error('support_phone')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="support_email" class="form-label fw-semibold small text-dark mb-1">
+                                    البريد الإلكتروني للدعم <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="fa-solid fa-envelope"></i></span>
+                                    <input type="email" 
+                                           class="form-control border-start-0 @error('support_email') is-invalid @enderror" 
+                                           id="support_email" 
+                                           name="support_email" 
+                                           value="{{ old('support_email', $settings->support_email ?? 'support@rounder.sa') }}" 
+                                           placeholder="support@rounder.sa" 
+                                           dir="ltr">
+                                </div>
+                                @error('support_email')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="support_working_hours" class="form-label fw-semibold small text-dark mb-1">
+                                    ساعات وأيام عمل الدعم
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="fa-solid fa-clock"></i></span>
+                                    <input type="text" 
+                                           class="form-control border-start-0 @error('support_working_hours') is-invalid @enderror" 
+                                           id="support_working_hours" 
+                                           name="support_working_hours" 
+                                           value="{{ old('support_working_hours', $settings->support_working_hours ?? 'الأحد إلى الخميس، 9 ص - 6 م') }}" 
+                                           placeholder="الأحد إلى الخميس، 9 ص - 6 م">
+                                </div>
+                                @error('support_working_hours')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-12">
+                                <div class="form-check form-switch mt-1">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="support_chat_enabled" name="support_chat_enabled" value="1" @checked(old('support_chat_enabled', $settings->support_chat_enabled ?? true))>
+                                    <label class="form-check-label small fw-semibold text-dark" for="support_chat_enabled">
+                                        إتاحة خيار "محادثة مع الدعم" في التطبيق
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Column 2: Official Stamp --}}

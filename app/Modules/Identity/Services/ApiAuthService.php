@@ -187,9 +187,7 @@ class ApiAuthService
         $mobile = $input['mobile'] ?? $input['phone'] ?? '';
         $international = '+966' . substr($mobile, 1);
 
-        // $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-    
-        $otp = "555555";
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         try {
             SMS::send($mobile, 'Your OTP code is ' . $otp);
@@ -238,9 +236,7 @@ class ApiAuthService
 
         $cachedOtp = Cache::get('otp_' . $mobile) ?? Cache::get('otp_' . $international);
 
-        // السماح بـ 123456 للتسهيل أثناء التطوير
-        $isMatch = ($cachedOtp !== null && $cachedOtp === $otp)
-            || ((app()->environment('local', 'testing') || config('app.debug')) && $otp === '555555');
+        $isMatch = is_string($cachedOtp) && hash_equals($cachedOtp, $otp);
 
         if (!$isMatch) {
             throw ValidationException::withMessages([

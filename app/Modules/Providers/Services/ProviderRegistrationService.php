@@ -13,9 +13,10 @@ use Illuminate\Support\Str;
 
 class ProviderRegistrationService
 {
-    public function __construct(private readonly ProviderAccountService $accounts)
-    {
-    }
+    public function __construct(
+        private readonly ProviderAccountService $accounts,
+        private readonly ProviderDocumentService $documents
+    ) {}
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, Service> */
     public function services(): \Illuminate\Database\Eloquent\Collection
@@ -44,6 +45,7 @@ class ProviderRegistrationService
             ]);
             $profile->services()->sync($input['service_ids']);
             $user->update(['provider_profile_id' => $profile->id]);
+            $this->documents->save($profile, $input);
 
             $draftStatusId = ProviderContractStatus::query()
                 ->where('code', ContractStatusCode::Draft->value)

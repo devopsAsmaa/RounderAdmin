@@ -7,11 +7,13 @@ use App\Modules\Identity\Services\ApiAuthService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Requests\ApiAuthRegisterRequest;
 use App\Modules\Identity\Requests\ApiAuthLoginRequest;
+use App\Modules\Identity\Requests\ApiSocialLoginRequest;
 use App\Modules\Identity\Requests\ApiAuthLogoutRequest;
 use App\Modules\Identity\Requests\ApiAuthMeRequest;
 use App\Modules\Identity\Requests\ApiValidateMobileRequest;
 use App\Modules\Identity\Requests\ApiSendOtpRequest;
 use App\Modules\Identity\Requests\ApiVerifyOtpRequest;
+use App\Modules\Identity\Services\ResidentSocialLoginService;
 
 /** متحكم HTTP لمجال Identity؛ يفوض جميع العمليات إلى الخدمة. */
 class AuthController extends Controller
@@ -46,6 +48,15 @@ class AuthController extends Controller
     public function login(ApiAuthLoginRequest $request): \Illuminate\Http\JsonResponse
     {
         return response()->json($this->service->login($request->validated(), null), 200);
+    }
+
+    public function socialLogin(
+        ApiSocialLoginRequest $request,
+        ResidentSocialLoginService $socialLogin
+    ): \Illuminate\Http\JsonResponse {
+        $data = $request->validated();
+
+        return response()->json($socialLogin->login($data['provider'], $data['id_token']), 200);
     }
 
     /**

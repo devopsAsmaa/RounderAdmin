@@ -20,6 +20,7 @@ class ProviderRegistrationTest extends TestCase
     public function test_external_registration_waits_for_admin_approval_and_contract_acceptance(): void
     {
         $this->seed();
+        $this->withHeader('Sec-Fetch-Site', 'same-origin');
         Storage::fake('local');
         $service = Service::query()->where('is_active', true)->firstOrFail();
 
@@ -27,7 +28,10 @@ class ProviderRegistrationTest extends TestCase
             ->assertSee('class="site-header sticky-top"', false)
             ->assertSee('class="site-footer"', false)
             ->assertSee('name="service_ids[]"', false)
-            ->assertSee('name="password"', false);
+            ->assertSee('name="password"', false)
+            ->assertSee('enctype="multipart/form-data"', false)
+            ->assertSee('name="commercial_registration_document"', false)
+            ->assertSee('name="legal_representative_id_document"', false);
 
         $this->post('/provider/register', [
             'company_name' => 'شركة تجريبية',
@@ -38,9 +42,12 @@ class ProviderRegistrationTest extends TestCase
             'phone' => '0551234567',
             'password' => 'StrongPassword123!',
             'password_confirmation' => 'StrongPassword123!',
+            'commercial_registration_document' => UploadedFile::fake()->create('registration.pdf', 100, 'application/pdf'),
         ])->assertRedirect(route('provider.login'));
 
         $profile = ProviderProfile::query()->where('company_name', 'شركة تجريبية')->firstOrFail();
+        $this->assertNotNull($profile->commercial_registration_document);
+        Storage::disk('local')->assertExists($profile->commercial_registration_document);
         $contract = $profile->contracts()->firstOrFail();
         $this->assertFalse($profile->is_approved);
         $this->assertSame(ContractStatusCode::Draft->value, $contract->status->code);
@@ -85,7 +92,6 @@ class ProviderRegistrationTest extends TestCase
         $this->actingAs($admin, 'web')->put('/admin/providers/' . $profile->id, $approval)
             ->assertSessionHasErrors([
                 'company_seal',
-                'commercial_registration_document',
                 'legal_representative_id_document',
                 'signed_annex_a',
                 'municipal_license',

@@ -103,6 +103,11 @@ class User extends Authenticatable
         return $this->belongsTo(ProviderProfile::class, 'provider_profile_id');
     }
 
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     /**
      * السجلات التابعة عبر resident_id.
      * @return HasMany

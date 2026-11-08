@@ -35,6 +35,7 @@
         .provider-service-heading .form-label { margin-bottom: 3px; }
         .provider-service-hint { color: var(--rounder-muted); font-size: .75rem; }
         .provider-service-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+        .provider-service-option:last-child:nth-child(3n + 1) { grid-column: 2; }
         .provider-service-option {
             display: flex;
             align-items: center;
@@ -56,6 +57,16 @@
         }
         .provider-service-option .form-check-input { float: none; flex: 0 0 auto; margin: 0; }
         .provider-service-option .form-check-label { flex: 1; color: var(--rounder-ink); font-size: .79rem; }
+        .provider-documents {
+            padding: 18px;
+            border: 1px solid #e0eae7;
+            border-radius: 12px;
+            background: #fbfdfc;
+        }
+        .provider-documents-heading { margin-bottom: 14px; }
+        .provider-documents-heading h2 { margin: 0 0 4px; color: var(--rounder-ink); font-size: .95rem; font-weight: 800; }
+        .provider-documents-heading p { margin: 0; color: var(--rounder-muted); font-size: .78rem; }
+        .provider-register-form input[type="file"] { padding: 7px 10px; font-size: .76rem; }
         .provider-register-actions { margin-top: 25px; padding-top: 19px; border-top: 1px solid #edf2f0; }
         .provider-register-actions .btn { min-height: 45px; padding-inline: 20px; font-size: .84rem; }
         @media (max-width: 575.98px) {
@@ -63,8 +74,10 @@
             .provider-register-card { border-radius: 16px; }
             .provider-register-heading { margin-bottom: 21px; }
             .provider-service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+            .provider-service-option:last-child:nth-child(3n + 1) { grid-column: auto; }
             .provider-service-option { min-height: 46px; gap: 7px; padding: 9px; }
             .provider-service-option .form-check-label { font-size: .75rem; }
+            .provider-documents { padding: 14px; }
             .provider-register-actions { flex-direction: column; }
             .provider-register-actions .btn { width: 100%; }
         }
@@ -139,7 +152,7 @@
                     @if($errors->any())
                         <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
                     @endif
-                    <form class="provider-register-form" method="post" action="{{ route('provider.register.submit') }}">
+                    <form class="provider-register-form" method="post" action="{{ route('provider.register.submit') }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row g-3">
                             <div class="col-sm-6">
@@ -197,6 +210,29 @@
                             <div class="col-sm-6">
                                 <label class="form-label" for="password_confirmation">تأكيد كلمة المرور</label>
                                 <input class="form-control" type="password" id="password_confirmation" name="password_confirmation" minlength="8" autocomplete="new-password" required>
+                            </div>
+                            <div class="col-12">
+                                <section class="provider-documents" aria-labelledby="provider-documents-heading">
+                                    <div class="provider-documents-heading">
+                                        <h2 id="provider-documents-heading">المرفقات والمستندات</h2>
+                                        <p>يمكنك إرفاقها الآن أو استكمالها لاحقًا قبل اعتماد الحساب. الملفات المقبولة PDF أو صورة، بحد أقصى 10 ميجابايت لكل ملف.</p>
+                                    </div>
+                                    <div class="row g-3">
+                                        @foreach([
+                                            'commercial_registration_document' => 'السجل التجاري',
+                                            'legal_representative_id_document' => 'هوية الممثل القانوني',
+                                            'municipal_license' => 'الرخصة البلدية',
+                                            'signed_annex_a' => 'الملحق (أ) الموقّع',
+                                            'company_seal' => 'الختم أو الشعار',
+                                        ] as $field => $label)
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ $field }}">{{ $label }}</label>
+                                                <input class="form-control @error($field) is-invalid @enderror" type="file" id="{{ $field }}" name="{{ $field }}" accept=".jpg,.jpeg,.png,.pdf">
+                                                @error($field)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </section>
                             </div>
                         </div>
                         <div class="provider-register-actions d-flex flex-wrap gap-2">

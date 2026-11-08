@@ -34,7 +34,7 @@ final class AdminPermissionService
         $section = match (true) {
             $route === 'admin.dashboard' => DashboardSection::Dashboard,
             $route === 'admin.about' => DashboardSection::About,
-            str_starts_with($route, 'admin.users.'), str_starts_with($route, 'admin.residents.') => DashboardSection::Users,
+            str_starts_with($route, 'admin.users.'), str_starts_with($route, 'admin.residents.'), str_starts_with($route, 'admin.support-tickets.') => DashboardSection::Users,
             str_starts_with($route, 'admin.providers.') => DashboardSection::Providers,
             str_starts_with($route, 'admin.realestate.') => DashboardSection::Realestate,
             str_starts_with($route, 'admin.regions.') => DashboardSection::Regions,

@@ -20,7 +20,18 @@ class CompanySetting extends Model
         'legal_representative',
         'representative_title',
         'stamp_path',
+        'support_phone',
+        'support_email',
+        'support_working_hours',
+        'support_chat_enabled',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'support_chat_enabled' => 'boolean',
+        ];
+    }
 
     /**
      * جلب سجل إعدادات المنشأة الحالي أو إنشاء كائن جديد فارغ.
@@ -37,6 +48,10 @@ class CompanySetting extends Model
             'legal_representative' => '',
             'representative_title' => 'المدير العام',
             'stamp_path' => null,
+            'support_phone' => '920000488',
+            'support_email' => 'support@rounder.sa',
+            'support_working_hours' => 'الأحد إلى الخميس، 9 ص - 6 م',
+            'support_chat_enabled' => true,
         ]);
     }
 

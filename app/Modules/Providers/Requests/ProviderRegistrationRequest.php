@@ -30,6 +30,11 @@ class ProviderRegistrationRequest extends FormRequest
             'service_ids.*' => ['required', 'integer', 'distinct', Rule::exists('services', 'id')->where('is_active', true)],
             'phone' => ['required', 'string', 'regex:' . SaudiPhone::REGEX, 'unique:users,phone'],
             'password' => ['required', 'string', 'min:6','confirmed'],
+            'company_seal' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'commercial_registration_document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'legal_representative_id_document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'signed_annex_a' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'municipal_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ];
     }
 }
