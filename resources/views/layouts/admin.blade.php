@@ -191,6 +191,20 @@ body{
   }
 }
 
+@media print {
+  .topbar, .admin-sidebar, #admin-menu, .modal, .d-print-none {
+    display: none !important;
+  }
+  .admin-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}
+
 @media(max-width:991.98px){
   .admin-sidebar{min-height:auto;--bs-offcanvas-width:280px}
   .admin-main{margin:0!important;width:100%!important;overflow-x:hidden}
@@ -276,7 +290,9 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 .notification-dropdown{width:min(360px,calc(100vw - 24px))}
 #notification-list{max-height:380px;overflow-y:auto;overflow-wrap:anywhere}
 @media(max-width:575.98px){.topbar .notification-dropdown{position:fixed!important;top:70px!important;inset-inline-end:12px!important;inset-inline-start:auto!important;transform:none!important}}
-</style></head>
+</style>
+@stack('styles')
+</head>
 <body>
 @if(auth()->user() instanceof \App\Modules\Identity\Models\Admin)
 @php
@@ -286,7 +302,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
         $cleanTitle = __('Dashboard');
     }
 @endphp
-<nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar">
+<nav class="navbar topbar px-3 px-lg-4 topbar-with-sidebar d-print-none">
 <div class="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
 <button class="topbar-circle-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-menu" aria-controls="admin-menu" aria-label="{{ __('Open menu') }}">
 <i class="fa-solid fa-bars-staggered"></i>
@@ -409,10 +425,10 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $isOrdersActive = request()->routeIs('admin.service-orders.*') || request()->routeIs('admin.emergencies.*') || request()->routeIs('admin.bookings.*');
     $isPackagesActive = request()->routeIs('admin.packages.*') || request()->routeIs('admin.package-features.*') || request()->routeIs('admin.subscriptions.*');
     $isPropertiesActive = request()->routeIs('admin.realestate.*') || request()->routeIs('admin.regions.*') || request()->routeIs('admin.cities.*');
-    $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.content.*');
-    $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.pages.*');
+    $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*');
+    $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.pages.*') || request()->routeIs('admin.content.*') || request()->routeIs('admin.company-settings.*');
 @endphp
-<aside class="offcanvas-lg offcanvas-start admin-sidebar" tabindex="-1" id="admin-menu" aria-labelledby="admin-menu-title">
+<aside class="offcanvas-lg offcanvas-start admin-sidebar d-print-none" tabindex="-1" id="admin-menu" aria-labelledby="admin-menu-title">
 <div class="sidebar-brand-header d-flex align-items-center justify-content-between px-3 px-lg-4">
     <a class="navbar-brand brand d-flex align-items-center gap-2 m-0 text-decoration-none" href="{{ route('admin.dashboard') }}">
         <span class="brand-text text-rounder-orange">rounder</span>
@@ -597,10 +613,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 @if(
     $permService->allowsRoute($currentUser, 'admin.providers.index', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.providers.create', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.residents.index', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.users.index', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.users.create', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.content.index', 'GET')
+    $permService->allowsRoute($currentUser, 'admin.residents.index', 'GET')
 )
 <div class="sidebar-group">
     <button class="sidebar-group-btn {{ $isUsersActive ? 'has-active-child' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#menu-users" aria-expanded="{{ $isUsersActive ? 'true' : 'false' }}" aria-controls="menu-users">
@@ -621,16 +634,6 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
             @if($permService->allowsRoute($currentUser, 'admin.residents.index', 'GET'))
                 <a class="{{ request()->routeIs('admin.residents.*') ? 'active' : '' }}" href="{{ route('admin.residents.index') }}"><i class="fa-solid fa-users me-2" aria-hidden="true"></i>{{ __('Residents') }}</a>
             @endif
-
-            @if($permService->allowsRoute($currentUser, 'admin.users.index', 'GET'))
-                <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>{{ __('Administrators') }}</a>
-            @elseif($permService->allowsRoute($currentUser, 'admin.users.create', 'GET'))
-                <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.create') }}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>{{ __('Administrators') }}</a>
-            @endif
-
-            @if($permService->allowsRoute($currentUser, 'admin.content.index', 'GET'))
-                <a class="{{ request()->routeIs('admin.content.*') ? 'active' : '' }}" href="{{ route('admin.content.index') }}"><i class="fa-solid fa-people-roof me-2" aria-hidden="true"></i>{{ __('Resident operations') }}</a>
-            @endif
         </div>
     </div>
 </div>
@@ -638,9 +641,13 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 
 {{-- 7. النظام والإعدادات --}}
 @if(
+    $permService->allowsRoute($currentUser, 'admin.users.index', 'GET') ||
+    $permService->allowsRoute($currentUser, 'admin.users.create', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.permissions.index', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.permissions.create', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.pages.index', 'GET')
+    $permService->allowsRoute($currentUser, 'admin.company-settings.edit', 'GET') ||
+    $permService->allowsRoute($currentUser, 'admin.pages.index', 'GET') ||
+    $permService->allowsRoute($currentUser, 'admin.content.index', 'GET')
 )
 <div class="sidebar-group">
     <button class="sidebar-group-btn {{ $isSettingsActive ? 'has-active-child' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#menu-settings" aria-expanded="{{ $isSettingsActive ? 'true' : 'false' }}" aria-controls="menu-settings">
@@ -652,14 +659,28 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     </button>
     <div id="menu-settings" class="collapse {{ $isSettingsActive ? 'show' : '' }}" data-bs-parent="#sidebarMenuAccordion">
         <div class="sidebar-sublinks">
+            @if($permService->allowsRoute($currentUser, 'admin.users.index', 'GET'))
+                <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>{{ __('Administrators') }}</a>
+            @elseif($permService->allowsRoute($currentUser, 'admin.users.create', 'GET'))
+                <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.create') }}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>{{ __('Administrators') }}</a>
+            @endif
+
             @if($permService->allowsRoute($currentUser, 'admin.permissions.index', 'GET'))
                 <a class="{{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}" href="{{ route('admin.permissions.index') }}"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>{{ __('Permissions') }}</a>
             @elseif($permService->allowsRoute($currentUser, 'admin.permissions.create', 'GET'))
                 <a class="{{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}" href="{{ route('admin.permissions.create') }}"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>{{ __('Permissions') }}</a>
             @endif
 
+            @if($permService->allowsRoute($currentUser, 'admin.company-settings.edit', 'GET'))
+                <a class="{{ request()->routeIs('admin.company-settings.*') ? 'active' : '' }}" href="{{ route('admin.company-settings.edit') }}"><i class="fa-solid fa-building-circle-check me-2" aria-hidden="true"></i>{{ __('Company settings') }}</a>
+            @endif
+
             @if($permService->allowsRoute($currentUser, 'admin.pages.index', 'GET'))
                 <a class="{{ request()->routeIs('admin.pages.*') ? 'active' : '' }}" href="{{ route('admin.pages.index') }}"><i class="fa-solid fa-file-contract me-2" aria-hidden="true"></i>{{ __('Pages and policies') }}</a>
+            @endif
+
+            @if($permService->allowsRoute($currentUser, 'admin.content.index', 'GET'))
+                <a class="{{ request()->routeIs('admin.content.*') ? 'active' : '' }}" href="{{ route('admin.content.index') }}"><i class="fa-solid fa-people-roof me-2" aria-hidden="true"></i>{{ __('Resident operations') }}</a>
             @endif
         </div>
     </div>

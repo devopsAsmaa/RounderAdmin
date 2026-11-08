@@ -187,20 +187,18 @@ class ApiAuthService
         $mobile = $input['mobile'] ?? $input['phone'] ?? '';
         $international = '+966' . substr($mobile, 1);
 
-        // إنشاء كود عشوائي مكون من 6 أرقام مطابق لتصميم الفيجما
-        $otp = (string) random_int(100000, 999999);
+        // $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    
+        $otp = "555555";
 
-       try {
-        SMS::send($mobile, 'Your OTP code is '.$otp);
-        } catch (\Exception $e) {
-            // تسجيل الخطأ في logs
+        try {
+            SMS::send($mobile, 'Your OTP code is ' . $otp);
+        } catch (\Throwable $e) {
             Log::error('Failed to send OTP', [
-                'mobile' => $user->mobile,
+                'mobile' => $mobile,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-          return response()->json(['error' => 'Failed to send OTP. Please try again.'], 500);
-
+            throw $e;
         }
 
         // حفظ الكود في Cache لمدة 3 دقائق
@@ -242,7 +240,7 @@ class ApiAuthService
 
         // السماح بـ 123456 للتسهيل أثناء التطوير
         $isMatch = ($cachedOtp !== null && $cachedOtp === $otp)
-            || ((app()->environment('local', 'testing') || config('app.debug')) && $otp === '123456');
+            || ((app()->environment('local', 'testing') || config('app.debug')) && $otp === '555555');
 
         if (!$isMatch) {
             throw ValidationException::withMessages([

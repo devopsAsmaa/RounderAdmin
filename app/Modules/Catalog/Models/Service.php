@@ -21,6 +21,7 @@ class Service extends Model
         'original_price', 'price_before_discount', 'discount_type', 'discount_value', 'image_path',
         'service_category_id',
         'code',
+        'icon',
         'base_price',
         'is_active',
     ];

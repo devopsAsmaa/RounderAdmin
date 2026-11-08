@@ -106,6 +106,14 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <select name="approval_status" class="form-select">
+                    <option value="all" @selected(($filters['approval_status'] ?? 'all') === 'all')>{{ __('All approvals') }}</option>
+                    <option value="pending" @selected(($filters['approval_status'] ?? null) === 'pending')>{{ __('Pending approval') }}</option>
+                    <option value="approved" @selected(($filters['approval_status'] ?? null) === 'approved')>{{ __('Approved') }}</option>
+                    <option value="rejected" @selected(($filters['approval_status'] ?? null) === 'rejected')>{{ __('Rejected') }}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <input name="search" value="{{ $filters['search'] ?? '' }}" class="form-control" placeholder="{{ __('Search') }}...">
             </div>
             <div class="col-md-1">
@@ -113,7 +121,7 @@
                     <i class="fa-solid fa-filter"></i>
                 </button>
             </div>
-            @if(!empty($filters['provider_profile_id']) || !empty($filters['service_id']) || !empty($filters['region_id']) || !empty($filters['search']) || (!empty($filters['status']) && $filters['status'] !== 'all'))
+            @if(!empty($filters['provider_profile_id']) || !empty($filters['service_id']) || !empty($filters['region_id']) || !empty($filters['search']) || (!empty($filters['status']) && $filters['status'] !== 'all') || (!empty($filters['approval_status']) && $filters['approval_status'] !== 'all'))
             <div class="col-12 mt-2">
                 <a href="{{ route('admin.prices.index') }}" class="btn btn-sm btn-outline-secondary">
                     <i class="fa-solid fa-xmark me-1"></i> {{ __('Clear') }}
@@ -132,6 +140,7 @@
                         <th>{{ __('Sub service') }}</th>
                         <th>{{ __('Region and cities') }}</th>
                         <th>{{ __('Price') }}</th>
+                        <th>{{ __('Approval') }}</th>
                         <th>{{ __('Status') }}</th>
                         <th class="text-end" style="width: 140px;">{{ __('Actions') }}</th>
                     </tr>
@@ -176,6 +185,15 @@
                                 </span>
                             </td>
                             <td>
+                                @php($approvalLabels = ['pending' => __('Pending approval'), 'approved' => __('Approved'), 'rejected' => __('Rejected')])
+                                <span class="badge {{ $priceItem->approval_status === 'approved' ? 'bg-success-subtle text-success' : ($priceItem->approval_status === 'rejected' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning-emphasis') }}">
+                                    {{ $approvalLabels[$priceItem->approval_status] ?? $priceItem->approval_status }}
+                                </span>
+                                @if($priceItem->rejection_reason)
+                                    <div class="small text-danger mt-1">{{ $priceItem->rejection_reason }}</div>
+                                @endif
+                            </td>
+                            <td>
                                 @if($priceItem->is_active)
                                     <span class="badge bg-success-subtle text-success">{{ __('Active') }}</span>
                                 @else
@@ -184,6 +202,20 @@
                             </td>
                             <td class="text-end">
                                 <div class="d-inline-flex gap-1">
+                                    @if($priceItem->approval_status === 'pending')
+                                        @adminCan('admin.prices.edit')
+                                        <form method="post" action="{{ route('admin.prices.review', $priceItem->id) }}">
+                                            @csrf
+                                            <input type="hidden" name="decision" value="approved">
+                                            <button class="btn btn-sm btn-success" type="submit">{{ __('Approve') }}</button>
+                                        </form>
+                                        <form method="post" action="{{ route('admin.prices.review', $priceItem->id) }}">
+                                            @csrf
+                                            <input type="hidden" name="decision" value="rejected">
+                                            <button class="btn btn-sm btn-outline-danger" type="submit">{{ __('Reject') }}</button>
+                                        </form>
+                                        @endadminCan
+                                    @endif
                                     @adminCan('admin.prices.edit')
                                     <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.prices.edit', $priceItem->id) }}">
                                         {{ __('Edit') }}
@@ -197,7 +229,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-secondary">
+                            <td colspan="9" class="text-center py-4 text-secondary">
                                 {{ __('No prices found') }}
                             </td>
                         </tr>

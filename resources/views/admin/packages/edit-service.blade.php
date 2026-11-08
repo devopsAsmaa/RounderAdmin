@@ -53,7 +53,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="code" class="form-label small fw-semibold text-secondary">
                             {{ __('Service code') }} <span class="text-danger">*</span>
                         </label>
@@ -65,6 +65,26 @@
                         </div>
                         @error('code')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="icon" class="form-label small fw-semibold text-secondary">
+                            <i class="fa-solid fa-icons text-rounder-orange me-1"></i> {{ __('Icon') }}
+                        </label>
+                        <select id="icon" name="icon" class="form-select @error('icon') is-invalid @enderror" style="border-radius: 10px;">
+                            <option value="">{{ __('Default / Auto') }}</option>
+                            <option value="ac" @selected(old('icon', $service->icon) == 'ac')>❄️ {{ __('Air conditioner (ac)') }}</option>
+                            <option value="drop" @selected(old('icon', $service->icon) == 'drop')>💧 {{ __('Plumbing (drop)') }}</option>
+                            <option value="bolt" @selected(old('icon', $service->icon) == 'bolt')>⚡ {{ __('Electricity (bolt)') }}</option>
+                            <option value="spark" @selected(old('icon', $service->icon) == 'spark')>✨ {{ __('Cleaning (spark)') }}</option>
+                            <option value="washer" @selected(old('icon', $service->icon) == 'washer')>🧺 {{ __('Appliances (washer)') }}</option>
+                            <option value="paint" @selected(old('icon', $service->icon) == 'paint')>🎨 {{ __('Paint (paint)') }}</option>
+                            <option value="tool" @selected(old('icon', $service->icon) == 'tool')>🔧 {{ __('Tools & Furniture (tool)') }}</option>
+                            <option value="home" @selected(old('icon', $service->icon) == 'home')>🏠 {{ __('General home (home)') }}</option>
+                        </select>
+                        @error('icon')
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -83,7 +103,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="active" class="form-label small fw-semibold text-secondary">
                             <i class="fa-solid fa-toggle-on text-rounder-orange me-1"></i> {{ __('Status') }}
                         </label>

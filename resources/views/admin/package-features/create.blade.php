@@ -43,7 +43,7 @@
                             <span class="input-group-text bg-white text-secondary border-end-0" style="border-radius: 0 10px 10px 0;">
                                 <i class="fa-solid fa-barcode"></i>
                             </span>
-                            <input name="code" value="{{ old('code') }}" class="form-control border-start-0 font-monospace @error('code') is-invalid @enderror" required maxlength="60" pattern="[A-Za-z0-9_-]+" placeholder="e.g. 24_7_support, free_maintenance" style="border-radius: 10px 0 0 10px;">
+                            <input name="code" value="{{ old('code') }}" class="form-control border-start-0 font-monospace @error('code') is-invalid @enderror" required maxlength="60" pattern="[A-Za-z0-9_-]+" placeholder="{{ __('e.g. 24_7_support, free_maintenance') }}" style="border-radius: 10px 0 0 10px;">
                             @error('code')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror

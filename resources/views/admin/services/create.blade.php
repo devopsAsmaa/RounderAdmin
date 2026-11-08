@@ -52,7 +52,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label small fw-semibold text-secondary">
                             {{ __('Service code') }} <span class="text-danger">*</span>
                         </label>
@@ -60,10 +60,30 @@
                             <span class="input-group-text bg-white text-secondary border-end-0" style="border-radius: 0 10px 10px 0;">
                                 <i class="fa-solid fa-barcode"></i>
                             </span>
-                            <input name="code" value="{{ old('code') }}" class="form-control border-start-0 font-monospace @error('code') is-invalid @enderror" required maxlength="60" pattern="[A-Za-z0-9_-]+" placeholder="e.g. ac-repair, leak-detect" style="border-radius: 10px 0 0 10px;">
+                            <input name="code" value="{{ old('code') }}" class="form-control border-start-0 font-monospace @error('code') is-invalid @enderror" required maxlength="60" pattern="[A-Za-z0-9_-]+" placeholder="e.g. ac-repair" style="border-radius: 10px 0 0 10px;">
                         </div>
                         @error('code')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-semibold text-secondary">
+                            <i class="fa-solid fa-icons text-rounder-orange me-1"></i> {{ __('Icon') }}
+                        </label>
+                        <select name="icon" class="form-select @error('icon') is-invalid @enderror" style="border-radius: 10px;">
+                            <option value="">{{ __('Default / Auto') }}</option>
+                            <option value="ac" @selected(old('icon') == 'ac')>❄️ {{ __('Air conditioner (ac)') }}</option>
+                            <option value="drop" @selected(old('icon') == 'drop')>💧 {{ __('Plumbing (drop)') }}</option>
+                            <option value="bolt" @selected(old('icon') == 'bolt')>⚡ {{ __('Electricity (bolt)') }}</option>
+                            <option value="spark" @selected(old('icon') == 'spark')>✨ {{ __('Cleaning (spark)') }}</option>
+                            <option value="washer" @selected(old('icon') == 'washer')>🧺 {{ __('Appliances (washer)') }}</option>
+                            <option value="paint" @selected(old('icon') == 'paint')>🎨 {{ __('Paint (paint)') }}</option>
+                            <option value="tool" @selected(old('icon') == 'tool')>🔧 {{ __('Tools & Furniture (tool)') }}</option>
+                            <option value="home" @selected(old('icon') == 'home')>🏠 {{ __('General home (home)') }}</option>
+                        </select>
+                        @error('icon')
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -82,7 +102,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label small fw-semibold text-secondary">
                             <i class="fa-solid fa-toggle-on text-rounder-orange me-1"></i> {{ __('Status') }}
                         </label>

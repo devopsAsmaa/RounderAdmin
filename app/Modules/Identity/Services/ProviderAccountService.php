@@ -21,6 +21,8 @@ final class ProviderAccountService
             $user = User::create([
                 'role_id' => $role->id, 'name' => $input['name'], 'email' => $input['email'] ?? null,
                 'phone' => $input['phone'], 'locale' => $input['locale'], 'password' => $input['password'],
+                'provider_profile_id' => $input['provider_profile_id'] ?? null,
+                'permissions' => $input['permissions'] ?? null,
             ]);
             DB::afterCommit(fn () => event(new IdentityChanged(Operation::CreateProviderAccount, $actorId)));
             return $user;

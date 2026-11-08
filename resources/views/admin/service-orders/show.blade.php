@@ -75,6 +75,9 @@
             'icon' => $stageIcons[$code] ?? 'fa-circle-dot',
         ];
     }
+
+    $cleanPhone = preg_replace('/[^0-9]/', '', (string)($booking->resident?->phone ?? ''));
+    $waPhone = str_starts_with($cleanPhone, '05') ? ('966' . substr($cleanPhone, 1)) : $cleanPhone;
 @endphp
 
 <style>
@@ -89,12 +92,267 @@
         align-items: center;
         justify-content: center;
     }
+    .order-stepper-line {
+        position: absolute;
+        top: 20px;
+        inset-inline-start: 12%;
+        inset-inline-end: 12%;
+        height: 3px;
+        background: #e5ede9;
+        z-index: 1;
+    }
+    .order-stepper-progress {
+        height: 100%;
+        background: var(--orange);
+        transition: width 0.3s ease;
+    }
+
+    /* Print Document Styling */
+    .print-voucher {
+        display: none !important;
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 10mm 12mm;
+        }
+        body {
+            background: #fff !important;
+            color: #000 !important;
+            font-family: "Tajawal", system-ui, sans-serif !important;
+            font-size: 10pt !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .web-only-view,
+        .d-print-none,
+        .topbar,
+        .admin-sidebar,
+        #admin-menu,
+        button,
+        .btn,
+        form {
+            display: none !important;
+        }
+        .print-voucher {
+            display: block !important;
+            width: 100% !important;
+            color: #111 !important;
+        }
+        .print-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 12px !important;
+        }
+        .print-table th, .print-table td {
+            border: 1px solid #d5dedb !important;
+            padding: 6px 10px !important;
+            font-size: 9pt !important;
+            vertical-align: middle !important;
+        }
+        .print-table th {
+            background-color: #f4f8f7 !important;
+            color: #02333E !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .print-section-header {
+            background-color: #edf5f3 !important;
+            color: #02333E !important;
+            font-weight: 800 !important;
+            padding: 6px 10px !important;
+            font-size: 9.5pt !important;
+            border: 1px solid #c8dbd6 !important;
+            margin-bottom: -1px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
 </style>
 
-<div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4">
+{{-- ======================================================== --}}
+{{-- 1. OFFICIAL PRINTABLE SERVICE ORDER VOUCHER (PRINT ONLY) --}}
+{{-- ======================================================== --}}
+<div class="print-voucher">
+    {{-- Header with Logo, Title, and Order # --}}
+    <div style="border-bottom: 2px solid #02333E; padding-bottom: 10px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="font-size: 15pt; font-weight: 800; color: #02333E; margin: 0 0 2px 0;">
+                    شركة راوندر لخدمات الصيانة وإدارة العقارات
+                </h1>
+                <div style="font-size: 8.5pt; color: #555;">
+                    Rounder Property Management & Maintenance Services
+                </div>
+            </div>
+            <div style="text-align: left;">
+                <div style="font-size: 13pt; font-weight: 800; color: #FB822F;">
+                    سند أمر خدمة (Service Order)
+                </div>
+                <div style="font-size: 10pt; font-weight: 700; color: #02333E;">
+                    رقم الطلب: #{{ $booking->id }}
+                </div>
+                <div style="font-size: 8pt; color: #666;">
+                    تاريخ الطباعة: {{ now()->format('Y-m-d H:i') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Vital Info Top Bar --}}
+    <table class="print-table" style="margin-bottom: 12px;">
+        <tr>
+            <th style="width: 15%;">حالة الطلب:</th>
+            <td style="width: 35%;">
+                <strong>{{ $statusName }}</strong>
+            </td>
+            <th style="width: 15%;">موعد الحجز:</th>
+            <td style="width: 35%;">
+                <strong>{{ $booking->scheduled_at ? $booking->scheduled_at->format('Y-m-d H:i') : '—' }}</strong>
+            </td>
+        </tr>
+        <tr>
+            <th>تاريخ الإنشاء:</th>
+            <td>{{ $booking->created_at ? $booking->created_at->format('Y-m-d H:i') : '—' }}</td>
+            <th>إجمالي المبلغ:</th>
+            <td><strong style="color: #02333E; font-size: 11pt;">{{ number_format($booking->total_amount, 2) }} SAR</strong></td>
+        </tr>
+    </table>
+
+    {{-- Section 1: بيانات الخدمة --}}
+    <div class="print-section-header">1. تفاصيل الخدمة ونطاق العمل</div>
+    <table class="print-table">
+        <tr>
+            <th style="width: 20%;">الخدمة المطلوبة:</th>
+            <td style="width: 30%;"><strong>{{ $serviceName }}</strong></td>
+            <th style="width: 20%;">قسم الخدمة:</th>
+            <td style="width: 30%;">{{ $categoryName ?? '—' }}</td>
+        </tr>
+        <tr>
+            <th>الخدمة الفرعية:</th>
+            <td>{{ $subServiceName ?? '—' }}</td>
+            <th>السعر الأساسي:</th>
+            <td>{{ number_format($booking->service?->base_price ?? $booking->total_amount, 2) }} SAR</td>
+        </tr>
+        @if($booking->notes)
+            <tr>
+                <th>ملاحظات وتوجيهات العميل:</th>
+                <td colspan="3" style="font-style: italic; background-color: #fafafa;">"{{ $booking->notes }}"</td>
+            </tr>
+        @endif
+    </table>
+
+    {{-- Section 2: بيانات العميل والموقع --}}
+    <div class="print-section-header">2. بيانات الساكن وموقع العقار</div>
+    <table class="print-table">
+        <tr>
+            <th style="width: 20%;">اسم الساكن:</th>
+            <td style="width: 30%;"><strong>{{ $booking->resident?->name ?? '—' }}</strong></td>
+            <th style="width: 20%;">رقم الجوال:</th>
+            <td style="width: 30%;" dir="ltr"><strong>{{ $booking->resident?->phone ?? '—' }}</strong></td>
+        </tr>
+        <tr>
+            <th>اسم العقار:</th>
+            <td>{{ $booking->home?->name ?? '—' }} ({{ $cityName }})</td>
+            <th>رقم / اسم الوحدة:</th>
+            <td><strong>{{ $booking->residentHome?->unit_label ?? '—' }}</strong></td>
+        </tr>
+        @if($booking->home?->address || $booking->resident?->email)
+            <tr>
+                <th>العنوان:</th>
+                <td>{{ $booking->home?->address ?? '—' }}</td>
+                <th>البريد الإلكتروني:</th>
+                <td>{{ $booking->resident?->email ?? '—' }}</td>
+            </tr>
+        @endif
+    </table>
+
+    {{-- Section 3: بيانات مزود الخدمة ومسار التنفيذ --}}
+    <div class="print-section-header">3. مزود الخدمة ومسار تنفيذ الطلب</div>
+    <table class="print-table">
+        <tr>
+            <th style="width: 20%;">المزود المعين:</th>
+            <td style="width: 30%;"><strong>{{ $providerProfile?->company_name ?? 'لم يعين بعد' }}</strong></td>
+            <th style="width: 20%;">هاتف المزود:</th>
+            <td style="width: 30%;" dir="ltr">{{ $providerProfile?->user?->phone ?? '—' }}</td>
+        </tr>
+    </table>
+
+    {{-- Progress Steps Summary --}}
+    <table class="print-table" style="text-align: center;">
+        <thead>
+            <tr>
+                <th style="width: 25%; text-align: center;">المرحلة 1: تم الإرسال</th>
+                <th style="width: 25%; text-align: center;">المرحلة 2: تم القبول</th>
+                <th style="width: 25%; text-align: center;">المرحلة 3: الفني في الطريق</th>
+                <th style="width: 25%; text-align: center;">المرحلة 4: اكتمال الخدمة</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ $submittedAt ? \Carbon\Carbon::parse($submittedAt)->format('Y-m-d H:i') : '—' }}</td>
+                <td>{{ $confirmedAt ? \Carbon\Carbon::parse($confirmedAt)->format('Y-m-d H:i') : '—' }}</td>
+                <td>{{ $inProgressAt ? \Carbon\Carbon::parse($inProgressAt)->format('Y-m-d H:i') : '—' }}</td>
+                <td>{{ $completedAt ? \Carbon\Carbon::parse($completedAt)->format('Y-m-d H:i') : '—' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {{-- Section 4: تقييم العميل (إن وجد) --}}
+    @if($booking->bookingRatings->isNotEmpty())
+        @php $r = $booking->bookingRatings->first(); @endphp
+        <div class="print-section-header">4. تقييم ورأي العميل</div>
+        <table class="print-table">
+            <tr>
+                <th style="width: 20%;">التقييم:</th>
+                <td style="width: 30%;"><strong>{{ $r->score }} / 5 نجوم</strong></td>
+                <th style="width: 20%;">الوسوم:</th>
+                <td style="width: 30%;">{{ !empty($r->tags) ? implode(' · ', $r->tags) : '—' }}</td>
+            </tr>
+            @if($r->comment)
+                <tr>
+                    <th>ملاحظات التقييم:</th>
+                    <td colspan="3" style="font-style: italic;">"{{ $r->comment }}"</td>
+                </tr>
+            @endif
+        </table>
+    @endif
+
+    {{-- Section 5: التوقيعات والاعتماد --}}
+    <div style="margin-top: 20px; padding-top: 10px; border-top: 1.5px dashed #aaa;">
+        <table style="width: 100%; text-align: center; border: none;">
+            <tr style="border: none;">
+                <td style="width: 33.3%; border: none; padding: 5px;">
+                    <div style="font-size: 8.5pt; font-weight: 700; color: #333; margin-bottom: 35px;">توقيع العميل / المستلم</div>
+                    <div style="border-bottom: 1px dotted #888; width: 75%; margin: 0 auto;"></div>
+                </td>
+                <td style="width: 33.3%; border: none; padding: 5px;">
+                    <div style="font-size: 8.5pt; font-weight: 700; color: #333; margin-bottom: 35px;">توقيع الفني / مقدم الخدمة</div>
+                    <div style="border-bottom: 1px dotted #888; width: 75%; margin: 0 auto;"></div>
+                </td>
+                <td style="width: 33.3%; border: none; padding: 5px;">
+                    <div style="font-size: 8.5pt; font-weight: 700; color: #333; margin-bottom: 35px;">ختم واعتماد الإدارة</div>
+                    <div style="border-bottom: 1px dotted #888; width: 75%; margin: 0 auto;"></div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {{-- Footer note --}}
+    <div style="margin-top: 15px; text-align: center; font-size: 7.5pt; color: #888;">
+        تم استخراج هذا السند إلكترونياً من منصة راوندر لإدارة العقارات والخدمات · جميع الحقوق محفوظة © {{ date('Y') }} Rounder
+    </div>
+</div>
+
+{{-- ======================================================== --}}
+{{-- 2. INTERACTIVE DASHBOARD VIEW (SCREEN ONLY - D-PRINT-NONE) --}}
+{{-- ======================================================== --}}
+<div class="web-only-view d-print-none container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4">
     <div class="row g-3">
         <main class="col-12 content">
-            {{-- Breadcrumb & Top Actions --}}
+            {{-- Breadcrumb & Quick Top Actions --}}
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0 bg-transparent p-0 align-items-center">
@@ -109,8 +367,8 @@
                                 {{ __('Service orders') }}
                             </a>
                         </li>
-                        <li class="breadcrumb-item active fw-bold text-dark d-inline-flex align-items-center gap-1" aria-current="page">
-                            <span>#{{ $booking->id }}</span>
+                        <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">
+                            #{{ $booking->id }}
                         </li>
                     </ol>
                 </nav>
@@ -127,550 +385,364 @@
                 </div>
             </div>
 
-            {{-- Alerts / Feedback --}}
-            @if(session('status'))
-                <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                    <i class="fa-solid fa-circle-check me-2"></i>{{ session('status') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-            @if($errors->any())
-                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                    <strong>{{ __('Please check the form errors') }}:</strong>
-                    <ul class="mb-0 mt-1">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
+            @include('admin.partials.feedback')
 
-            {{-- Main Header Hero Panel --}}
-            <div class="panel p-3 p-lg-4 mb-4 border-0 position-relative overflow-hidden"
-                 style="background: linear-gradient(135deg, var(--petrol) 0%, #034b57 100%); color: #fff; box-shadow: 0 4px 20px rgba(2,51,62,0.18);">
-                {{-- Subtle decorative glow --}}
-                <div class="position-absolute end-0 top-0 w-50 h-100 opacity-25 pe-none"
-                     style="background: radial-gradient(circle at top right, rgba(251,130,47,0.4) 0%, transparent 60%);"></div>
+            {{-- Unified Executive Order Header & Stepper --}}
+            <div class="panel p-3 p-lg-4 mb-3 shadow-sm border-0" style="border-radius: 14px; background: #fff;">
+                {{-- Top Summary Bar --}}
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge px-3 py-2 fs-6 fw-bold text-white shadow-sm" style="background: var(--petrol); border-radius: 8px;">
+                            #{{ $booking->id }}
+                        </span>
 
-                <div class="row align-items-center g-3 position-relative">
-                    <div class="col-lg-8">
-                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                            <span class="badge px-3 py-2 text-uppercase fw-bold" style="background: rgba(255,255,255,0.18); font-size: 0.85rem; letter-spacing: 0.05em; border: 1px solid rgba(255,255,255,0.2);">
-                                <i class="fa-solid fa-hashtag me-1"></i>{{ $booking->id }}
+                        @if($statusCode === 'completed')
+                            <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">
+                                <i class="fa-solid fa-check-double me-1"></i> {{ $statusName }}
                             </span>
-
-                            @if($statusCode === 'completed')
-                                <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">
-                                    <i class="fa-solid fa-check-double me-1"></i> {{ $statusName }}
-                                </span>
-                            @elseif($statusCode === 'confirmed')
-                                <span class="badge px-3 py-2 fs-6 shadow-sm" style="background:#025968; color:#DDF3EE; border:1px solid rgba(221,243,238,0.4);">
-                                    <i class="fa-solid fa-calendar-check me-1"></i> {{ $statusName }}
-                                </span>
-                            @elseif($statusCode === 'in_progress')
-                                <span class="badge px-3 py-2 fs-6 shadow-sm" style="background:var(--orange); color:#fff;">
-                                    <i class="fa-solid fa-truck-fast me-1"></i> {{ $statusName }}
-                                </span>
-                            @elseif($statusCode === 'cancelled')
-                                <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
-                                    <i class="fa-solid fa-ban me-1"></i> {{ $statusName }}
-                                </span>
-                            @else
-                                <span class="badge px-3 py-2 fs-6 shadow-sm" style="background:#fff3ea; color:#b6530b; border:1px solid #ffd8bf;">
-                                    <i class="fa-solid fa-hourglass-half me-1"></i> {{ $statusName }}
-                                </span>
-                            @endif
-
-                            @if($categoryName)
-                                <span class="badge rounded-pill" style="background: rgba(255,255,255,0.12); color:#DDF3EE; border: 1px solid rgba(221,243,238,0.25);">
-                                    <i class="fa-solid fa-layer-group me-1"></i>{{ $categoryName }}
-                                </span>
-                            @endif
-                        </div>
-
-                        <h1 class="h2 fw-bold text-white mb-1">{{ $serviceName }}</h1>
-
-                        @if($subServiceName)
-                            <div class="text-white-50 fs-6 mb-2 d-flex align-items-center gap-1">
-                                <i class="fa-solid fa-arrow-turn-down-right text-rounder-orange"></i>
-                                <span>{{ __('Sub service') }}:</span>
-                                <span class="text-white fw-semibold">{{ $subServiceName }}</span>
-                            </div>
-                        @endif
-
-                        <div class="d-flex flex-wrap align-items-center gap-3 text-white-50 small mt-3">
-                            <span class="d-inline-flex align-items-center gap-1">
-                                <i class="fa-regular fa-clock text-warning"></i>
-                                <span>{{ __('Scheduled date and time') }}:</span>
-                                <strong class="text-white">{{ $booking->scheduled_at ? $booking->scheduled_at->format('Y-m-d H:i') : '—' }}</strong>
+                        @elseif($statusCode === 'confirmed')
+                            <span class="badge px-3 py-2 fs-6 shadow-sm" style="background:#025968; color:#DDF3EE;">
+                                <i class="fa-solid fa-calendar-check me-1"></i> {{ $statusName }}
                             </span>
-                            <span>•</span>
-                            <span class="d-inline-flex align-items-center gap-1">
-                                <i class="fa-regular fa-calendar-plus text-info"></i>
-                                <span>{{ __('Created at') }}:</span>
-                                <strong class="text-white">{{ $booking->created_at ? $booking->created_at->format('Y-m-d H:i') : '—' }}</strong>
+                        @elseif($statusCode === 'in_progress')
+                            <span class="badge px-3 py-2 fs-6 shadow-sm" style="background:var(--orange); color:#fff;">
+                                <i class="fa-solid fa-truck-fast me-1"></i> {{ $statusName }}
                             </span>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4 text-lg-end">
-                        <div class="p-3 rounded-3 d-inline-block text-start text-lg-end w-100 w-lg-auto"
-                             style="background: rgba(255,255,255,0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.18);">
-                            <div class="small text-white-50">{{ __('Total price') }}</div>
-                            <div class="display-6 fw-bold text-white" style="letter-spacing: -0.02em;">
-                                {{ number_format($booking->total_amount, 2) }} <span class="fs-6 fw-normal text-white-50">SAR</span>
-                            </div>
-                            @if($booking->service && (float)$booking->service->base_price > 0 && (float)$booking->service->base_price != (float)$booking->total_amount)
-                                <div class="small text-white-50 mt-1">
-                                    {{ __('Base price') }}: {{ number_format($booking->service->base_price, 2) }} SAR
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Order Tracking & Stages Progress Stepper ("مراحل الطلب") --}}
-            <div class="panel p-3 p-lg-4 mb-4">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:var(--mint); color:var(--petrol);">
-                            <i class="fa-solid fa-route"></i>
-                        </div>
-                        <div>
-                            <h2 class="h5 fw-bold mb-0 text-dark">{{ __('Order tracking') }}</h2>
-                            <div class="small text-muted">{{ __('Order stages') }} ({{ count($stages) }} {{ __('stages') }})</div>
-                        </div>
-                    </div>
-                    <div>
-                        @if($isCancelled)
-                            <span class="badge bg-danger px-3 py-2">
-                                <i class="fa-solid fa-ban me-1"></i> {{ __('Order Cancelled') }}
+                        @elseif($statusCode === 'cancelled')
+                            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
+                                <i class="fa-solid fa-ban me-1"></i> {{ $statusName }}
                             </span>
                         @else
-                            <span class="pill fw-bold" style="background:var(--mint); color:var(--petrol); border-color:#bce5dc;">
-                                <i class="fa-solid fa-circle-dot me-1 text-rounder-orange"></i>
-                                {{ __('Current stage') }}: {{ $statusName }}
+                            <span class="badge px-3 py-2 fs-6 shadow-sm" style="background:#fff3ea; color:#b6530b; border:1px solid #ffd8bf;">
+                                <i class="fa-solid fa-hourglass-half me-1"></i> {{ $statusName }}
+                            </span>
+                        @endif
+
+                        <h1 class="h5 fw-bold mb-0 text-dark ms-2">{{ $serviceName }}</h1>
+                        @if($subServiceName)
+                            <span class="badge bg-light text-secondary border">
+                                <i class="fa-solid fa-check text-rounder-orange me-1"></i>{{ $subServiceName }}
                             </span>
                         @endif
                     </div>
-                </div>
 
-                @if($isCancelled)
-                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
-                        <i class="fa-solid fa-circle-exclamation fs-5"></i>
-                        <div>
-                            <strong>{{ __('Order Cancelled') }}</strong>
-                            @if($cancelledAt)
-                                <span class="ms-1">({{ \Carbon\Carbon::parse($cancelledAt)->format('Y-m-d H:i') }})</span>
-                            @endif
-                            @php
-                                $cancelHistory = $statusHistory->firstWhere('booking_status_id', 85);
-                            @endphp
-                            @if($cancelHistory?->note)
-                                <div class="small mt-1 text-danger-emphasis fst-italic">"{{ $cancelHistory->note }}"</div>
-                            @endif
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="text-start text-sm-end">
+                            <div class="small text-muted">{{ __('Total price') }}</div>
+                            <div class="h5 fw-bold text-dark mb-0">
+                                {{ number_format($booking->total_amount, 2) }} <span class="fs-6 fw-normal text-muted">SAR</span>
+                            </div>
+                        </div>
+                        <div class="vr mx-1 d-none d-sm-block" style="height: 32px;"></div>
+                        <div class="text-start text-sm-end d-none d-sm-block">
+                            <div class="small text-muted">{{ __('Scheduled date and time') }}</div>
+                            <div class="fw-semibold text-dark mb-0" style="font-size: 0.9rem;">
+                                <i class="fa-regular fa-clock text-warning me-1"></i>{{ $booking->scheduled_at ? $booking->scheduled_at->format('Y-m-d H:i') : '—' }}
+                            </div>
                         </div>
                     </div>
-                @endif
+                </div>
 
-                {{-- Visual 4-Step Progress Stepper --}}
-                <div class="order-stepper-wrapper py-2">
-                    <div class="row g-3">
-                        @foreach($stages as $index => $stage)
-                            <div class="col-12 col-sm-6 col-lg-3">
-                                <div class="p-3 rounded-3 h-100 position-relative transition-all"
-                                     style="background: {{ $stage['is_current'] && !$isCancelled ? 'linear-gradient(180deg, #fff7f0 0%, #fff 100%)' : ($stage['is_done'] && !$isCancelled ? '#f4faf7' : '#fafafa') }};
-                                            border: 1.5px solid {{ $stage['is_current'] && !$isCancelled ? 'var(--orange)' : ($stage['is_done'] && !$isCancelled ? '#c2e5dc' : '#e5e7eb') }};
-                                            box-shadow: {{ $stage['is_current'] && !$isCancelled ? '0 4px 14px rgba(251,130,47,0.14)' : 'none' }};">
-                                    
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        @if($isCancelled && !$stage['is_done'])
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-muted flex-shrink-0"
-                                                 style="width:38px; height:38px; background:#f1f5f9; border: 2px dashed #cbd5e1;">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </div>
-                                        @elseif($stage['is_current'] && !$isCancelled)
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0"
-                                                 style="width:38px; height:38px; background:var(--orange); box-shadow: 0 0 0 4px rgba(251,130,47,0.22);">
-                                                <i class="fa-solid {{ $stage['icon'] }}"></i>
-                                            </div>
-                                        @elseif($stage['is_done'] && !$isCancelled)
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                                 style="width:38px; height:38px; background:var(--mint); color:var(--petrol); border: 2px solid #025968;">
-                                                <i class="fa-solid fa-check"></i>
-                                            </div>
-                                        @else
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-muted flex-shrink-0"
-                                                 style="width:38px; height:38px; background:#f8faf9; border: 2px dashed #cbd5e1;">
-                                                <i class="fa-solid {{ $stage['icon'] }}"></i>
-                                            </div>
-                                        @endif
+                {{-- Compact 4-Step Progress Stepper --}}
+                <div class="pt-3">
+                    @if($isCancelled)
+                        <div class="alert alert-danger d-flex align-items-center gap-2 mb-0 py-2" role="alert">
+                            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+                            <div class="small">
+                                <strong>{{ __('Order Cancelled') }}</strong>
+                                @if($cancelledAt)
+                                    <span class="ms-1">({{ \Carbon\Carbon::parse($cancelledAt)->format('Y-m-d H:i') }})</span>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        @php
+                            $progressPercent = ($sequenceIndex >= 0) ? min(100, ($sequenceIndex / (count($sequenceCodes) - 1)) * 100) : 0;
+                        @endphp
+                        <div class="position-relative py-2">
+                            {{-- Connecting Progress Line --}}
+                            <div class="order-stepper-line d-none d-md-block">
+                                <div class="order-stepper-progress" style="width: {{ $progressPercent }}%;"></div>
+                            </div>
 
-                                        <div class="overflow-hidden">
-                                            <div class="small text-muted" style="font-size:0.75rem;">
-                                                {{ __('Stage') }} {{ $index + 1 }}
+                            <div class="row g-2 position-relative" style="z-index: 2;">
+                                @foreach($stages as $index => $stage)
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-2 rounded-3 text-center h-100"
+                                             style="background: {{ $stage['is_current'] ? '#fff7f0' : ($stage['is_done'] ? '#f4faf7' : '#fafafa') }};
+                                                    border: 1px solid {{ $stage['is_current'] ? 'var(--orange)' : ($stage['is_done'] ? '#c2e5dc' : '#e5e7eb') }};">
+                                            
+                                            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                                @if($stage['is_current'])
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                         style="width: 28px; height: 28px; background: var(--orange); box-shadow: 0 0 0 3px rgba(251,130,47,0.22); font-size: 0.8rem;">
+                                                        <i class="fa-solid {{ $stage['icon'] }}"></i>
+                                                    </div>
+                                                @elseif($stage['is_done'])
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                         style="width: 28px; height: 28px; background: var(--mint); color: var(--petrol); border: 1.5px solid #025968; font-size: 0.8rem;">
+                                                        <i class="fa-solid fa-check"></i>
+                                                    </div>
+                                                @else
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-muted flex-shrink-0"
+                                                         style="width: 28px; height: 28px; background: #fff; border: 1.5px dashed #cbd5e1; font-size: 0.75rem;">
+                                                        <i class="fa-solid {{ $stage['icon'] }}"></i>
+                                                    </div>
+                                                @endif
+
+                                                <div class="fw-bold text-dark text-truncate text-start" style="font-size: 0.82rem;">
+                                                    {{ $stage['title'] }}
+                                                </div>
                                             </div>
-                                            <div class="fw-bold text-dark text-truncate" style="font-size:0.92rem;">
-                                                {{ $stage['title'] }}
+
+                                            <div class="d-flex align-items-center justify-content-between px-1" style="font-size: 0.7rem;">
+                                                @if($stage['timestamp'] && ($stage['is_done'] || $stage['is_current']))
+                                                    <span class="text-muted"><i class="fa-regular fa-clock me-1"></i>{{ \Carbon\Carbon::parse($stage['timestamp'])->format('H:i') }}</span>
+                                                    <span class="badge {{ $stage['is_current'] ? 'bg-warning text-dark' : 'bg-success-subtle text-success' }}" style="font-size: 0.65rem;">
+                                                        {{ $stage['is_current'] ? __('Current') : __('Done') }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted fst-italic">{{ __('Pending') }}</span>
+                                                    <span class="text-muted" style="font-size: 0.65rem;">{{ __('Stage') }} {{ $index + 1 }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div class="small mt-1 d-flex align-items-center gap-1" style="font-size:0.76rem;">
-                                        @if($stage['is_current'] && !$isCancelled)
-                                            <span class="text-warning-emphasis fw-bold d-inline-flex align-items-center gap-1">
-                                                <span class="spinner-grow spinner-grow-sm text-warning" style="width:7px; height:7px;" role="status"></span>
-                                                {{ __('In progress') }}
-                                            </span>
-                                        @elseif($stage['is_done'] && !$isCancelled)
-                                            <span class="text-success fw-semibold d-inline-flex align-items-center gap-1">
-                                                <i class="fa-solid fa-circle-check"></i>
-                                                {{ __('Completed') }}
-                                            </span>
-                                        @elseif($isCancelled)
-                                            <span class="text-muted">{{ __('Cancelled') }}</span>
-                                        @else
-                                            <span class="text-muted">{{ __('Pending') }}</span>
-                                        @endif
-                                    </div>
-
-                                    <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between" style="font-size:0.73rem;">
-                                        @if($stage['timestamp'] && ($stage['is_done'] || $stage['is_current']))
-                                            <span class="text-muted"><i class="fa-regular fa-clock me-1"></i>{{ \Carbon\Carbon::parse($stage['timestamp'])->format('Y-m-d H:i') }}</span>
-                                            <span class="badge {{ $stage['is_current'] && !$isCancelled ? 'bg-warning text-dark' : 'bg-success-subtle text-success' }}">
-                                                {{ $stage['is_current'] && !$isCancelled ? __('Current stage') : __('Completed stage') }}
-                                            </span>
-                                        @else
-                                            <span class="text-muted fst-italic">{{ __('Upcoming') }}</span>
-                                            <span class="badge bg-light text-secondary border">{{ __('Pending') }}</span>
-                                        @endif
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
-                        @endforeach
-                    </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
-            {{-- 4 Quick Summary KPI Cards --}}
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3">
-                    <div class="panel p-3 h-100">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                 style="width:44px; height:44px; background: var(--mint); color: var(--petrol); font-size:1.15rem;">
-                                <i class="fa-solid fa-clock"></i>
-                            </div>
-                            <div class="overflow-hidden">
-                                <div class="small text-secondary text-truncate">{{ __('Scheduled date and time') }}</div>
-                                <div class="fw-bold fs-6 text-dark text-truncate">{{ $booking->scheduled_at ? $booking->scheduled_at->format('Y-m-d H:i') : '—' }}</div>
-                                <div class="text-muted text-truncate" style="font-size:0.75rem;">{{ $booking->scheduled_at ? $booking->scheduled_at->diffForHumans() : '' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="panel p-3 h-100">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                 style="width:44px; height:44px; background: #fff3ea; color: var(--orange); font-size:1.15rem;">
-                                <i class="fa-solid fa-coins"></i>
-                            </div>
-                            <div class="overflow-hidden">
-                                <div class="small text-secondary text-truncate">{{ __('Total price') }}</div>
-                                <div class="fw-bold fs-5 text-dark text-truncate">{{ number_format($booking->total_amount, 2) }} <span class="fs-6 fw-normal text-secondary">SAR</span></div>
-                                <div class="text-muted text-truncate" style="font-size:0.75rem;">{{ $booking->payments->isNotEmpty() ? __('Payments') . ': ' . $booking->payments->count() : __('No payments recorded') }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="panel p-3 h-100">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                 style="width:44px; height:44px; background: #eaf2f4; color: var(--petrol); font-size:1.15rem;">
-                                <i class="fa-solid fa-user"></i>
-                            </div>
-                            <div class="overflow-hidden">
-                                <div class="small text-secondary text-truncate">{{ __('Resident') }}</div>
-                                <div class="fw-bold fs-6 text-dark text-truncate">{{ $booking->resident?->name ?? '—' }}</div>
-                                <div class="text-muted text-truncate" style="font-size:0.75rem;">
-                                    @if($booking->residentHome?->unit_label)
-                                        <span class="text-dark fw-semibold">{{ __('Unit') }}: {{ $booking->residentHome->unit_label }}</span>
-                                    @elseif($booking->home?->name)
-                                        <span>{{ $booking->home->name }}</span>
-                                    @else
-                                        <span>—</span>
-                                    @endif
-                                    @if($booking->resident?->phone)
-                                        <span class="ms-1" dir="ltr">· {{ $booking->resident->phone }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="panel p-3 h-100">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                 style="width:44px; height:44px; background: #edf5f8; color: #025968; font-size:1.15rem;">
-                                <i class="fa-solid fa-building-shield"></i>
-                            </div>
-                            <div class="overflow-hidden">
-                                <div class="small text-secondary text-truncate">{{ __('Assigned provider') }}</div>
-                                <div class="fw-bold fs-6 text-dark text-truncate" title="{{ $providerProfile?->company_name ?? __('Not assigned yet') }}">
-                                    {{ $providerProfile?->company_name ?? __('Not assigned yet') }}
-                                </div>
-                                <div class="text-muted text-truncate" style="font-size:0.75rem;">
-                                    @if($assignment?->assigned_at)
-                                        <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>{{ __('Assigned') }}</span>
-                                    @else
-                                        <span class="text-warning"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ __('Needs assignment') }}</span>
-                                    @endif
-                                    @if($providerProfile?->user?->phone)
-                                        <span class="ms-1" dir="ltr">· {{ $providerProfile->user->phone }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 2-Column Responsive Body --}}
-            <div class="row g-4">
-                {{-- Left Column: Details, Scope, Photos, Additional Works, Rating --}}
+            {{-- 2. Clean 2-Column Dashboard Body --}}
+            <div class="row g-3">
+                {{-- Main Column (8 cols): Unified Order, Customer Details & Photos --}}
                 <div class="col-lg-8">
-                    {{-- 1. Service & Scope of Work Card --}}
-                    <div class="panel p-3 p-lg-4 mb-4">
+                    {{-- 2.1 Unified Booking, Service & Customer Details Card --}}
+                    <div class="panel p-3 p-lg-4 mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h2 class="h5 fw-bold mb-0 text-dark">
-                                <i class="fa-solid fa-screwdriver-wrench me-2 text-primary"></i>{{ __('Service and scope') }}
-                            </h2>
-                            <span class="badge bg-light text-secondary border">
-                                {{ $booking->service?->code }}
-                            </span>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="small text-secondary mb-1">{{ __('Available services') }}</div>
-                                <div class="fw-semibold text-dark fs-6">{{ $serviceName }}</div>
-                                @if($serviceTranslation?->description)
-                                    <div class="small text-muted mt-1">{{ $serviceTranslation->description }}</div>
-                                @endif
-                            </div>
-                            <div class="col-md-6">
-                                <div class="small text-secondary mb-1">{{ __('Service categories') }}</div>
-                                <div class="fw-semibold text-dark">
-                                    @if($categoryName)
-                                        <span class="pill"><i class="fa-solid fa-layer-group me-1 text-rounder-orange"></i>{{ $categoryName }}</span>
-                                    @else
-                                        <span class="text-muted">—</span>
-                                    @endif
-                                </div>
-                            </div>
-                            @if($subServiceName)
-                                <div class="col-md-6">
-                                    <div class="small text-secondary mb-1">{{ __('Sub service') }}</div>
-                                    <div class="fw-semibold text-primary"><i class="fa-solid fa-check me-1 text-rounder-orange"></i>{{ $subServiceName }}</div>
-                                </div>
-                            @endif
-                            <div class="col-md-6">
-                                <div class="small text-secondary mb-1">{{ __('Base price') }}</div>
-                                <div class="fw-semibold text-dark">{{ number_format($booking->service?->base_price ?? $booking->total_amount, 2) }} SAR</div>
-                            </div>
-                        </div>
-
-                        {{-- Resident instructions / notes --}}
-                        <div class="mt-4 pt-3 border-top">
-                            <div class="small fw-bold text-secondary mb-2">
-                                <i class="fa-regular fa-comment-dots me-1 text-primary"></i>{{ __('Resident instructions') }}
-                            </div>
-                            @if($booking->notes)
-                                <div class="p-3 rounded-3" style="background:var(--sand); border-inline-start:4px solid var(--orange);">
-                                    <div class="fst-italic text-dark">{{ $booking->notes }}</div>
-                                </div>
-                            @else
-                                <div class="text-muted small fst-italic">{{ __('No resident notes provided') }}</div>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- 2. Customer and Property Location Card --}}
-                    <div class="panel p-3 p-lg-4 mb-4">
-                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h2 class="h5 fw-bold mb-0 text-dark">
-                                <i class="fa-solid fa-location-dot me-2 text-danger"></i>{{ __('Customer and home details') }}
+                            <h2 class="h6 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-clipboard-list text-primary"></i>
+                                <span>{{ __('Booking details') }} & {{ __('Resident and home') }}</span>
                             </h2>
                             @if($booking->home?->property_code)
                                 <span class="badge bg-light text-dark border">{{ $booking->home->property_code }}</span>
                             @endif
                         </div>
-                        <div class="row g-3">
-                            {{-- Resident Details --}}
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-3 h-100" style="background: #f8faf9; border: 1px solid #e8efed;">
-                                    <div class="d-flex align-items-center gap-3 mb-3">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                             style="width:42px; height:42px; background:var(--mint); color:var(--petrol); font-size:1.15rem;">
-                                            <i class="fa-solid fa-user"></i>
-                                        </div>
-                                        <div class="overflow-hidden">
-                                            <div class="fw-bold text-dark text-truncate">{{ $booking->resident?->name ?? '—' }}</div>
-                                            <div class="text-secondary small">{{ __('Resident') }} · ID #{{ $booking->resident_id }}</div>
-                                        </div>
+
+                        <div class="row g-4">
+                            {{-- Service & Scope Side --}}
+                            <div class="col-md-6 border-end-md">
+                                <div class="small fw-bold text-secondary mb-2 text-uppercase" style="letter-spacing: 0.04em;">
+                                    {{ __('Service and scope') }}
+                                </div>
+                                <div class="d-grid gap-2 small">
+                                    <div class="row g-2 align-items-center py-1">
+                                        <div class="col-5 text-secondary">{{ __('Available services') }}:</div>
+                                        <div class="col-7 fw-semibold text-dark">{{ $serviceName }}</div>
                                     </div>
-                                    <div class="d-grid gap-2 small">
-                                        @if($booking->resident?->phone)
-                                            @php
-                                                $cleanPhone = preg_replace('/[^0-9]/', '', $booking->resident->phone);
-                                                $waPhone = str_starts_with($cleanPhone, '05') ? ('966' . substr($cleanPhone, 1)) : $cleanPhone;
-                                            @endphp
-                                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <i class="fa-solid fa-phone text-secondary" style="width:16px"></i>
-                                                    <a href="tel:{{ $booking->resident->phone }}" class="text-decoration-none text-dark fw-semibold" dir="ltr">{{ $booking->resident->phone }}</a>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <a href="tel:{{ $booking->resident->phone }}" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size:0.75rem;" title="{{ __('Call resident') }}">
-                                                        <i class="fa-solid fa-phone-flip text-primary"></i>
-                                                    </a>
-                                                    <a href="https://wa.me/{{ $waPhone }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success py-1 px-2" style="font-size:0.75rem;" title="{{ __('Contact via WhatsApp') }}">
-                                                        <i class="fa-brands fa-whatsapp text-success"></i>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        @endif
-                                        @if($booking->resident?->email)
-                                            <div class="d-flex align-items-center gap-2 text-truncate">
-                                                <i class="fa-solid fa-envelope text-secondary" style="width:16px"></i>
-                                                <a href="mailto:{{ $booking->resident->email }}" class="text-decoration-none text-dark text-truncate">{{ $booking->resident->email }}</a>
-                                            </div>
-                                        @endif
+                                    @if($categoryName)
+                                        <div class="row g-2 align-items-center py-1">
+                                            <div class="col-5 text-secondary">{{ __('Service categories') }}:</div>
+                                            <div class="col-7"><span class="pill py-0 px-2">{{ $categoryName }}</span></div>
+                                        </div>
+                                    @endif
+                                    @if($subServiceName)
+                                        <div class="row g-2 align-items-center py-1">
+                                            <div class="col-5 text-secondary">{{ __('Sub service') }}:</div>
+                                            <div class="col-7 text-primary fw-semibold">{{ $subServiceName }}</div>
+                                        </div>
+                                    @endif
+                                    <div class="row g-2 align-items-center py-1">
+                                        <div class="col-5 text-secondary">{{ __('Base price') }}:</div>
+                                        <div class="col-7 text-dark">{{ number_format($booking->service?->base_price ?? $booking->total_amount, 2) }} SAR</div>
                                     </div>
+                                    <div class="row g-2 align-items-center py-1">
+                                        <div class="col-5 text-secondary">{{ __('Total amount') }}:</div>
+                                        <div class="col-7"><strong class="text-dark">{{ number_format($booking->total_amount, 2) }} SAR</strong></div>
+                                    </div>
+                                </div>
+
+                                {{-- Resident Instructions / Notes --}}
+                                <div class="mt-3 pt-2 border-top">
+                                    <div class="small fw-semibold text-secondary mb-1">
+                                        <i class="fa-regular fa-comment-dots me-1 text-primary"></i>{{ __('Resident instructions') }}
+                                    </div>
+                                    @if($booking->notes)
+                                        <div class="p-2 rounded-2 small" style="background:var(--sand); border-inline-start:3px solid var(--orange);">
+                                            <div class="fst-italic text-dark">{{ $booking->notes }}</div>
+                                        </div>
+                                    @else
+                                        <div class="text-muted small fst-italic">{{ __('No resident notes provided') }}</div>
+                                    @endif
                                 </div>
                             </div>
 
-                            {{-- Property & Unit Details --}}
+                            {{-- Resident & Location Side --}}
                             <div class="col-md-6">
-                                <div class="p-3 rounded-3 h-100" style="background: #f8faf9; border: 1px solid #e8efed;">
-                                    <div class="d-flex align-items-center gap-3 mb-3">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                             style="width:42px; height:42px; background:#fff3ea; color:var(--orange); font-size:1.15rem;">
-                                            <i class="fa-solid fa-building"></i>
-                                        </div>
-                                        <div class="overflow-hidden">
-                                            <div class="fw-bold text-dark text-truncate">{{ $booking->home?->name ?? '—' }}</div>
-                                            <div class="text-secondary small">{{ $cityName }}</div>
-                                        </div>
+                                <div class="small fw-bold text-secondary mb-2 text-uppercase" style="letter-spacing: 0.04em;">
+                                    {{ __('Resident and home') }}
+                                </div>
+                                <div class="d-grid gap-2 small">
+                                    <div class="row g-2 align-items-center py-1">
+                                        <div class="col-4 text-secondary">{{ __('Resident') }}:</div>
+                                        <div class="col-8"><strong class="text-dark">{{ $booking->resident?->name ?? '—' }}</strong></div>
                                     </div>
-                                    <div class="d-grid gap-2 small">
-                                        @if($booking->home?->address)
-                                            <div class="d-flex align-items-start gap-2">
-                                                <i class="fa-solid fa-map-pin text-secondary mt-1" style="width:16px"></i>
-                                                <span class="text-dark">{{ $booking->home->address }}</span>
+
+                                    @if($booking->resident?->phone)
+                                        <div class="row g-2 align-items-center py-1">
+                                            <div class="col-4 text-secondary">{{ __('Mobile') }}:</div>
+                                            <div class="col-8 d-flex align-items-center gap-1">
+                                                <a href="tel:{{ $booking->resident->phone }}" class="text-decoration-none text-dark fw-semibold" dir="ltr">{{ $booking->resident->phone }}</a>
+                                                <a href="tel:{{ $booking->resident->phone }}" class="btn btn-sm btn-outline-secondary py-0 px-1" title="{{ __('Call resident') }}">
+                                                    <i class="fa-solid fa-phone-flip text-primary" style="font-size:0.7rem;"></i>
+                                                </a>
+                                                <a href="https://wa.me/{{ $waPhone }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success py-0 px-1" title="{{ __('Contact via WhatsApp') }}">
+                                                    <i class="fa-brands fa-whatsapp text-success" style="font-size:0.75rem;"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($booking->resident?->email)
+                                        <div class="row g-2 align-items-center py-1">
+                                            <div class="col-4 text-secondary">{{ __('Email') }}:</div>
+                                            <div class="col-8">
+                                                <a href="mailto:{{ $booking->resident->email }}" class="text-decoration-none text-dark text-truncate d-block" title="{{ $booking->resident->email }}">{{ $booking->resident->email }}</a>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="row g-2 align-items-center py-1">
+                                        <div class="col-4 text-secondary">{{ __('Property') }}:</div>
+                                        <div class="col-8 fw-semibold text-dark">{{ $booking->home?->name ?? '—' }} ({{ $cityName }})</div>
+                                    </div>
+
+                                    @if($booking->residentHome)
+                                        <div class="row g-2 align-items-center py-1">
+                                            <div class="col-4 text-secondary">{{ __('Unit label') }}:</div>
+                                            <div class="col-8"><strong class="text-dark">{{ $booking->residentHome->unit_label }}</strong></div>
+                                        </div>
+                                        @if($booking->residentHome->floor_number)
+                                            <div class="row g-2 align-items-center py-1">
+                                                <div class="col-4 text-secondary">{{ __('Floor') }}:</div>
+                                                <div class="col-8 text-dark">{{ $booking->residentHome->floor_number }}</div>
                                             </div>
                                         @endif
-                                        @if($booking->residentHome)
-                                            <div class="d-flex align-items-center gap-2">
-                                                <i class="fa-solid fa-door-open text-secondary" style="width:16px"></i>
-                                                <span class="text-dark"><strong>{{ __('Unit label') }}:</strong> {{ $booking->residentHome->unit_label }}</span>
-                                                @if($booking->residentHome->floor_number)
-                                                    <span class="text-muted">({{ __('Floor') }}: {{ $booking->residentHome->floor_number }})</span>
-                                                @endif
-                                            </div>
-                                            @if($booking->residentHome->area_sqm)
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <i class="fa-solid fa-ruler-combined text-secondary" style="width:16px"></i>
-                                                    <span class="text-dark"><strong>{{ __('Area') }}:</strong> {{ $booking->residentHome->area_sqm }} m²</span>
-                                                </div>
-                                            @endif
-                                        @endif
-                                    </div>
+                                    @endif
+
+                                    @if($booking->home?->address)
+                                        <div class="row g-2 align-items-center py-1">
+                                            <div class="col-4 text-secondary">{{ __('Address') }}:</div>
+                                            <div class="col-8 text-dark text-truncate" title="{{ $booking->home->address }}">{{ $booking->home->address }}</div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- 3. Attached Photos & Media Gallery Card --}}
-                    <div class="panel p-3 p-lg-4 mb-4">
+                    {{-- 2.2 Attached Photos & Customer Review Card --}}
+                    <div class="panel p-3 p-lg-4 mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h2 class="h5 fw-bold mb-0 text-dark">
-                                <i class="fa-solid fa-images me-2 text-info"></i>{{ __('Attached photos and media') }}
+                            <h2 class="h6 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-images text-info"></i>
+                                <span>{{ __('Attached photos and media') }}</span>
+                                <span class="badge rounded-pill bg-light text-secondary border ms-1">
+                                    {{ $booking->bookingMedia->count() }}
+                                </span>
                             </h2>
-                            <span class="badge rounded-pill bg-light text-secondary border">
-                                {{ $booking->bookingMedia->count() }} {{ __('Photos') }}
-                            </span>
+                            @if($booking->bookingRatings->isNotEmpty())
+                                <span class="badge bg-warning-subtle text-dark border border-warning">
+                                    <i class="fa-solid fa-star text-warning me-1"></i>{{ __('Customer rating') }}
+                                </span>
+                            @endif
                         </div>
 
+                        {{-- Photos Grid --}}
                         @if($booking->bookingMedia->isNotEmpty())
-                            <div class="row g-3">
+                            <div class="row g-2 mb-3">
                                 @foreach($booking->bookingMedia as $media)
                                     <div class="col-6 col-sm-4 col-md-3">
-                                        <div class="card h-100 border shadow-sm overflow-hidden" style="border-radius:12px;">
+                                        <div class="card h-100 border shadow-sm overflow-hidden" style="border-radius:10px;">
                                             <a href="{{ $media->url }}" target="_blank" rel="noopener noreferrer"
                                                class="d-block position-relative ratio ratio-1x1 bg-light photo-preview-link"
                                                title="{{ __('View full photo') }}"
                                                data-img-url="{{ $media->url }}"
                                                data-img-kind="{{ $media->kind ?? 'photo' }}">
-                                                <img src="{{ $media->url }}" alt="Booking photo" class="w-100 h-100" style="object-fit:cover; transition: transform 0.2s ease;">
-                                                <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75">
+                                                <img src="{{ $media->url }}" alt="Booking photo" class="w-100 h-100" style="object-fit:cover;">
+                                                <span class="position-absolute top-0 end-0 m-1 badge bg-dark bg-opacity-75" style="font-size:0.65rem;">
                                                     <i class="fa-solid fa-magnifying-glass-plus"></i>
                                                 </span>
                                             </a>
-                                            <div class="p-2 small text-secondary bg-white" style="font-size:0.75rem;">
-                                                <div class="text-truncate fw-semibold text-dark">
-                                                    {{ $media->kind ?? 'photo' }}
-                                                </div>
-                                                <div class="text-muted text-truncate mt-1">
-                                                    <i class="fa-solid fa-arrow-up-from-bracket me-1"></i>
-                                                    @if($media->adminUploadedBy)
-                                                        {{ __('Administrator') }}: {{ $media->adminUploadedBy->name }}
-                                                    @elseif($media->uploadedBy)
-                                                        {{ $media->uploadedBy->name }}
-                                                    @else
-                                                        {{ __('Resident') }}
-                                                    @endif
-                                                </div>
-                                                <div class="text-muted" style="font-size:0.7rem;">
-                                                    {{ $media->created_at ? $media->created_at->format('Y-m-d H:i') : '' }}
-                                                </div>
+                                            <div class="p-1 px-2 small text-secondary bg-white d-flex justify-content-between align-items-center" style="font-size:0.7rem;">
+                                                <span class="text-truncate fw-semibold text-dark">{{ $media->kind ?? 'photo' }}</span>
+                                                <span class="text-muted">{{ $media->created_at ? $media->created_at->format('H:i') : '' }}</span>
                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <div class="p-4 text-center text-secondary bg-light rounded-3">
-                                <i class="fa-regular fa-image fa-2x mb-2 text-muted"></i>
-                                <div>{{ __('No photos attached yet') }}</div>
-                                <div class="small text-muted mt-1">{{ __('You can attach photos to describe the problem or requested service.') }}</div>
+                            <div class="p-3 text-center text-muted bg-light rounded-3 small mb-3">
+                                <i class="fa-regular fa-image me-1"></i> {{ __('No photos attached yet') }}
+                            </div>
+                        @endif
+
+                        {{-- Customer Review & Rating (if exists) --}}
+                        @if($booking->bookingRatings->isNotEmpty())
+                            <div class="pt-2 border-top">
+                                <div class="small fw-bold text-dark mb-2 d-flex align-items-center gap-1">
+                                    <i class="fa-solid fa-star text-warning"></i>
+                                    <span>{{ __('Customer review and rating') }}</span>
+                                </div>
+                                @foreach($booking->bookingRatings as $rating)
+                                    <div class="p-3 rounded-3" style="background:var(--sand); border: 1px solid #ffe8cc;">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <div class="d-flex align-items-center gap-1 text-warning fs-6">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <i class="fa-{{ $i <= $rating->score ? 'solid' : 'regular' }} fa-star"></i>
+                                                @endfor
+                                                <span class="ms-1 fw-bold text-dark" style="font-size:0.85rem;">{{ $rating->score }} / 5</span>
+                                            </div>
+                                            <div class="small text-muted" style="font-size:0.75rem;">
+                                                {{ $rating->created_at ? $rating->created_at->format('Y-m-d') : '' }}
+                                            </div>
+                                        </div>
+                                        @if($rating->comment)
+                                            <div class="text-dark fst-italic small mt-1">"{{ $rating->comment }}"</div>
+                                        @endif
+                                        @if(!empty($rating->tags))
+                                            <div class="d-flex flex-wrap gap-1 mt-2">
+                                                @foreach($rating->tags as $tag)
+                                                    <span class="badge bg-white text-dark border px-2 py-1 rounded-pill" style="font-size: 0.75rem;">
+                                                        <i class="fa-solid fa-check text-success me-1"></i>{{ $tag }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
                             </div>
                         @endif
                     </div>
 
-                    {{-- 4. Additional Work & Warranties (if any) --}}
+                    {{-- 2.3 Additional Works & Warranties (if any) --}}
                     @if($booking->bookingAdditionalWork->isNotEmpty() || $booking->bookingWarranties->isNotEmpty())
-                        <div class="panel p-3 p-lg-4 mb-4">
-                            <h2 class="h5 fw-bold mb-3 border-bottom pb-2 text-dark">
-                                <i class="fa-solid fa-shield-halved me-2 text-success"></i>{{ __('Additional work') }} & {{ __('Warranties') }}
+                        <div class="panel p-3 p-lg-4 mb-3">
+                            <h2 class="h6 fw-bold mb-3 border-bottom pb-2 text-dark">
+                                <i class="fa-solid fa-shield-halved me-1 text-success"></i>{{ __('Additional work') }} & {{ __('Warranties') }}
                             </h2>
-
                             @if($booking->bookingAdditionalWork->isNotEmpty())
-                                <h3 class="h6 fw-bold text-dark mt-2 mb-2">{{ __('Additional work') }}</h3>
-                                <div class="table-responsive mb-3">
-                                    <table class="table table-sm align-middle" style="min-width: 480px;">
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0" style="font-size: 0.8rem;">
                                         <thead>
                                             <tr>
                                                 <th>{{ __('Record number') }}</th>
                                                 <th>{{ __('Description') }}</th>
                                                 <th>{{ __('Amount') }}</th>
                                                 <th>{{ __('Status') }}</th>
-                                                <th>{{ __('Approved at') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -679,106 +751,43 @@
                                                     <td><strong>{{ $work->reference }}</strong></td>
                                                     <td>{{ $work->description }}</td>
                                                     <td><strong class="text-primary">{{ number_format($work->amount, 2) }} SAR</strong></td>
-                                                    <td><span class="pill">{{ $work->status?->translations->firstWhere('locale', $locale)?->name ?? $work->status?->code }}</span></td>
-                                                    <td class="small text-secondary">{{ $work->approved_at ? \Carbon\Carbon::parse($work->approved_at)->format('Y-m-d H:i') : '—' }}</td>
+                                                    <td><span class="pill py-0 px-2">{{ $work->status?->translations->firstWhere('locale', $locale)?->name ?? $work->status?->code }}</span></td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
                             @endif
-
-                            @if($booking->bookingWarranties->isNotEmpty())
-                                <h3 class="h6 fw-bold text-dark mt-3 mb-2">{{ __('Warranties') }}</h3>
-                                <div class="row g-2">
-                                    @foreach($booking->bookingWarranties as $warranty)
-                                        <div class="col-md-6">
-                                            <div class="p-3 rounded-3 border bg-light small">
-                                                <div class="fw-bold text-dark mb-1">
-                                                    <i class="fa-solid fa-award me-1 text-warning"></i>{{ $warranty->reference }}
-                                                </div>
-                                                <div class="text-secondary mb-2">{{ $warranty->terms }}</div>
-                                                <div class="d-flex justify-content-between text-muted" style="font-size:0.75rem;">
-                                                    <span>{{ __('Valid from') }}: {{ $warranty->starts_on }}</span>
-                                                    <span>{{ __('Valid until') }}: {{ $warranty->ends_on }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    @endif
-
-                    {{-- 5. Customer Rating & Feedback (if rated) --}}
-                    @if($booking->bookingRatings->isNotEmpty())
-                        <div class="panel p-3 p-lg-4 mb-4">
-                            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                                <h2 class="h5 fw-bold mb-0 text-dark">
-                                    <i class="fa-solid fa-star me-2 text-warning"></i>{{ __('Customer review and rating') }}
-                                </h2>
-                            </div>
-                            @foreach($booking->bookingRatings as $rating)
-                                <div class="p-3 rounded-3" style="background:var(--sand); border: 1px solid #ffe8cc;">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-1 text-warning fs-5">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                <i class="fa-{{ $i <= $rating->score ? 'solid' : 'regular' }} fa-star"></i>
-                                            @endfor
-                                            <span class="ms-2 fw-bold text-dark fs-6">{{ $rating->score }} / 5</span>
-                                        </div>
-                                        <div class="small text-secondary">
-                                            {{ $rating->created_at ? $rating->created_at->format('Y-m-d') : '' }}
-                                        </div>
-                                    </div>
-                                    @if($rating->comment)
-                                        <div class="text-dark fst-italic mt-2">"{{ $rating->comment }}"</div>
-                                    @endif
-                                    @if(!empty($rating->tags))
-                                        <div class="d-flex flex-wrap gap-1 mt-2">
-                                            @foreach($rating->tags as $tag)
-                                                <span class="badge bg-white text-dark border px-2 py-1 rounded-pill" style="font-size: 0.78rem;">
-                                                    <i class="fa-solid fa-check text-success me-1"></i>{{ $tag }}
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    <div class="small text-muted mt-2">
-                                        <i class="fa-solid fa-user me-1"></i>{{ $rating->resident?->name ?? __('Resident') }}
-                                    </div>
-                                </div>
-                            @endforeach
                         </div>
                     @endif
                 </div>
 
-                {{-- Right Column: Interactive Management, Assignment, Commission & Timeline --}}
+                {{-- Sidebar Column (4 cols): Quick Update Form, Financials & Timeline --}}
                 <div class="col-lg-4">
-                    {{-- 1. Fast Management & Assignment Form --}}
+                    {{-- 3.1 Quick Order Update Form --}}
                     @adminCan('admin.service-orders.update', 'PUT')
-                        <div class="panel p-3 p-lg-4 mb-4 shadow-sm" style="border: 2px solid var(--petrol); border-radius: 18px;">
+                        <div class="panel p-3 p-lg-4 mb-3 shadow-sm" style="border: 1.5px solid var(--petrol); border-radius: 14px;">
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:var(--mint); color:var(--petrol);">
-                                        <i class="fa-solid fa-sliders"></i>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:30px; height:30px; background:var(--mint); color:var(--petrol);">
+                                        <i class="fa-solid fa-sliders" style="font-size:0.8rem;"></i>
                                     </div>
-                                    <h2 class="h5 fw-bold mb-0 text-dark">
+                                    <h2 class="h6 fw-bold mb-0 text-dark">
                                         {{ __('Quick order update') }}
                                     </h2>
                                 </div>
-                                <span class="badge" style="background:var(--petrol); color:#fff;">{{ __('Update') }}</span>
+                                <span class="badge" style="background:var(--petrol); color:#fff; font-size:0.7rem;">{{ __('Update') }}</span>
                             </div>
-                            <form method="post" action="{{ route('admin.service-orders.update', $booking->id) }}" enctype="multipart/form-data" class="d-grid gap-3">
+
+                            <form method="post" action="{{ route('admin.service-orders.update', $booking->id) }}" enctype="multipart/form-data" class="d-grid gap-2">
                                 @csrf
                                 @method('put')
 
                                 <div>
-                                    <label class="form-label fw-semibold small text-dark d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-list-check text-primary"></i>
-                                        <span>{{ __('Booking status') }}</span>
-                                        <span class="text-danger">*</span>
+                                    <label class="form-label fw-semibold text-dark small mb-1">
+                                        <i class="fa-solid fa-list-check text-primary me-1"></i>{{ __('Booking status') }} <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-select order-status" name="booking_status_id" required>
+                                    <select class="form-select form-select-sm order-status" name="booking_status_id" required>
                                         @foreach($statuses as $status)
                                             <option value="{{ $status->id }}" data-code="{{ $status->code }}" @selected($booking->booking_status_id === $status->id)>
                                                 {{ $status->name }}
@@ -788,11 +797,10 @@
                                 </div>
 
                                 <div>
-                                    <label class="form-label fw-semibold small text-dark d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-handshake text-primary"></i>
-                                        <span>{{ __('Assigned provider') }}</span>
+                                    <label class="form-label fw-semibold text-dark small mb-1">
+                                        <i class="fa-solid fa-handshake text-primary me-1"></i>{{ __('Assigned provider') }}
                                     </label>
-                                    <select class="form-select provider-select" name="provider_profile_id">
+                                    <select class="form-select form-select-sm provider-select" name="provider_profile_id">
                                         <option value="">{{ __('Choose provider') }}</option>
                                         @foreach($providers as $provider)
                                             <option value="{{ $provider->id }}" @selected(($assignment?->provider_profile_id ?? $booking->service_provider_id) === $provider->id)>
@@ -803,173 +811,93 @@
                                 </div>
 
                                 <div>
-                                    <label class="form-label fw-semibold small text-dark d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-coins text-primary"></i>
-                                        <span>{{ __('Final amount for commission') }}</span>
+                                    <label class="form-label fw-semibold text-dark small mb-1">
+                                        <i class="fa-solid fa-coins text-primary me-1"></i>{{ __('Final amount for commission') }}
                                     </label>
-                                    <div class="input-group">
+                                    <div class="input-group input-group-sm">
                                         <input type="number" step=".01" min="0" max="9999999999.99" name="gross_amount" class="form-control gross-amount"
                                                value="{{ old('gross_amount', $commission?->gross_amount ?? $booking->total_amount) }}"
                                                placeholder="{{ __('Final amount for commission') }}">
                                         <span class="input-group-text bg-light text-secondary">SAR</span>
                                     </div>
-                                    <div class="form-text small" style="font-size:0.75rem;">
-                                        {{ __('Required when completing this booking.') }}
-                                    </div>
                                 </div>
 
                                 <div>
-                                    <label class="form-label fw-semibold small text-dark d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-note-sticky text-primary"></i>
-                                        <span>{{ __('Internal team note') }}</span>
+                                    <label class="form-label fw-semibold text-dark small mb-1">
+                                        <i class="fa-solid fa-note-sticky text-primary me-1"></i>{{ __('Internal team note') }}
                                     </label>
-                                    <textarea name="note" rows="2" maxlength="2000" class="form-control" placeholder="{{ __('Internal note') }}"></textarea>
+                                    <textarea name="note" rows="2" maxlength="2000" class="form-control form-control-sm" placeholder="{{ __('Internal note') }}"></textarea>
                                 </div>
 
                                 <div>
-                                    <label class="form-label fw-semibold small text-dark d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-camera text-primary"></i>
-                                        <span>{{ __('Add photos') }}</span>
+                                    <label class="form-label fw-semibold text-dark small mb-1">
+                                        <i class="fa-solid fa-camera text-primary me-1"></i>{{ __('Add photos') }}
                                     </label>
                                     <input type="file" name="images[]" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/jpg" multiple>
-                                    <div class="form-text small" style="font-size:0.75rem;">{{ __('JPG, PNG or WebP, up to 4 MB.') }}</div>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+                                <button type="submit" class="btn btn-primary btn-sm w-100 py-2 fw-semibold shadow-sm mt-1">
                                     <i class="fa-solid fa-floppy-disk me-1"></i> {{ __('Save order update') }}
                                 </button>
                             </form>
                         </div>
                     @endadminCan
 
-                    {{-- 2. Provider Assignment & Commission Card --}}
-                    <div class="panel p-3 p-lg-4 mb-4">
-                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h2 class="h5 fw-bold mb-0 text-dark">
-                                <i class="fa-solid fa-handshake me-2 text-primary"></i>{{ __('Financial and commission') }}
+                    {{-- 3.2 Financial & Payments Card (Compact) --}}
+                    <div class="panel p-3 mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                            <h2 class="h6 fw-bold mb-0 text-dark d-flex align-items-center gap-1">
+                                <i class="fa-solid fa-wallet text-success"></i>
+                                <span>{{ __('Financial and commission') }}</span>
                             </h2>
+                            <span class="badge bg-light text-secondary border font-monospace">
+                                {{ number_format($booking->total_amount, 2) }} SAR
+                            </span>
                         </div>
-                        @if($assignment)
-                            <div class="d-grid gap-2 small mb-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-secondary">{{ __('Provider') }}:</span>
-                                    <strong class="text-dark">{{ $assignment->providerProfile?->company_name ?? '—' }}</strong>
-                                </div>
-                                @if($assignment->providerContract)
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-secondary">{{ __('Provider contract') }}:</span>
-                                        <span class="text-dark">#{{ $assignment->providerContract->id }} ({{ $assignment->providerContract->reference ?? '—' }})</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-secondary">{{ __('Commission rate') }}:</span>
-                                        <span class="badge bg-light text-dark border">{{ $assignment->providerContract->service_commission_percent }}%</span>
-                                    </div>
-                                @endif
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-secondary">{{ __('Assigned at') }}:</span>
-                                    <span class="text-dark">{{ \Carbon\Carbon::parse($assignment->assigned_at)->format('Y-m-d H:i') }}</span>
-                                </div>
-                                @if($assignment->accepted_at)
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-secondary">{{ __('Accepted at') }}:</span>
-                                        <span class="text-dark">{{ \Carbon\Carbon::parse($assignment->accepted_at)->format('Y-m-d H:i') }}</span>
-                                    </div>
-                                @endif
-                                @if($assignment->completed_at)
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-secondary">{{ __('Completed at') }}:</span>
-                                        <span class="text-dark">{{ \Carbon\Carbon::parse($assignment->completed_at)->format('Y-m-d H:i') }}</span>
-                                    </div>
-                                @endif
-                                @if($assignment->adminActor)
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-secondary">{{ __('Assigned by') }}:</span>
-                                        <span class="text-dark">{{ $assignment->adminActor->name }}</span>
-                                    </div>
-                                @elseif($assignment->assignedBy)
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="text-secondary">{{ __('Assigned by') }}:</span>
-                                        <span class="text-dark">{{ $assignment->assignedBy->name }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        @else
-                            <div class="p-3 text-center text-muted bg-light rounded-3 mb-3 small">
-                                <i class="fa-solid fa-user-xmark mb-1"></i>
-                                <div>{{ __('Not assigned yet') }}</div>
-                            </div>
-                        @endif
 
-                        {{-- Commission Entry Details --}}
-                        @if($commission)
-                            <div class="p-3 rounded-3" style="background:var(--sand); border:1px solid #ffe8cc;">
-                                <div class="small fw-bold text-dark mb-2">
-                                    <i class="fa-solid fa-receipt me-1 text-primary"></i>{{ __('Commission snapshot') }}
-                                </div>
-                                <div class="d-grid gap-1 small">
-                                    <div class="d-flex justify-content-between">
-                                        <span class="text-secondary">{{ __('Gross amount') }}:</span>
-                                        <strong>{{ number_format($commission->gross_amount, 2) }} SAR</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span class="text-secondary">{{ __('Commission rate') }}:</span>
-                                        <span>{{ $commission->commission_percent_snapshot }}%</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between border-top pt-1 mt-1">
-                                        <span class="text-secondary fw-bold">{{ __('Commission amount') }}:</span>
-                                        <strong class="text-success">{{ number_format($commission->commission_amount, 2) }} SAR</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between mt-1">
-                                        <span class="text-secondary">{{ __('Commission status') }}:</span>
-                                        <span class="pill">{{ $commission->status?->code ?? 'recorded' }}</span>
-                                    </div>
-                                </div>
+                        <div class="d-grid gap-1 small">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-secondary">{{ __('Provider') }}:</span>
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 170px;" title="{{ $providerProfile?->company_name ?? __('Not assigned yet') }}">
+                                    {{ $providerProfile?->company_name ?? __('Not assigned yet') }}
+                                </span>
                             </div>
-                        @endif
+
+                            @if($commission)
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">{{ __('Commission rate') }}:</span>
+                                    <span>{{ $commission->commission_percent_snapshot }}%</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">{{ __('Commission amount') }}:</span>
+                                    <strong class="text-success">{{ number_format($commission->commission_amount, 2) }} SAR</strong>
+                                </div>
+                            @elseif($assignment?->providerContract)
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">{{ __('Commission rate') }}:</span>
+                                    <span>{{ $assignment->providerContract->service_commission_percent }}%</span>
+                                </div>
+                            @endif
+
+                            <div class="d-flex justify-content-between border-top pt-1 mt-1">
+                                <span class="text-secondary">{{ __('Payments') }}:</span>
+                                <span>{{ $booking->payments->isNotEmpty() ? $booking->payments->count() : __('No payments recorded') }}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    {{-- 3. Payments Recorded Card --}}
-                    <div class="panel p-3 p-lg-4 mb-4">
-                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h2 class="h5 fw-bold mb-0 text-dark">
-                                <i class="fa-solid fa-credit-card me-2 text-primary"></i>{{ __('Payments') }}
-                            </h2>
-                            <span class="badge bg-light text-secondary border">{{ $booking->payments->count() }}</span>
-                        </div>
-                        @if($booking->payments->isNotEmpty())
-                            <div class="d-grid gap-2">
-                                @foreach($booking->payments as $payment)
-                                    <div class="p-2 rounded-2 border bg-light small d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <div class="fw-bold text-dark">#{{ $payment->reference ?? $payment->id }}</div>
-                                            <div class="text-muted" style="font-size:0.7rem;">{{ $payment->created_at ? $payment->created_at->format('Y-m-d H:i') : '' }}</div>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="fw-bold text-primary">{{ number_format($payment->amount, 2) }} SAR</div>
-                                            <span class="badge bg-success-subtle text-success" style="font-size:0.65rem;">{{ $payment->status?->code ?? 'paid' }}</span>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="p-3 text-center text-muted bg-light rounded-3 small">
-                                <i class="fa-regular fa-credit-card mb-1"></i>
-                                <div>{{ __('No payments recorded') }}</div>
-                            </div>
-                        @endif
-                    </div>
-
-                    {{-- 4. Status History & Audit Timeline Card --}}
-                    <div class="panel p-3 p-lg-4 mb-4">
-                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h2 class="h5 fw-bold mb-0 text-dark">
-                                <i class="fa-solid fa-timeline me-2 text-secondary"></i>{{ __('Timeline and status history') }}
+                    {{-- 3.3 Timeline & Status History Card (Compact) --}}
+                    <div class="panel p-3 mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                            <h2 class="h6 fw-bold mb-0 text-dark d-flex align-items-center gap-1">
+                                <i class="fa-solid fa-timeline text-secondary"></i>
+                                <span>{{ __('Timeline and status history') }}</span>
                             </h2>
                             <span class="badge bg-light text-secondary border">{{ $booking->bookingStatusHistory->count() }}</span>
                         </div>
 
                         @if($booking->bookingStatusHistory->isNotEmpty())
-                            <div class="position-relative ps-3" style="border-inline-start: 2px dashed #b4dbd2; margin-inline-start: 10px;">
+                            <div class="position-relative ps-3" style="border-inline-start: 2px dashed #b4dbd2; margin-inline-start: 8px; max-height: 240px; overflow-y: auto;">
                                 @foreach($booking->bookingStatusHistory as $history)
                                     @php
                                         $hStatusTranslation = $history->status?->translations->firstWhere('locale', $locale);
@@ -985,19 +913,18 @@
                                             default => '#f59e0b',
                                         };
                                     @endphp
-                                    <div class="position-relative mb-3 pb-2">
-                                        {{-- Dot --}}
+                                    <div class="position-relative mb-2 pb-1" style="font-size:0.75rem;">
                                         <span class="position-absolute rounded-circle"
-                                              style="width: 12px; height: 12px; inset-inline-start: -23px; top: 4px; border: 2px solid #fff; background-color: {{ $dotColor }}; box-shadow: 0 0 0 2px rgba(2,51,62,0.1);"></span>
+                                              style="width: 10px; height: 10px; inset-inline-start: -21px; top: 3px; border: 2px solid #fff; background-color: {{ $dotColor }};"></span>
                                         <div class="d-flex align-items-center justify-content-between">
-                                            <span class="pill fw-bold" style="font-size: 0.75rem;">{{ $hStatusName }}</span>
-                                            <span class="text-muted" style="font-size: 0.7rem;">{{ $history->created_at ? $history->created_at->format('Y-m-d H:i') : '' }}</span>
+                                            <span class="fw-semibold text-dark">{{ $hStatusName }}</span>
+                                            <span class="text-muted" style="font-size: 0.68rem;">{{ $history->created_at ? $history->created_at->format('m-d H:i') : '' }}</span>
                                         </div>
-                                        <div class="small text-secondary mt-1">
-                                            <i class="fa-solid fa-user-pen me-1" style="font-size: 0.7rem;"></i>{{ __('Changed by') }}: <strong>{{ $actorName }}</strong>
+                                        <div class="text-secondary" style="font-size: 0.7rem;">
+                                            {{ $actorName }}
                                         </div>
                                         @if($history->note)
-                                            <div class="small bg-light p-2 rounded-2 mt-1 text-dark fst-italic" style="font-size: 0.75rem;">
+                                            <div class="bg-light p-1 rounded mt-1 text-dark fst-italic" style="font-size: 0.7rem;">
                                                 "{{ $history->note }}"
                                             </div>
                                         @endif
@@ -1005,8 +932,8 @@
                                 @endforeach
                             </div>
                         @else
-                            <div class="p-3 text-center text-muted bg-light rounded-3 small">
-                                <div>{{ __('No status history recorded') }}</div>
+                            <div class="p-2 text-center text-muted bg-light rounded-3 small">
+                                {{ __('No status history recorded') }}
                             </div>
                         @endif
                     </div>
@@ -1017,9 +944,9 @@
 </div>
 
 {{-- Lightbox Image Modal for Fast Photo Preview --}}
-<div class="modal fade" id="bookingPhotoModal" tabindex="-1" aria-labelledby="bookingPhotoModalLabel" aria-hidden="true">
+<div class="modal fade d-print-none" id="bookingPhotoModal" tabindex="-1" aria-labelledby="bookingPhotoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px; overflow:hidden;">
             <div class="modal-header border-bottom py-2 px-3" style="background:#f8faf9;">
                 <h5 class="modal-title fs-6 fw-bold text-dark" id="bookingPhotoModalLabel">
                     <i class="fa-solid fa-image me-1 text-primary"></i> <span id="photoModalTitle">{{ __('Attached photos and media') }}</span>

@@ -22,6 +22,18 @@ class ProviderProfile extends Model
     protected $fillable = [
         'user_id',
         'company_name',
+        'trade_name',
+        'provider_type',
+        'years_of_experience',
+        'commercial_registration',
+        'legal_representative',
+        'legal_representative_id',
+        'company_seal',
+        'commercial_registration_document',
+        'legal_representative_id_document',
+        'signed_annex_a',
+        'municipal_license',
+        'contract_accepted_at',
         'is_approved',
     ];
 
@@ -34,6 +46,8 @@ class ProviderProfile extends Model
         return [
             'user_id' => 'integer',
             'is_approved' => 'boolean',
+            'years_of_experience' => 'integer',
+            'contract_accepted_at' => 'datetime',
         ];
     }
 
@@ -100,6 +114,7 @@ class ProviderProfile extends Model
     {
         return $this->hasMany(BookingProviderAssignment::class, 'provider_profile_id');
     }
+
 
     /**
      * السجلات التابعة عبر provider_profile_id.

@@ -8,6 +8,7 @@ use App\Modules\Catalog\Services\AdminPriceAdminService;
 use App\Modules\Properties\Models\Region;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -51,6 +52,17 @@ class PriceAdminController extends Controller
 
         return redirect()->route('admin.prices.index')
             ->with('status', __('Pricing updated successfully.'));
+    }
+
+    public function review(Request $request, int $priceId): RedirectResponse
+    {
+        $input = $request->validate([
+            'decision' => ['required', 'in:approved,rejected'],
+            'rejection_reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $this->service->review($priceId, $input['decision'], $input['rejection_reason'] ?? null, $request->user());
+
+        return redirect()->route('admin.prices.index')->with('status', __('Price review saved successfully.'));
     }
 
     public function destroy(int $priceId): RedirectResponse

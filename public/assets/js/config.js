@@ -1,10 +1,17 @@
 /**
- * Rounder demo content. Edit these values when connecting the real catalog.
- * Cities and service scopes are illustrative; they are not availability claims.
+ * Rounder demo content fallback.
+ * Uses existing window.ROUNDER_CONFIG if provided dynamically by the backend.
  */
+if (!window.ROUNDER_CONFIG) {
 window.ROUNDER_CONFIG = Object.freeze({
   locale: 'ar-SA',
   timeZone: 'Asia/Riyadh',
+  regions: [
+    { name: 'المنطقة الوسطى', cities: ['الرياض', 'الخرج', 'بريدة', 'عنيزة', 'حائل', 'المجمعة'] },
+    { name: 'المنطقة الغربية', cities: ['جدة', 'مكة المكرمة', 'المدينة المنورة', 'الطائف', 'ينبع', 'أبها'] },
+    { name: 'المنطقة الشرقية', cities: ['الدمام', 'الخبر', 'الجبيل', 'الأحساء', 'الهفوف', 'القطيف'] },
+    { name: 'المنطقة الشمالية', cities: ['تبوك', 'عرعر', 'سكاكا', 'طريف', 'القريات'] }
+  ],
   cities: ['الرياض', 'جدة', 'الدمام', 'مكة المكرمة', 'المدينة المنورة', 'مدينة أخرى'],
   propertyTypes: ['شقة', 'فيلا', 'مكتب'],
   timeSlots: ['صباحًا · ٩ ص – ١٢ م', 'ظهرًا · ١٢ م – ٤ م', 'مساءً · ٤ م – ٨ م'],
@@ -51,3 +58,4 @@ window.ROUNDER_CONFIG = Object.freeze({
     }
   ]
 });
+}

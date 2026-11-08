@@ -135,11 +135,17 @@
                                 <div class="small fw-bold text-dark font-monospace">
                                     {{ $provider->contract_reference ?? '—' }}
                                 </div>
-                                @if($provider->contract_status)
-                                    <span class="badge {{ $provider->contract_status === 'active' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-secondary border' }}" style="font-size: 0.72rem;">
-                                        {{ __($provider->contract_status) }}
-                                    </span>
-                                @endif
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    @if($provider->contract_status)
+                                        <span class="badge {{ $provider->contract_status === 'active' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-secondary border' }}" style="font-size: 0.72rem;">
+                                            {{ __($provider->contract_status) }}
+                                        </span>
+                                    @endif
+                                    <a class="btn btn-sm btn-outline-danger py-0 px-2 d-inline-flex align-items-center gap-1" style="font-size: 0.76rem; border-radius: 6px;" href="{{ route('admin.providers.contract.pdf', $provider->provider_id) }}" title="{{ __('Download contract PDF') }}">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                        <span>{{ __('Download contract PDF') }}</span>
+                                    </a>
+                                </div>
                             </td>
                             <td class="text-nowrap">
                                 <div class="d-flex align-items-center gap-1">

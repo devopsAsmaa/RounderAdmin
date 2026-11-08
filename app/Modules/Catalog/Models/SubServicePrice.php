@@ -24,6 +24,10 @@ class SubServicePrice extends Model
         'region_id',
         'price',
         'is_active',
+        'approval_status',
+        'reviewed_by',
+        'reviewed_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -34,8 +38,14 @@ class SubServicePrice extends Model
             'region_id' => 'integer',
             'price' => 'decimal:2',
             'is_active' => 'boolean',
+            'reviewed_by' => 'integer',
+            'reviewed_at' => 'datetime',
         ];
     }
+
+    public const APPROVAL_PENDING = 'pending';
+    public const APPROVAL_APPROVED = 'approved';
+    public const APPROVAL_REJECTED = 'rejected';
 
     public function provider(): BelongsTo
     {

@@ -40,7 +40,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'permissions', 'provider_profile_id'];
 
     protected $table = 'users';
 
@@ -52,6 +52,8 @@ class User extends Authenticatable
         'phone',
         'locale',
         'password',
+        'provider_profile_id',
+        'permissions',
     ];
 
     /**
@@ -62,6 +64,8 @@ class User extends Authenticatable
     {
         return [
             'role_id' => 'integer',
+            'provider_profile_id' => 'integer',
+            'permissions' => 'array',
             'email_verified_at' => 'datetime:Y-m-d H:i:s',
             'password' => 'hashed',
         ];
@@ -92,6 +96,11 @@ class User extends Authenticatable
     public function providerProfiles(): HasMany
     {
         return $this->hasMany(ProviderProfile::class, 'user_id');
+    }
+
+    public function providerProfile(): BelongsTo
+    {
+        return $this->belongsTo(ProviderProfile::class, 'provider_profile_id');
     }
 
     /**

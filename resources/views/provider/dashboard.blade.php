@@ -1,0 +1,61 @@
+@extends('layouts.provider')
+@section('title', __('Dashboard'))
+@section('body')
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <div class="text-secondary">{{ __('Provider portal') }}</div>
+        <h1 class="h3 fw-bold mb-0">{{ $profile->company_name }}</h1>
+    </div>
+    @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'orders.create'))
+        <a class="btn btn-orange" href="{{ route('provider.orders.create') }}">+ {{ __('Create service order') }}</a>
+    @endif
+</div>
+<div class="row g-3 mb-4">
+    @foreach([__('Total orders') => $ordersCount, __('Pending orders') => $pendingCount, __('Active orders') => $activeCount, __('Completed orders') => $completedCount] as $label => $value)
+        <div class="col-6 col-xl-3"><div class="metric"><div class="text-secondary">{{ $label }}</div><div class="value">{{ $value }}</div></div></div>
+    @endforeach
+</div>
+@if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'orders.view'))
+<section class="panel p-3 p-lg-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 fw-bold mb-0">{{ __('Recent service orders') }}</h2>
+        @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'orders.view'))
+            <a href="{{ route('provider.orders.index') }}">{{ __('View all') }}</a>
+        @endif
+    </div>
+    @include('provider.orders.table', ['orders' => $orders])
+</section>
+@endif
+<div class="row g-3 mt-1">
+    <div class="col-lg-5">
+        <section class="panel p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0">{{ __('Your registered services') }}</h2>
+                <span class="badge text-bg-light">{{ $services->count() }}</span>
+            </div>
+            @forelse($services as $service)
+                <div class="border rounded-3 p-2 mb-2">
+                    {{ $service->translations->firstWhere('locale', app()->getLocale())?->name
+                        ?? $service->translations->firstWhere('locale', 'ar')?->name
+                        ?? $service->code }}
+                </div>
+            @empty
+                <p class="text-secondary mb-0">{{ __('No services are linked to your provider account.') }}</p>
+            @endforelse
+        </section>
+    </div>
+    @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'emergencies.view'))
+    <div class="col-lg-7">
+        <section class="panel p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0">{{ __('Emergency requests') }}</h2>
+                @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'emergencies.view'))
+                    <a href="{{ route('provider.emergencies.index') }}">{{ __('View all') }}</a>
+                @endif
+            </div>
+            @include('provider.emergencies.table', ['emergencies' => $emergencies])
+        </section>
+    </div>
+    @endif
+</div>
+@endsection

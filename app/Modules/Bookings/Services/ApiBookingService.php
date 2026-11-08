@@ -337,6 +337,7 @@ class ApiBookingService
             $prices = SubServicePrice::query()
                 ->where('sub_service_id', $subServiceId)
                 ->where('is_active', true)
+                ->where('approval_status', SubServicePrice::APPROVAL_APPROVED)
                 ->whereHas('cities', fn ($q) => $q->where('cities.id', $cityId))
                 ->get()
                 ->keyBy('provider_profile_id');
@@ -438,6 +439,7 @@ class ApiBookingService
                 $priceRecord = SubServicePrice::query()
                     ->where('id', $subServicePriceId)
                     ->where('is_active', true)
+                    ->where('approval_status', SubServicePrice::APPROVAL_APPROVED)
                     ->first();
                 if ($priceRecord) {
                     $dynamicPrice = $priceRecord->price;
@@ -459,6 +461,7 @@ class ApiBookingService
                         ->where('provider_profile_id', $serviceProviderId)
                         ->where('sub_service_id', $data['sub_service_id'])
                         ->where('is_active', true)
+                        ->where('approval_status', SubServicePrice::APPROVAL_APPROVED)
                         ->whereHas('cities', fn ($q) => $q->where('cities.id', $cityId))
                         ->first();
                     if ($priceRecord) {

@@ -51,7 +51,7 @@ final class AdminPermissionService
             str_starts_with($route, 'admin.service-orders.'), str_starts_with($route, 'admin.bookings.') => DashboardSection::Orders,
             str_starts_with($route, 'admin.emergencies.') => DashboardSection::Emergencies,
             str_starts_with($route, 'admin.permissions.') => DashboardSection::Permissions,
-            str_starts_with($route, 'admin.pages.') => DashboardSection::Pages,
+            str_starts_with($route, 'admin.pages.'), str_starts_with($route, 'admin.company-settings.') => DashboardSection::Pages,
             default => null,
         };
         if (!$section) return false;

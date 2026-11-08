@@ -4,15 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#00343e">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="راوندر — خدمات المنزل والأعمال. استكشف الخدمات وجرّب رحلة الحجز.">
     <title>راوندر — كل خدمات بيتك، في مكان واحد</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="assets/fonts/tajawal-bold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.rtl.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/vendor/select2/select2.min.css?v=4.1.0">
+    <link rel="stylesheet" href="assets/vendor/select2/select2-bootstrap-5-theme.rtl.min.css?v=1.3.0">
+    <link rel="stylesheet" href="assets/css/style.css?v={{ filemtime(public_path('assets/css/style.css')) }}">
+    <script src="assets/vendor/jquery/jquery.min.js"></script>
+    <script src="assets/vendor/select2/select2.min.js"></script>
     <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js" defer></script>
-    <script src="assets/js/config.js" defer></script>
-    <script src="assets/js/app.js" defer></script>
+    <script>
+      window.ROUNDER_CONFIG = {!! json_encode($clientConfig ?? [], JSON_UNESCAPED_UNICODE) !!};
+    </script>
+    <script src="assets/js/app.js?v={{ filemtime(public_path('assets/js/app.js')) }}" defer></script>
   </head>
   <body>
     <a class="visually-hidden-focusable skip-link" href="#main">تخطّ إلى المحتوى</a>
@@ -60,9 +67,9 @@
                 <span>دخول الإدارة</span>
               </a>
             @endauth
-            <button class="btn btn-link header-partner d-none d-xl-inline-flex" type="button" data-modal="provider">
+            <a class="btn btn-link header-partner d-none d-xl-inline-flex" href="{{ route('provider.register') }}">
               انضم كمزود خدمة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
-            </button>
+            </a>
             <button class="btn btn-primary btn-sm" type="button" data-modal="booking">
               اطلب خدمة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
             </button>
@@ -143,7 +150,7 @@
                   <h2 class="hero-title">مهارتك تصنع<br><span>فرقًا في كل بيت.</span></h2>
                   <p class="hero-description">أنت تقدّم الخبرة، وراوندر ترتّب التجربة.<br>استكشف طريقة الانضمام كمزود خدمة.</p>
                   <div class="hero-actions d-flex flex-wrap align-items-center gap-3">
-                    <button class="btn btn-primary" type="button" data-modal="provider">انضم لراوندر <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+                    <a class="btn btn-primary" href="{{ route('provider.register') }}">انضم لراوندر <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
                     <a class="btn btn-link" href="#providers">تعرّف على الفرصة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
                   </div>
                 </div>
@@ -190,71 +197,67 @@
             <div><span class="eyebrow">خدمات راوندر</span><h2 id="services-title">إيش يحتاج بيتك اليوم؟</h2><p>كل احتياجات المنزل، بخطوة بسيطة.</p></div>
             <div class="nav nav-pills service-filters" role="group" aria-label="تصفية الخدمات">
               <button class="nav-link active" type="button" data-filter="all" aria-pressed="true">كل الخدمات</button>
-              <button class="nav-link" type="button" data-filter="maintenance" aria-pressed="false">صيانة</button>
-              <button class="nav-link" type="button" data-filter="care" aria-pressed="false">عناية بالمنزل</button>
+              @if(!empty($categories))
+                @foreach($categories as $category)
+                  <button class="nav-link" type="button" data-filter="{{ $category->code }}" aria-pressed="false">
+                    {{ $category->translations->firstWhere('locale', app()->getLocale())?->name ?? $category->code }}
+                  </button>
+                @endforeach
+              @else
+                <button class="nav-link" type="button" data-filter="maintenance" aria-pressed="false">صيانة</button>
+                <button class="nav-link" type="button" data-filter="cleaning" aria-pressed="false">نظافة</button>
+              @endif
             </div>
           </div>
           <div class="row row-cols-2 row-cols-lg-3 g-3 g-lg-4" id="service-grid">
-            
-            <div class="col" data-service-item data-category="maintenance">
-              <button type="button" class="card service-card h-100 w-100" data-service="ac">
-                <span class="service-icon tone-teal"><svg class="icon" aria-hidden="true"><use href="#i-ac"></use></svg></span>
-                <span class="service-number">01</span>
-                <h3>التكييف</h3>
-                <p>صيانة، تنظيف وتركيب المكيّفات</p>
-                <span class="service-card-footer">خلّ جوّك أريح <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
-              </button>
-            </div>
-
-            <div class="col" data-service-item data-category="maintenance">
-              <button type="button" class="card service-card h-100 w-100" data-service="plumbing">
-                <span class="service-icon tone-mint"><svg class="icon" aria-hidden="true"><use href="#i-drop"></use></svg></span>
-                <span class="service-number">02</span>
-                <h3>السباكة</h3>
-                <p>إصلاح التسريبات وتركيب الأدوات الصحية</p>
-                <span class="service-card-footer">حلول من الأساس <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
-              </button>
-            </div>
-
-            <div class="col" data-service-item data-category="maintenance">
-              <button type="button" class="card service-card h-100 w-100" data-service="electric">
-                <span class="service-icon tone-orange"><svg class="icon" aria-hidden="true"><use href="#i-bolt"></use></svg></span>
-                <span class="service-number">03</span>
-                <h3>الكهرباء</h3>
-                <p>فحص الأعطال وتركيب الإضاءة</p>
-                <span class="service-card-footer">نوّر بيتك براحة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
-              </button>
-            </div>
-
-            <div class="col" data-service-item data-category="maintenance">
-              <button type="button" class="card service-card h-100 w-100" data-service="appliances">
-                <span class="service-icon tone-sage"><svg class="icon" aria-hidden="true"><use href="#i-washer"></use></svg></span>
-                <span class="service-number">04</span>
-                <h3>الأجهزة المنزلية</h3>
-                <p>فحص وصيانة الغسالات والثلاجات</p>
-                <span class="service-card-footer">لروتين يومي أسهل <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
-              </button>
-            </div>
-
-            <div class="col" data-service-item data-category="care">
-              <button type="button" class="card service-card h-100 w-100" data-service="paint">
-                <span class="service-icon tone-orange"><svg class="icon" aria-hidden="true"><use href="#i-paint"></use></svg></span>
-                <span class="service-number">05</span>
-                <h3>الدهانات</h3>
-                <p>تجديد الجدران واللمسات النهائية</p>
-                <span class="service-card-footer">جدّد تفاصيل مكانك <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
-              </button>
-            </div>
-
-            <div class="col" data-service-item data-category="care">
-              <button type="button" class="card service-card h-100 w-100" data-service="clean">
-                <span class="service-icon tone-mint"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></span>
-                <span class="service-number">06</span>
-                <h3>التنظيف</h3>
-                <p>تنظيف المنزل والمجالس والمفروشات</p>
-                <span class="service-card-footer">راحة تبدأ بالنظافة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
-              </button>
-            </div>
+            @php
+              $tones = ['tone-teal', 'tone-mint', 'tone-orange', 'tone-sage'];
+              $footerPhrases = [
+                  'خلّ جوّك أريح',
+                  'حلول من الأساس',
+                  'نوّر بيتك براحة',
+                  'لروتين يومي أسهل',
+                  'جدّد تفاصيل مكانك',
+                  'راحة تبدأ بالنظافة',
+                  'إتقان يدوم معك',
+                  'خدمة سريعة ومضمونة',
+              ];
+            @endphp
+            @forelse($services as $service)
+              @php
+                $catCode = $service->category?->code ?? 'maintenance';
+                $serviceName = $service->translations->firstWhere('locale', app()->getLocale())?->name ?? $service->code;
+                $serviceDesc = $service->translations->firstWhere('locale', app()->getLocale())?->description;
+                if (!$serviceDesc) {
+                    $firstSubs = $service->subServices->take(3)->map(
+                        fn($s) => $s->translations->firstWhere('locale', app()->getLocale())?->name ?? $s->code
+                    )->filter()->implode('، ');
+                    $serviceDesc = $firstSubs ? 'يشمل: ' . $firstSubs : 'صيانة وخدمات احترافية لبيتك';
+                }
+                $icon = !empty($service->icon) ? $service->icon : 'home';
+                $tone = $tones[$loop->index % count($tones)];
+                $phrase = $footerPhrases[$loop->index % count($footerPhrases)];
+              @endphp
+              <div class="col" data-service-item data-category="{{ $catCode }}">
+                <button type="button" class="card service-card h-100 w-100" data-service="{{ $service->code }}">
+                  <span class="service-icon {{ $tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ $icon }}"></use></svg></span>
+                  <span class="service-number">{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                  <h3>{{ $serviceName }}</h3>
+                  <p>{{ $serviceDesc }}</p>
+                  <span class="service-card-footer">{{ $phrase }} <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
+                </button>
+              </div>
+            @empty
+              <div class="col" data-service-item data-category="maintenance">
+                <button type="button" class="card service-card h-100 w-100" data-service="ac">
+                  <span class="service-icon tone-teal"><svg class="icon" aria-hidden="true"><use href="#i-ac"></use></svg></span>
+                  <span class="service-number">01</span>
+                  <h3>التكييف</h3>
+                  <p>صيانة، تنظيف وتركيب المكيّفات</p>
+                  <span class="service-card-footer">خلّ جوّك أريح <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
+                </button>
+              </div>
+            @endforelse
           </div>
           <p class="visually-hidden" id="filter-status" role="status" aria-live="polite"></p>
           <div class="service-help d-flex flex-column flex-sm-row justify-content-center align-items-center gap-1 gap-sm-3">
@@ -330,7 +333,7 @@
           <div class="row align-items-center gy-3 provider-inner">
             <div class="col-auto"><div class="provider-icon"><svg class="icon" aria-hidden="true"><use href="#i-tool"></use></svg></div></div>
             <div class="col"><span class="eyebrow">كبر شغلك مع راوندر</span><h2 id="provider-title">عندك الخبرة؟ نحتاج مهارتك.</h2><p>مساحة لمزودي الخدمات والفنيين لعرض تخصصاتهم وتنظيم طلباتهم.</p></div>
-            <div class="col-12 col-lg-auto"><button class="btn btn-outline-primary" type="button" data-modal="provider">انضم كمزود خدمة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></button></div>
+            <div class="col-12 col-lg-auto"><a class="btn btn-outline-primary" href="{{ route('provider.register') }}">انضم كمزود خدمة <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a></div>
           </div>
         </div>
       </section>
@@ -403,12 +406,12 @@
                   <button class="accordion-button collapsed" type="button"
                     data-bs-toggle="collapse" data-bs-target="#faq-5"
                     aria-expanded="false" aria-controls="faq-5">
-                    كيف أنضم كمزود خدمة؟
+                    كيف أسجل كمزود خدمة؟
                   </button>
                 </h3>
                 <div id="faq-5" class="accordion-collapse collapse"
                   data-bs-parent="#faq-accordion">
-                  <div class="accordion-body">اضغط «انضم كمزود خدمة» وجرّب تحديد تخصصك ونطاق عملك. التسجيل هنا للمعاينة فقط؛ شروط الانضمام الفعلية تُحدد قبل الإطلاق.</div>
+                  <div class="accordion-body">أرسل بيانات شركتك والخدمات التي تقدمها. تراجع الإدارة الطلب والمرفقات، وبعد الموافقة يظهر لك العقد في حسابك؛ اقبله للدخول إلى لوحة مزود الخدمة.</div>
                 </div>
               </div>
               </div>
@@ -435,7 +438,7 @@
             <a href="#" aria-label="راوندر — الرئيسية"><img class="wordmark" src="assets/images/rounder-wordmark.png" alt="rounder — راوندر" width="2172" height="724" loading="lazy"></a>
             <p>عناية للمنزل. راحة لك.</p>
           </div>
-          <div class="col-6 col-lg-3"><h3>اكتشف راوندر</h3><ul class="list-unstyled footer-links"><li><a href="#services">الخدمات المنزلية</a></li><li><a href="#business">حلول الأعمال</a></li><li><button type="button" data-modal="provider">مزودو الخدمات</button></li>@auth<li><a href="{{ route('admin.dashboard') }}">لوحة التحكم</a></li>@else<li><a href="{{ route('admin.login') }}">دخول الإدارة</a></li>@endauth</ul></div>
+          <div class="col-6 col-lg-3"><h3>اكتشف راوندر</h3><ul class="list-unstyled footer-links"><li><a href="#services">الخدمات المنزلية</a></li><li><a href="#business">حلول الأعمال</a></li><li><a href="{{ route('provider.register') }}">التسجيل كمزود خدمة</a></li><li><a href="{{ route('provider.login') }}">دخول مزود الخدمة</a></li>@auth<li><a href="{{ route('admin.dashboard') }}">لوحة التحكم</a></li>@else<li><a href="{{ route('admin.login') }}">دخول الإدارة</a></li>@endauth</ul></div>
           <div class="col-6 col-lg-3"><h3>كيف نقدر نساعدك؟</h3><ul class="list-unstyled footer-links"><li><a href="#how">طريقة الحجز</a></li><li><a href="#faq">الأسئلة الشائعة</a></li><li><button type="button" data-modal="help">اختيار الخدمة المناسبة</button></li></ul></div>
           <div class="col-12 col-lg-3 footer-note"><span class="concept-label">نسخة تصميم تجريبية</span><p>واجهة راوندر للخدمات المنزلية.<br>المحتوى والطلبات لأغراض المعاينة.</p></div>
         </div>

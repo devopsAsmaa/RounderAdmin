@@ -58,6 +58,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/prices', [$p, 'store'])->name('prices.store');
     Route::get('/prices/{priceId}/edit', [$p, 'edit'])->whereNumber('priceId')->name('prices.edit');
     Route::put('/prices/{priceId}', [$p, 'update'])->whereNumber('priceId')->name('prices.update');
+    Route::post('/prices/{priceId}/review', [$p, 'review'])->whereNumber('priceId')->name('prices.review');
     Route::delete('/prices/{priceId}', [$p, 'destroy'])->whereNumber('priceId')->name('prices.destroy');
 
     Route::get('/prices/ajax/provider-services/{providerId}', [$p, 'getProviderServices'])->whereNumber('providerId')->name('prices.ajax.provider-services');

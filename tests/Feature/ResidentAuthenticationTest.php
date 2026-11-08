@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class ResidentAuthenticationTest extends TestCase
@@ -242,5 +243,20 @@ class ResidentAuthenticationTest extends TestCase
             ->assertJsonPath('status', true)
             ->assertJsonPath('data.is_registered', true)
             ->assertJsonStructure(['data' => ['user' => ['id', 'name', 'phone'], 'token']]);
+    }
+
+    public function test_send_otp_returns_server_error_and_does_not_cache_code_when_sms_fails(): void
+    {
+        config(['app.sms_url' => null]);
+        Cache::forget('otp_0577778888');
+        Cache::forget('otp_+966577778888');
+
+        $this->postJson('/api/v1/auth/send-otp', [
+            'mobile' => '0577778888',
+        ])->assertStatus(500)
+            ->assertJsonMissingPath('data.otp');
+
+        $this->assertNull(Cache::get('otp_0577778888'));
+        $this->assertNull(Cache::get('otp_+966577778888'));
     }
 }

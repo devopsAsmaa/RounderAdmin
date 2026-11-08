@@ -10,6 +10,8 @@ use App\Modules\Properties\Models\Region;
 use App\Modules\Providers\Models\ProviderProfile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use App\Modules\Identity\Models\Admin;
 
 /**
  * قواعد عمل إدارة أسعار الخدمات الفرعية للوحة الإدارة.
@@ -60,6 +62,9 @@ class AdminPriceAdminService
 
         if (isset($input['status']) && $input['status'] !== 'all') {
             $query->where('is_active', $input['status'] === 'active');
+        }
+        if (!empty($input['approval_status']) && $input['approval_status'] !== 'all') {
+            $query->where('approval_status', $input['approval_status']);
         }
 
         if (!empty($input['search'])) {
@@ -142,6 +147,32 @@ class AdminPriceAdminService
     public function store(array $input, mixed $actor): SubServicePrice
     {
         return DB::transaction(function () use ($input) {
+            ProviderProfile::query()->whereKey($input['provider_profile_id'])->lockForUpdate()->firstOrFail();
+            $this->ensureCitiesBelongToRegion($input['region_id'], $input['city_ids'] ?? []);
+            $cityIds = $input['city_ids'] ?? [];
+            if (!empty($cityIds)) {
+                $conflicting = SubServicePrice::query()
+                    ->where('provider_profile_id', (int) $input['provider_profile_id'])
+                    ->where('sub_service_id', (int) $input['sub_service_id'])
+                    ->whereHas('cities', fn ($q) => $q->whereIn('cities.id', $cityIds))
+                    ->with('region.translations')
+                    ->first();
+
+                if ($conflicting) {
+                    $regionName = $conflicting->region?->translations->firstWhere('locale', app()->getLocale())?->name
+                        ?? $conflicting->region?->translations->firstWhere('locale', 'ar')?->name
+                        ?? $conflicting->region?->code
+                        ?? '';
+
+                    throw ValidationException::withMessages([
+                        'city_ids' => [__('A pricing already exists for this provider and sub-service covering the selected cities (Price #:id:region). Please edit the existing price instead of creating a conflict.', [
+                            'id' => $conflicting->id,
+                            'region' => $regionName ? " - {$regionName}" : '',
+                        ])],
+                    ]);
+                }
+            }
+
             $price = SubServicePrice::create([
                 'provider_profile_id' => (int) $input['provider_profile_id'],
                 'sub_service_id' => (int) $input['sub_service_id'],
@@ -190,6 +221,32 @@ class AdminPriceAdminService
         return DB::transaction(function () use ($priceId, $input) {
             $priceRecord = SubServicePrice::findOrFail($priceId);
 
+            $cityIds = $input['city_ids'] ?? null;
+            $this->ensureCitiesBelongToRegion($input['region_id'], $cityIds ?? []);
+            if (!empty($cityIds)) {
+                $conflicting = SubServicePrice::query()
+                    ->where('id', '!=', $priceId)
+                    ->where('provider_profile_id', $priceRecord->provider_profile_id)
+                    ->where('sub_service_id', $priceRecord->sub_service_id)
+                    ->whereHas('cities', fn ($q) => $q->whereIn('cities.id', $cityIds))
+                    ->with('region.translations')
+                    ->first();
+
+                if ($conflicting) {
+                    $regionName = $conflicting->region?->translations->firstWhere('locale', app()->getLocale())?->name
+                        ?? $conflicting->region?->translations->firstWhere('locale', 'ar')?->name
+                        ?? $conflicting->region?->code
+                        ?? '';
+
+                    throw ValidationException::withMessages([
+                        'city_ids' => [__('A pricing already exists for this provider and sub-service covering the selected cities (Price #:id:region). Please edit the existing price instead of creating a conflict.', [
+                            'id' => $conflicting->id,
+                            'region' => $regionName ? " - {$regionName}" : '',
+                        ])],
+                    ]);
+                }
+            }
+
             $dataToUpdate = [
                 'price' => $input['price'],
                 'is_active' => isset($input['is_active']) ? (bool) $input['is_active'] : true,
@@ -220,6 +277,41 @@ class AdminPriceAdminService
     {
         $priceRecord = SubServicePrice::findOrFail($priceId);
         $priceRecord->delete();
+    }
+
+    public function review(int $priceId, string $decision, ?string $reason, Admin $actor): void
+    {
+        DB::transaction(function () use ($priceId, $decision, $reason, $actor) {
+            $price = SubServicePrice::query()->whereKey($priceId)->lockForUpdate()->firstOrFail();
+            if ($price->approval_status !== SubServicePrice::APPROVAL_PENDING) {
+                throw ValidationException::withMessages(['approval_status' => __('Only pending prices can be reviewed.')]);
+            }
+            if (!in_array($decision, [SubServicePrice::APPROVAL_APPROVED, SubServicePrice::APPROVAL_REJECTED], true)) {
+                throw ValidationException::withMessages(['decision' => __('Select a valid review decision.')]);
+            }
+
+            $price->update([
+                'approval_status' => $decision,
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+                'rejection_reason' => $decision === SubServicePrice::APPROVAL_REJECTED ? $reason : null,
+            ]);
+        });
+    }
+
+    private function ensureCitiesBelongToRegion(int $regionId, array $cityIds): void
+    {
+        if (!$cityIds) {
+            return;
+        }
+
+        $matchingCities = City::query()->where('region_id', $regionId)
+            ->whereIn('id', $cityIds)->count();
+        if ($matchingCities !== count(array_unique(array_map('intval', $cityIds)))) {
+            throw ValidationException::withMessages([
+                'city_ids' => [__('Each selected city must belong to the selected region.')],
+            ]);
+        }
     }
 
     /**

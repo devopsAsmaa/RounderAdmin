@@ -80,14 +80,34 @@
                                     @if($service->image_path)
                                         <img class="rounded-3 border flex-shrink-0" width="46" height="46" style="object-fit:cover" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($service->image_path) }}" alt="{{ __('Product image') }}">
                                     @else
+                                        @php
+                                            $iconInfo = match($service->icon) {
+                                                'ac' => ['fa-snowflake', '#0284c7', '#e0f2fe', '❄️ تكييف'],
+                                                'drop' => ['fa-droplet', '#0284c7', '#e0f2fe', '💧 سباكة'],
+                                                'bolt' => ['fa-bolt', '#d97706', '#fef3c7', '⚡ كهرباء'],
+                                                'spark' => ['fa-wand-magic-sparkles', '#059669', '#d1fae5', '✨ نظافة'],
+                                                'washer' => ['fa-soap', '#4f46e5', '#e0e7ff', '🧺 أجهزة'],
+                                                'paint' => ['fa-paint-roller', '#db2777', '#fce7f3', '🎨 دهانات'],
+                                                'tool' => ['fa-screwdriver-wrench', '#ea580c', '#ffedd5', '🔧 أدوات'],
+                                                default => ['fa-house', '#0d9488', '#ccfbf1', '🏠 عام']
+                                            };
+                                        @endphp
                                         <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
-                                             style="width: 46px; height: 46px; background-color: #fff3eb; color: var(--orange, #fb822f);">
-                                            <i class="fa-solid fa-screwdriver-wrench" style="font-size: 1.1rem;"></i>
+                                             style="width: 46px; height: 46px; background-color: {{ $iconInfo[2] }}; color: {{ $iconInfo[1] }};"
+                                             title="{{ $iconInfo[3] }}">
+                                            <i class="fa-solid {{ $iconInfo[0] }}" style="font-size: 1.15rem;"></i>
                                         </div>
                                     @endif
                                     <div>
                                         <div class="fw-bold text-dark">{{ $service->name ?? $service->code }}</div>
-                                        <code class="text-secondary small font-monospace">{{ $service->code }}</code>
+                                        <div class="d-flex align-items-center gap-2 mt-1">
+                                            <code class="text-secondary small font-monospace">{{ $service->code }}</code>
+                                            @if($service->icon)
+                                                <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.72rem;">
+                                                    {{ $iconInfo[3] ?? $service->icon }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </td>

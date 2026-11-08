@@ -1,5 +1,36 @@
 @extends('layouts.admin')
 @section('title', ($emergency ? __('Create emergency request') : __('Create service order')) . ' · Rounder')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/select2/select2.min.css') }}?v=4.1.0">
+<link rel="stylesheet" href="{{ asset('assets/vendor/select2/select2-bootstrap-5-theme.rtl.min.css') }}?v=1.3.0">
+<style>
+.select2-container--bootstrap-5 .select2-selection {
+    border-radius: 10px !important;
+    min-height: 44px;
+    padding: 6px 12px;
+    border-color: #dee2e6;
+}
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: var(--orange, #fb822f) !important;
+    box-shadow: 0 0 0 0.25rem rgba(251, 130, 47, 0.2) !important;
+}
+.select2-container--bootstrap-5 .select2-dropdown {
+    border-radius: 10px !important;
+    border-color: #dee2e6;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+.select2-container--bootstrap-5 .select2-dropdown .select2-search .select2-search__field {
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+.select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--petrol, #02333e) !important;
+    color: #fff !important;
+}
+</style>
+@endpush
+
 @section('body')
 <main class="container py-4">
     {{-- Top Header & Navigation --}}
@@ -55,33 +86,46 @@
                     <span>{{ __('Resident and property details') }}</span>
                 </h6>
 
-                <div class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <label class="form-label small fw-semibold text-secondary" for="membership-search">
-                            <i class="fa-solid fa-magnifying-glass me-1 text-muted"></i> {{ __('Search resident or property') }}
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white text-secondary border-end-0" style="border-radius: 0 10px 10px 0;">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                            </span>
-                            <input id="membership-search" type="search" class="form-control border-start-0" placeholder="{{ __('Search resident or property') }}..." style="border-radius: 10px 0 0 10px;">
-                        </div>
-                    </div>
+                @php
+                    $clients = $memberships->groupBy('user_id');
+                    $selectedResidentHomeId = (int) old('resident_home_id', 0);
+                    $initialSelectedUserId = 0;
+                    if ($selectedResidentHomeId) {
+                        $initialMembership = $memberships->firstWhere('id', $selectedResidentHomeId);
+                        $initialSelectedUserId = $initialMembership?->user_id ?? 0;
+                    }
+                @endphp
 
+                <div class="row g-3">
+                    {{-- 1. اختيار العميل (الساكن) مع بحث Select2 حي --}}
                     <div class="col-12 col-md-6">
-                        <label class="form-label small fw-semibold text-secondary" for="resident_home_id">
-                            <i class="fa-solid fa-building-user text-rounder-orange me-1"></i> {{ __('Resident and unit') }} <span class="text-danger">*</span>
+                        <label class="form-label small fw-semibold text-secondary" for="resident_user_id">
+                            <i class="fa-solid fa-user text-primary me-1"></i> {{ __('Resident / Client') }} <span class="text-danger">*</span>
                         </label>
-                        <select id="resident_home_id" name="resident_home_id" class="form-select @error('resident_home_id') is-invalid @enderror" required style="border-radius: 10px;">
-                            <option value="">{{ __('Select a resident unit') }}</option>
-                            @foreach($memberships as $membership)
-                                <option data-phone="{{ $membership->contact_phone ?? '' }}" value="{{ $membership->id }}" @selected(old('resident_home_id') == $membership->id)>
-                                    {{ $membership->resident_name }} · {{ $membership->home_name }} · {{ $membership->unit_label }}
+                        <select id="resident_user_id" class="form-select" required style="border-radius: 10px; width: 100%;">
+                            <option value="">{{ __('Select resident') }}</option>
+                            @foreach($clients as $userId => $userUnits)
+                                @php $client = $userUnits->first(); @endphp
+                                <option value="{{ $userId }}" data-phone="{{ $client->contact_phone ?? '' }}" @selected($initialSelectedUserId == $userId)>
+                                    {{ $client->resident_name }}@if(!empty($client->contact_phone)) · {{ $client->contact_phone }}@endif
                                 </option>
                             @endforeach
                         </select>
                         <div class="form-text small text-muted mt-1">
-                            <i class="fa-solid fa-circle-info text-primary me-1"></i> {{ __('The resident and property are resolved from the selected unit.') }}
+                            <i class="fa-solid fa-circle-info text-primary me-1"></i> {{ __('Search by resident name or phone number.') }}
+                        </div>
+                    </div>
+
+                    {{-- 2. اختيار العقار والوحدة الخاصة بالعميل --}}
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-semibold text-secondary" for="resident_home_id">
+                            <i class="fa-solid fa-building-user text-rounder-orange me-1"></i> {{ __('Property and unit') }} <span class="text-danger">*</span>
+                        </label>
+                        <select id="resident_home_id" name="resident_home_id" class="form-select @error('resident_home_id') is-invalid @enderror" required style="border-radius: 10px; width: 100%;" disabled>
+                            <option value="">{{ __('Select resident first') }}</option>
+                        </select>
+                        <div class="form-text small text-muted mt-1">
+                            <i class="fa-solid fa-house-chimney text-primary me-1"></i> {{ __('Select the specific property and unit for the request.') }}
                         </div>
                         @error('resident_home_id')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -160,6 +204,28 @@
                             @enderror
                         </div>
                     @else
+                        <div class="col-12 col-md-6" id="sub-service-field" hidden>
+                            <label class="form-label small fw-semibold text-secondary" for="sub_service_id">
+                                <i class="fa-solid fa-screwdriver-wrench text-rounder-orange me-1"></i> {{ __('Sub service') }} <span class="text-danger">*</span>
+                            </label>
+                            <select id="sub_service_id" name="sub_service_id" class="form-select @error('sub_service_id') is-invalid @enderror" disabled style="border-radius: 10px;">
+                                <option value="">{{ __('Choose a sub service') }}</option>
+                                @foreach($subServices as $subService)
+                                    @php
+                                        $subServiceName = $subService->translations->firstWhere('locale', app()->getLocale())?->name
+                                            ?? $subService->translations->firstWhere('locale', 'ar')?->name
+                                            ?? $subService->code;
+                                    @endphp
+                                    <option value="{{ $subService->id }}" data-service-id="{{ $subService->service_id }}" @selected(old('sub_service_id') == $subService->id)>
+                                        {{ $subServiceName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('sub_service_id')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <div class="col-12 col-md-6">
                             <label for="scheduled_at" class="form-label small fw-semibold text-secondary">
                                 <i class="fa-regular fa-calendar-check text-rounder-orange me-1"></i> {{ __('Scheduled date and time') }} <span class="text-danger">*</span>
@@ -214,28 +280,115 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('assets/vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ asset('assets/vendor/select2/select2.min.js') }}"></script>
 <script>
-(() => {
-    const select = document.getElementById('resident_home_id');
-    const searchInput = document.getElementById('membership-search');
+$(document).ready(function () {
+    const $clientSelect = $('#resident_user_id');
+    const $homeSelect = $('#resident_home_id');
+    const $serviceSelect = $('#request_option');
+    const $subServiceField = $('#sub-service-field');
+    const $subServiceSelect = $('#sub_service_id');
+    const phoneInput = document.getElementById('contact_phone');
+    const isRtl = $('html').attr('dir') === 'rtl';
 
-    if (searchInput && select) {
-        searchInput.addEventListener('input', function() {
-            const query = this.value.trim().toLocaleLowerCase();
-            for (const option of select.options) {
-                option.hidden = option.value !== '' && !option.text.toLocaleLowerCase().includes(query);
+    $clientSelect.select2({
+        theme: 'bootstrap-5',
+        dir: isRtl ? 'rtl' : 'ltr',
+        placeholder: "{{ __('Select resident') }}",
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function () {
+                return "{{ __('No results found') }}";
+            },
+            searching: function () {
+                return "{{ __('Searching...') }}";
+            }
+        }
+    });
+
+    const membershipsMap = @json($clients);
+    const oldResidentHomeId = "{{ old('resident_home_id', $selectedResidentHomeId ?? '') }}";
+
+    function updateSubServices() {
+        const selectedServiceId = $serviceSelect.val();
+        let hasSubServices = false;
+
+        $subServiceSelect.find('option').each(function () {
+            if (!this.value) return;
+            const matchesService = this.dataset.serviceId === selectedServiceId;
+            this.hidden = !matchesService;
+            if (matchesService) {
+                hasSubServices = true;
+            } else if (this.selected) {
+                this.selected = false;
             }
         });
+
+        $subServiceField.prop('hidden', !hasSubServices);
+        $subServiceSelect.prop('disabled', !hasSubServices).prop('required', hasSubServices);
+        if (!hasSubServices) {
+            $subServiceSelect.val('');
+        }
     }
 
-    const phone = document.getElementById('contact_phone');
-    if (select && phone) {
-        select.addEventListener('change', () => {
-            if (!phone.value) {
-                phone.value = select.selectedOptions[0]?.dataset.phone || '';
+    function updateUnitsForClient(userId, preSelectedHomeId) {
+        $homeSelect.empty();
+
+        if (!userId || !membershipsMap[userId] || membershipsMap[userId].length === 0) {
+            $homeSelect.append(new Option("{{ __('Select resident first') }}", ""));
+            $homeSelect.prop('disabled', true);
+            return;
+        }
+
+        const units = membershipsMap[userId];
+        $homeSelect.append(new Option("{{ __('Select property and unit') }}", ""));
+
+        let autoSelectedPhone = null;
+        units.forEach(function (unit) {
+            const label = unit.home_name + ' (' + unit.unit_label + ')';
+            const isSelected = String(unit.id) === String(preSelectedHomeId) || (units.length === 1 && !preSelectedHomeId);
+            const opt = new Option(label, unit.id, false, isSelected);
+            opt.setAttribute('data-phone', unit.contact_phone || '');
+            $homeSelect.append(opt);
+
+            if (isSelected) {
+                autoSelectedPhone = unit.contact_phone;
             }
         });
+
+        $homeSelect.prop('disabled', false);
+
+        // Update phone input with client contact phone
+        const selectedOpt = $homeSelect.find('option:selected')[0];
+        const phone = (selectedOpt && selectedOpt.getAttribute('data-phone')) || autoSelectedPhone || (units[0] && units[0].contact_phone);
+        if (phone && phoneInput) {
+            phoneInput.value = phone;
+        }
     }
-})();
+
+    $clientSelect.on('change', function () {
+        const userId = this.value;
+        updateUnitsForClient(userId, null);
+    });
+    $serviceSelect.on('change', updateSubServices);
+
+    $homeSelect.on('change', function () {
+        const selectedOpt = this.options[this.selectedIndex];
+        if (selectedOpt && phoneInput) {
+            const phone = selectedOpt.getAttribute('data-phone');
+            if (phone) {
+                phoneInput.value = phone;
+            }
+        }
+    });
+
+    // If client is already selected (e.g. from old input after validation error)
+    if ($clientSelect.val()) {
+        updateUnitsForClient($clientSelect.val(), oldResidentHomeId);
+    }
+    updateSubServices();
+});
 </script>
 @endpush
