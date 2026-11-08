@@ -6,6 +6,26 @@
         <div class="text-secondary">{{ __('Provider portal') }}</div>
         <h1 class="h3 fw-bold mb-0">{{ $profile->company_name }}</h1>
     </div>
+    <div class="row g-3 mb-4">
+        @foreach([
+            ['orders.view', 'provider.orders.index', 'fa-calendar-check', __('Bookings')],
+            ['emergencies.view', 'provider.emergencies.index', 'fa-triangle-exclamation', __('Emergency requests')],
+            ['prices.view', 'provider.prices.index', 'fa-tags', __('Prices and approvals')],
+            ['finance.view', 'provider.finance.index', 'fa-coins', __('Financial accounts')],
+            ['ratings.view', 'provider.ratings.index', 'fa-star', __('Ratings')],
+            ['users.manage', 'provider.team.index', 'fa-users-gear', __('Users and permissions')],
+            ['profile.manage', 'provider.settings.index', 'fa-gear', __('Settings / Profile')],
+            ['contract.view', 'provider.contract', 'fa-file-contract', __('Provider contract')],
+        ] as [$permission, $route, $icon, $label])
+            @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, $permission))
+                <div class="col-6 col-lg-3">
+                    <a class="panel p-3 h-100 d-flex align-items-center gap-3 text-decoration-none text-dark" href="{{ route($route) }}">
+                        <i class="fa-solid {{ $icon }} text-rounder-orange fs-4"></i><span class="fw-semibold">{{ $label }}</span>
+                    </a>
+                </div>
+            @endif
+        @endforeach
+    </div>
     @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'orders.create'))
         <a class="btn btn-orange" href="{{ route('provider.orders.create') }}">+ {{ __('Create service order') }}</a>
     @endif

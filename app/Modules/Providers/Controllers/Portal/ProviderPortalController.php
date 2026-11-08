@@ -34,7 +34,7 @@ class ProviderPortalController extends Controller
     {
         $profile = $this->profile($request);
         abort_unless($profile->is_approved, 403);
-        abort_if($profile->contract_accepted_at, 404);
+        abort_unless($this->portal->allows($this->actor($request), $profile, 'contract.view'), 403);
         $contract = $this->portal->contractFor($profile);
         abort_unless($contract, 404);
         $terms = app(\App\Services\RichTextSanitizer::class)->clean($contract->terms);
@@ -42,10 +42,22 @@ class ProviderPortalController extends Controller
         return view('provider.contract', compact('profile', 'contract', 'terms'));
     }
 
+    public function downloadContract(Request $request): \Illuminate\Http\Response
+    {
+        $profile = $this->profile($request);
+        abort_unless($this->portal->allows($this->actor($request), $profile, 'contract.view'), 403);
+        abort_unless($profile->is_approved && $this->portal->contractFor($profile), 404);
+
+        return app(\App\Modules\Providers\Controllers\Admin\ProviderContractPdfController::class)
+            ->download($profile);
+    }
+
     public function acceptContract(Request $request): \Illuminate\Http\RedirectResponse
     {
+        $profile = $this->profile($request);
+        abort_unless($this->portal->allows($this->actor($request), $profile, 'contract.view'), 403);
         $request->validate(['accept_contract' => ['required', 'accepted']]);
-        $this->portal->acceptContract($this->profile($request));
+        $this->portal->acceptContract($profile);
 
         return redirect()->route('provider.dashboard')->with('status', __('تم قبول العقد، مرحباً بك في لوحة مزود الخدمة.'));
     }
@@ -99,6 +111,51 @@ class ProviderPortalController extends Controller
     public function emergencies(Request $request): \Illuminate\Contracts\View\View
     {
         return view('provider.emergencies.index', $this->portal->emergencies($this->profile($request)));
+    }
+
+    public function financialAccount(Request $request): \Illuminate\Contracts\View\View
+    {
+        return view('provider.finance.index', $this->portal->financialAccount($this->profile($request)));
+    }
+
+    public function ratings(Request $request): \Illuminate\Contracts\View\View
+    {
+        return view('provider.ratings.index', $this->portal->ratings($this->profile($request)));
+    }
+
+    public function settings(Request $request): \Illuminate\Contracts\View\View
+    {
+        return view('provider.settings.index', $this->portal->profileSettings($this->profile($request)));
+    }
+
+    public function updateSettings(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $input = $request->validate([
+            'company_name' => ['required', 'string', 'max:160'],
+            'trade_name' => ['nullable', 'string', 'max:160'],
+            'provider_type' => ['nullable', 'string', 'max:80'],
+            'years_of_experience' => ['nullable', 'integer', 'min:0', 'max:100'],
+        ]);
+        $this->portal->updateProfile($this->profile($request), $input);
+
+        return back()->with('status', __('Provider profile updated successfully.'));
+    }
+
+    public function addService(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $input = $request->validate([
+            'service_id' => ['required', 'integer', 'exists:services,id'],
+        ]);
+        $this->portal->addService($this->profile($request), (int) $input['service_id']);
+
+        return back()->with('status', __('Service added to your provider profile.'));
+    }
+
+    public function removeService(Request $request, int $serviceId): \Illuminate\Http\RedirectResponse
+    {
+        $this->portal->removeService($this->profile($request), $serviceId);
+
+        return back()->with('status', __('Service removed from your provider profile.'));
     }
 
     public function createPrice(Request $request): \Illuminate\Contracts\View\View

@@ -422,7 +422,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $currentUser = auth()->user();
 
     $isServicesActive = request()->routeIs('admin.service-categories.*') || request()->routeIs('admin.services.*') || request()->routeIs('admin.sub-services.*') || request()->routeIs('admin.prices.*');
-    $isOrdersActive = request()->routeIs('admin.service-orders.*') || request()->routeIs('admin.emergencies.*') || request()->routeIs('admin.bookings.*');
+    $isOrdersActive = request()->routeIs('admin.service-orders.*') || request()->routeIs('admin.emergencies.*') || request()->routeIs('admin.bookings.*') || request()->routeIs('admin.order-statuses.*');
     $isPackagesActive = request()->routeIs('admin.packages.*') || request()->routeIs('admin.package-features.*') || request()->routeIs('admin.subscriptions.*');
     $isPropertiesActive = request()->routeIs('admin.realestate.*') || request()->routeIs('admin.regions.*') || request()->routeIs('admin.cities.*');
     $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*');
@@ -502,7 +502,8 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $permService->allowsRoute($currentUser, 'admin.service-orders.index', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.service-orders.create', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.emergencies.index', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.emergencies.create', 'GET')
+    $permService->allowsRoute($currentUser, 'admin.emergencies.create', 'GET') ||
+    $permService->allowsRoute($currentUser, 'admin.order-statuses.index', 'GET')
 )
 <div class="sidebar-group">
     <button class="sidebar-group-btn {{ $isOrdersActive ? 'has-active-child' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#menu-orders" aria-expanded="{{ $isOrdersActive ? 'true' : 'false' }}" aria-controls="menu-orders">
@@ -524,6 +525,10 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
                 <a class="{{ request()->routeIs('admin.emergencies.*') ? 'active' : '' }}" href="{{ route('admin.emergencies.index') }}"><i class="fa-solid fa-truck-medical me-2" aria-hidden="true"></i>{{ __('Emergency requests') }}</a>
             @elseif($permService->allowsRoute($currentUser, 'admin.emergencies.create', 'GET'))
                 <a class="{{ request()->routeIs('admin.emergencies.*') ? 'active' : '' }}" href="{{ route('admin.emergencies.create') }}"><i class="fa-solid fa-truck-medical me-2" aria-hidden="true"></i>{{ __('Emergency requests') }}</a>
+            @endif
+
+            @if($permService->allowsRoute($currentUser, 'admin.order-statuses.index', 'GET'))
+                <a class="{{ request()->routeIs('admin.order-statuses.*') ? 'active' : '' }}" href="{{ route('admin.order-statuses.index') }}"><i class="fa-solid fa-sliders me-2" aria-hidden="true"></i>حالات الطلبات والطوارئ</a>
             @endif
         </div>
     </div>

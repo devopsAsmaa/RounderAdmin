@@ -7,6 +7,7 @@ use App\Modules\Bookings\Enums\BookingStatusCode;
 use App\Modules\Bookings\Enums\Operation as BookingOperation;
 use App\Modules\Bookings\Models\Booking;
 use App\Modules\Bookings\Models\BookingProviderAssignment;
+use App\Modules\Bookings\Models\BookingRating;
 use App\Modules\Bookings\Models\BookingStatus;
 use App\Modules\Bookings\Models\BookingStatusHistory;
 use App\Modules\Bookings\Services\AdminServiceOrderAdminService;
@@ -40,6 +41,10 @@ class ProviderPortalService
         'prices.manage',
         'emergencies.view',
         'users.manage',
+        'finance.view',
+        'ratings.view',
+        'profile.manage',
+        'contract.view',
     ];
 
     public function __construct(
@@ -73,6 +78,96 @@ class ProviderPortalService
     public function contractFor(ProviderProfile $profile): ?ProviderContract
     {
         return $profile->contracts()->with('status')->latest('id')->first();
+    }
+
+    public function financialAccount(ProviderProfile $profile): array
+    {
+        $entries = $profile->providerCommissionEntries()->with([
+            'status',
+            'booking.service.translations',
+            'emergencyRequest.emergencyType.translations',
+        ])->latest('calculated_at');
+
+        return [
+            'entries' => $entries->paginate(20)->withQueryString(),
+            'totals' => [
+                'gross' => (float) $profile->providerCommissionEntries()->sum('gross_amount'),
+                'commission' => (float) $profile->providerCommissionEntries()->sum('commission_amount'),
+                'settled' => (float) $profile->providerCommissionEntries()
+                    ->whereHas('status', fn (Builder $query) => $query->where('code', 'settled'))
+                    ->sum('commission_amount'),
+            ],
+        ];
+    }
+
+    public function ratings(ProviderProfile $profile): array
+    {
+        $ratings = BookingRating::query()
+            ->whereHas('booking', fn (Builder $query) => $query
+                ->where('service_provider_id', $profile->id)
+                ->orWhereHas('assignment', fn (Builder $assignment) => $assignment->where('provider_profile_id', $profile->id)))
+            ->with(['resident', 'booking.service.translations'])
+            ->latest('id');
+
+        return [
+            'averageScore' => (float) (clone $ratings)->avg('score'),
+            'ratingsCount' => (clone $ratings)->count(),
+            'ratings' => $ratings->paginate(20)->withQueryString(),
+        ];
+    }
+
+    public function profileSettings(ProviderProfile $profile): array
+    {
+        $services = $profile->services()->with('translations')->orderBy('services.code')->get();
+        $availableServices = Service::query()->where('is_active', true)
+            ->whereNotIn('id', $services->modelKeys())
+            ->with('translations')->orderBy('code')->get();
+        $ordersByService = Booking::query()
+            ->whereIn('service_id', $services->modelKeys())
+            ->where(fn (Builder $query) => $query->where('service_provider_id', $profile->id)
+                ->orWhereHas('assignment', fn (Builder $assignment) => $assignment->where('provider_profile_id', $profile->id)))
+            ->whereHas('status', fn (Builder $status) => $status->whereIn('code', [
+                BookingStatusCode::Pending->value,
+                BookingStatusCode::Confirmed->value,
+                BookingStatusCode::InProgress->value,
+            ]))
+            ->select('service_id')->distinct()->pluck('service_id')->mapWithKeys(fn ($id) => [$id => true]);
+
+        return compact('profile', 'services', 'availableServices', 'ordersByService');
+    }
+
+    public function updateProfile(ProviderProfile $profile, array $input): void
+    {
+        $profile->update($input);
+    }
+
+    public function addService(ProviderProfile $profile, int $serviceId): void
+    {
+        $service = Service::query()->whereKey($serviceId)->where('is_active', true)->firstOrFail();
+        if ($profile->services()->whereKey($service->id)->exists()) {
+            throw ValidationException::withMessages(['service_id' => __('This service is already linked to your provider profile.')]);
+        }
+
+        $profile->services()->attach($service->id);
+    }
+
+    public function removeService(ProviderProfile $profile, int $serviceId): void
+    {
+        abort_unless($profile->services()->whereKey($serviceId)->exists(), 404);
+        $hasOrders = Booking::query()->where('service_id', $serviceId)
+            ->where(fn (Builder $query) => $query->where('service_provider_id', $profile->id)
+                ->orWhereHas('assignment', fn (Builder $assignment) => $assignment->where('provider_profile_id', $profile->id)))
+            ->whereHas('status', fn (Builder $status) => $status->whereIn('code', [
+                BookingStatusCode::Pending->value,
+                BookingStatusCode::Confirmed->value,
+                BookingStatusCode::InProgress->value,
+            ]))
+            ->exists();
+        if ($hasOrders) {
+            throw ValidationException::withMessages(['service_id' => __('A service with an active order cannot be removed.')]);
+        }
+
+        $profile->services()->detach($serviceId);
     }
 
     public function isOwner(User $user, ProviderProfile $profile): bool
@@ -161,10 +256,12 @@ class ProviderPortalService
         $booking = $this->providerOrders($profile)->with([
             'resident', 'residentHome', 'home.city.translations', 'service.translations', 'subService.translations',
             'status.translations', 'assignment.providerContract', 'bookingMedia',
-            'bookingStatusHistory.status.translations',
+            'bookingStatusHistory' => fn ($q) => $q->whereHas('status', fn (Builder $sq) => $sq->where('show_in_provider_portal', true))->with('status.translations'),
         ])->whereKey($bookingId)->firstOrFail();
 
-        return compact('booking');
+        $availableNextStatuses = $this->visibleNextStatuses($booking->status->code);
+
+        return compact('booking', 'availableNextStatuses');
     }
 
     public function orderForm(ProviderProfile $profile): array
@@ -310,18 +407,16 @@ class ProviderPortalService
         $booking = $this->providerOrders($profile)->with('status')->whereKey($bookingId)->firstOrFail();
         $from = $booking->status->code;
         $to = $input['status'];
-        $allowed = match ($from) {
-            BookingStatusCode::Pending->value => [BookingStatusCode::Confirmed->value],
-            BookingStatusCode::Confirmed->value => [BookingStatusCode::InProgress->value],
-            BookingStatusCode::InProgress->value => [BookingStatusCode::Completed->value],
-            default => [],
-        };
+        $allowed = $this->visibleNextStatuses($from)->pluck('code')->all();
 
         if (!in_array($to, $allowed, true)) {
             throw ValidationException::withMessages(['status' => __('This order cannot be moved to the selected status.')]);
         }
 
-        $statusId = BookingStatus::query()->where('code', $to)->value('id');
+        $statusId = BookingStatus::query()
+            ->where('code', $to)
+            ->where('show_in_provider_portal', true)
+            ->value('id');
         if (!$statusId) {
             throw ValidationException::withMessages(['status' => __('The requested order status is not configured.')]);
         }
@@ -332,6 +427,38 @@ class ProviderPortalService
             'gross_amount' => $input['gross_amount'] ?? null,
             'note' => $input['note'] ?? null,
         ], $actor, $bookingId);
+    }
+
+    /**
+     * إرجاع الحالات التالية المتاحة والظاهرة لمزود الخدمة حسب ترتيب دورة حياة الطلب.
+     */
+    public function visibleNextStatuses(string $currentCode): \Illuminate\Support\Collection
+    {
+        $sequence = [
+            BookingStatusCode::Pending->value,
+            BookingStatusCode::Confirmed->value,
+            BookingStatusCode::InProgress->value,
+            BookingStatusCode::Completed->value,
+        ];
+
+        $currentIndex = array_search($currentCode, $sequence, true);
+        if ($currentIndex === false || $currentIndex >= count($sequence) - 1) {
+            return collect();
+        }
+
+        $nextCodes = array_slice($sequence, $currentIndex + 1);
+
+        $statusesByCode = BookingStatus::query()
+            ->whereIn('code', $nextCodes)
+            ->where('show_in_provider_portal', true)
+            ->with('translations')
+            ->get()
+            ->keyBy('code');
+
+        return collect($nextCodes)
+            ->map(fn (string $code) => $statusesByCode->get($code))
+            ->filter()
+            ->values();
     }
 
     public function prices(ProviderProfile $profile): array
@@ -417,6 +544,7 @@ class ProviderPortalService
     {
         return EmergencyProviderAssignment::query()
             ->where('provider_profile_id', $profile->id)
+            ->whereHas('emergencyRequest.status', fn (Builder $query) => $query->where('show_in_provider_portal', true))
             ->with([
                 'emergencyRequest.status.translations',
                 'emergencyRequest.emergencyType.translations',
@@ -492,7 +620,9 @@ class ProviderPortalService
 
     private function providerOrders(ProviderProfile $profile): Builder
     {
-        return Booking::query()->whereHas('assignment', fn (Builder $query) => $query->where('provider_profile_id', $profile->id));
+        return Booking::query()
+            ->whereHas('assignment', fn (Builder $query) => $query->where('provider_profile_id', $profile->id))
+            ->whereHas('status', fn (Builder $query) => $query->where('show_in_provider_portal', true));
     }
 
     private function ordersQuery(ProviderProfile $profile): Builder
@@ -508,7 +638,10 @@ class ProviderPortalService
                 $join->on('services.id', '=', 'service_translations.service_id')
                     ->where('service_translations.locale', $locale);
             })
-            ->join('booking_statuses', 'bookings.booking_status_id', '=', 'booking_statuses.id')
+            ->join('booking_statuses', function ($join) {
+                $join->on('bookings.booking_status_id', '=', 'booking_statuses.id')
+                    ->where('booking_statuses.show_in_provider_portal', true);
+            })
             ->leftJoin('booking_status_translations', function ($join) use ($locale) {
                 $join->on('booking_statuses.id', '=', 'booking_status_translations.booking_status_id')
                     ->where('booking_status_translations.locale', $locale);

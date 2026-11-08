@@ -12,8 +12,11 @@ Route::prefix('provider')->name('provider.')->group(function () {
 Route::prefix('provider')->name('provider.')->middleware('auth:provider')->group(function () {
     Route::post('/logout', [\App\Modules\Identity\Controllers\Provider\AuthController::class, 'logout'])->name('logout');
     Route::get('/pending', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'pending'])->name('pending');
-    Route::get('/contract', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'contract'])->name('contract');
+    Route::get('/contract', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'contract'])
+        ->name('contract');
     Route::post('/contract/accept', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'acceptContract'])->name('contract.accept');
+    Route::get('/contract/pdf', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'downloadContract'])
+        ->name('contract.pdf');
 
     Route::get('/dashboard', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'dashboard'])
         ->middleware('provider:dashboard.view')->name('dashboard');
@@ -39,6 +42,18 @@ Route::prefix('provider')->name('provider.')->middleware('auth:provider')->group
         ->whereNumber('priceId')->middleware('provider:prices.manage')->name('prices.update');
     Route::get('/emergencies', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'emergencies'])
         ->middleware('provider:emergencies.view')->name('emergencies.index');
+    Route::get('/finance', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'financialAccount'])
+        ->middleware('provider:finance.view')->name('finance.index');
+    Route::get('/ratings', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'ratings'])
+        ->middleware('provider:ratings.view')->name('ratings.index');
+    Route::get('/settings', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'settings'])
+        ->middleware('provider:profile.manage')->name('settings.index');
+    Route::put('/settings', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'updateSettings'])
+        ->middleware('provider:profile.manage')->name('settings.update');
+    Route::post('/settings/services', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'addService'])
+        ->middleware('provider:profile.manage')->name('settings.services.store');
+    Route::delete('/settings/services/{serviceId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'removeService'])
+        ->whereNumber('serviceId')->middleware('provider:profile.manage')->name('settings.services.destroy');
     Route::get('/team', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'team'])
         ->middleware('provider:users.manage')->name('team.index');
     Route::get('/team/create', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'createTeamMember'])

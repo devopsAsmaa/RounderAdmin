@@ -14,6 +14,7 @@ use App\Modules\Providers\Services\ProviderRegistrationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ProviderPortalPermissionsTest extends TestCase
@@ -43,6 +44,12 @@ class ProviderPortalPermissionsTest extends TestCase
         $this->actingAs($owner, 'provider')->get('/provider/orders')->assertOk();
         $this->get('/provider/prices')->assertOk();
         $this->get('/provider/emergencies')->assertOk();
+        $this->get('/provider/finance')->assertOk();
+        $this->get('/provider/ratings')->assertOk();
+        $this->get('/provider/settings')->assertOk();
+        $profile->update(['contract_accepted_at' => null]);
+        $this->get('/provider/contract')->assertOk();
+        $profile->update(['contract_accepted_at' => now()]);
         $teamResponse = $this->get('/provider/team')->assertOk();
         $teamResponse->assertSee(__('Primary account'))
             ->assertDontSee(route('provider.team.edit', $owner->id))
@@ -155,6 +162,12 @@ class ProviderPortalPermissionsTest extends TestCase
         $this->assertSame($subServiceId, $booking->fresh()->sub_service_id);
         $this->assertNull($booking->fresh()->sub_service_price_id);
         $this->assertSame('185.50', $booking->fresh()->total_amount);
+        try {
+            $portal->removeService($profile, $service->id);
+            $this->fail('A service with a pending order must remain linked.');
+        } catch (ValidationException) {
+            $this->assertTrue($profile->services()->whereKey($service->id)->exists());
+        }
 
         foreach (['confirmed', 'in_progress'] as $status) {
             $portal->transitionOrder($profile, $profile->user, $booking->id, ['status' => $status]);
@@ -170,5 +183,8 @@ class ProviderPortalPermissionsTest extends TestCase
             'booking_id' => $booking->id,
             'provider_profile_id' => $profile->id,
         ]);
+
+        $portal->removeService($profile, $service->id);
+        $this->assertFalse($profile->services()->whereKey($service->id)->exists());
     }
 }
