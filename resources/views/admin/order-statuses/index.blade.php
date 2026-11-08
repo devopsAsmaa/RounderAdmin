@@ -95,6 +95,7 @@
         ->allowsRoute(auth()->user(), 'admin.order-statuses.update', 'PUT');
 @endphp
 
+<main class="container py-4">
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <div class="d-flex align-items-center gap-2 mb-1">
@@ -104,7 +105,7 @@
         </div>
         <h1 class="h3 fw-bold mb-1 text-dark">حالات الطلبات والطوارئ</h1>
         <p class="text-secondary mb-0 small">
-            استعراض جميع الحالات المعتمدة في النظام (عرض فقط بدون إضافة أو تعديل أو حذف)، مع التحكم في إظهار أو إخفاء كل حالة في بوابة <strong>مزود الخدمة</strong>.
+            استعراض جميع الحالات المعتمدة في النظام والتحكم في إظهار أو إخفاء كل حالة في بوابة <strong>مزود الخدمة</strong>.
         </p>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -116,6 +117,8 @@
         </a>
     </div>
 </div>
+
+@include('admin.partials.feedback')
 
 <form method="POST" action="{{ route('admin.order-statuses.update') }}" id="statusesVisibilityForm">
     @csrf
@@ -135,9 +138,6 @@
                             <span class="text-secondary" style="font-size: 0.78rem;">الحالات الأساسية لدورة حياة طلب الصيانة (Booking Statuses)</span>
                         </div>
                     </div>
-                    <span class="badge bg-light text-dark border">
-                        <i class="fa-solid fa-lock text-secondary me-1"></i> الحالات ثابتة للعرض فقط
-                    </span>
                 </div>
 
                 <div class="table-responsive">
@@ -214,9 +214,6 @@
                             <span class="text-secondary" style="font-size: 0.78rem;">الحالات الأساسية لدورة حياة طلب الطوارئ (Emergency Statuses)</span>
                         </div>
                     </div>
-                    <span class="badge bg-light text-dark border">
-                        <i class="fa-solid fa-lock text-secondary me-1"></i> الحالات ثابتة للعرض فقط
-                    </span>
                 </div>
 
                 <div class="table-responsive">
@@ -289,6 +286,7 @@
         </div>
     @endif
 </form>
+</main>
 
 <div id="statusToast" class="toast-save-indicator">
     <i class="fa-solid fa-circle-check text-success"></i>
@@ -352,3 +350,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endsection
+

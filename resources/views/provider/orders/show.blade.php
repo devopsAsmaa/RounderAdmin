@@ -3,13 +3,13 @@
 @section('body')
 @php
     $currentStatus = $booking->status->code;
-    $nextStatus = match($currentStatus) {
-        'pending' => 'confirmed',
-        'confirmed' => 'in_progress',
-        'in_progress' => 'completed',
-        default => null,
-    };
-    $statusLabels = ['confirmed' => __('Accept order'), 'in_progress' => __('Start work'), 'completed' => __('Complete order')];
+    $nextStatuses = $availableNextStatuses ?? collect();
+    $nextStatus = $nextStatuses->first()?->code;
+    $statusLabels = [
+        'confirmed' => __('Accept order'),
+        'in_progress' => __('Start work'),
+        'completed' => __('Complete order'),
+    ];
 @endphp
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div><a href="{{ route('provider.orders.index') }}" class="text-decoration-none">{{ __('Service orders') }}</a><h1 class="h3 fw-bold mt-2">{{ __('Order') }} #{{ $booking->id }}</h1></div>
@@ -38,17 +38,28 @@
     <div class="col-lg-5">
         @if($nextStatus && app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), app(\App\Modules\Providers\Services\ProviderPortalService::class)->profileFor(auth('provider')->user()), 'orders.manage'))
             <section class="panel p-3 p-lg-4 mb-3">
-                <h2 class="h5 fw-bold">{{ $statusLabels[$nextStatus] }}</h2>
-                <form method="post" action="{{ route('provider.orders.update', $booking->id) }}">
+                <h2 class="h5 fw-bold">{{ $statusLabels[$nextStatus] ?? __('Update status') }}</h2>
+                <form method="post" action="{{ route('provider.orders.update', $booking->id) }}" id="providerOrderTransitionForm">
                     @csrf @method('put')
-                    <input type="hidden" name="status" value="{{ $nextStatus }}">
-                    @if($nextStatus === 'completed')
-                        <label class="form-label" for="gross_amount">{{ __('Final amount') }}</label>
-                        <input class="form-control mb-3" id="gross_amount" name="gross_amount" type="number" min="0" step="0.01" value="{{ old('gross_amount', $booking->total_amount) }}" required>
+                    @if($nextStatuses->count() > 1)
+                        <label class="form-label" for="provider_next_status">{{ __('Status') }}</label>
+                        <select class="form-select mb-3" id="provider_next_status" name="status" onchange="document.getElementById('grossAmountWrap').style.display = (this.value === 'completed' ? 'block' : 'none');">
+                            @foreach($nextStatuses as $st)
+                                <option value="{{ $st->code }}" @selected(old('status', $nextStatus) === $st->code)>
+                                    {{ $st->translations->firstWhere('locale', app()->getLocale())?->name ?? ($statusLabels[$st->code] ?? $st->code) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input type="hidden" name="status" value="{{ $nextStatus }}">
                     @endif
+                    <div id="grossAmountWrap" style="display: {{ old('status', $nextStatus) === 'completed' ? 'block' : 'none' }};">
+                        <label class="form-label" for="gross_amount">{{ __('Final amount') }}</label>
+                        <input class="form-control mb-3" id="gross_amount" name="gross_amount" type="number" min="0" step="0.01" value="{{ old('gross_amount', $booking->total_amount) }}">
+                    </div>
                     <label class="form-label" for="note">{{ __('Note') }}</label>
                     <textarea class="form-control mb-3" id="note" name="note" maxlength="2000" rows="3">{{ old('note') }}</textarea>
-                    <button class="btn btn-primary" type="submit">{{ $statusLabels[$nextStatus] }}</button>
+                    <button class="btn btn-primary" type="submit">{{ $statusLabels[$nextStatus] ?? __('Update status') }}</button>
                 </form>
             </section>
         @endif

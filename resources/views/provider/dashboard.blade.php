@@ -31,8 +31,21 @@
     @endif
 </div>
 <div class="row g-3 mb-4">
-    @foreach([__('Total orders') => $ordersCount, __('Pending orders') => $pendingCount, __('Active orders') => $activeCount, __('Completed orders') => $completedCount] as $label => $value)
-        <div class="col-6 col-xl-3"><div class="metric"><div class="text-secondary">{{ $label }}</div><div class="value">{{ $value }}</div></div></div>
+    <div class="col-6 col-xl-2">
+        <div class="metric">
+            <div class="text-secondary">{{ __('Total orders') }}</div>
+            <div class="value">{{ $ordersCount }}</div>
+        </div>
+    </div>
+    @foreach(($visibleBookingStatuses ?? collect()) as $st)
+        <div class="col-6 col-xl-2">
+            <a href="{{ route('provider.orders.index', ['status' => $st->code]) }}" class="text-decoration-none text-dark d-block">
+                <div class="metric">
+                    <div class="text-secondary">{{ $st->translations->firstWhere('locale', app()->getLocale())?->name ?? $st->code }}</div>
+                    <div class="value">{{ $st->provider_orders_count ?? 0 }}</div>
+                </div>
+            </a>
+        </div>
     @endforeach
 </div>
 @if(app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), $profile, 'orders.view'))

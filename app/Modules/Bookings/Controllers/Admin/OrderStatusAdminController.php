@@ -36,7 +36,9 @@ class OrderStatusAdminController extends Controller
     public function update(Request $request): RedirectResponse|JsonResponse
     {
         // دعم التحديث الفوري لـ Checkbox واحد عبر AJAX أو حفظ النموذج بالكامل
-        if ($request->filled('type') && $request->filled('status_id')) {
+        $singleId = $request->input('status_id', $request->input('id'));
+        if ($request->filled('type') && $singleId !== null) {
+            $request->merge(['status_id' => $singleId]);
             $validated = $request->validate([
                 'type' => ['required', 'in:booking,emergency'],
                 'status_id' => ['required', 'integer'],
@@ -59,23 +61,30 @@ class OrderStatusAdminController extends Controller
                     'status_id' => $status->id,
                     'type' => $validated['type'],
                     'show_in_provider_portal' => (bool) $status->show_in_provider_portal,
-                    'message' => __('Status visibility updated successfully.'),
+                    'message' => 'تم تحديث حالة الظهور لمزود الخدمة بنجاح.',
                 ]);
             }
 
             return redirect()->route('admin.order-statuses.index')
-                ->with('status', __('Status visibility updated successfully.'));
+                ->with('status', 'تم تحديث حالة الظهور لمزود الخدمة بنجاح.');
         }
 
         $validated = $request->validate([
+            'booking_statuses' => ['nullable', 'array'],
+            'booking_statuses.*' => ['integer', 'exists:booking_statuses,id'],
             'booking_status_ids' => ['nullable', 'array'],
             'booking_status_ids.*' => ['integer', 'exists:booking_statuses,id'],
+            'emergency_statuses' => ['nullable', 'array'],
+            'emergency_statuses.*' => ['integer', 'exists:emergency_request_statuses,id'],
             'emergency_status_ids' => ['nullable', 'array'],
             'emergency_status_ids.*' => ['integer', 'exists:emergency_request_statuses,id'],
         ]);
 
-        $visibleBookingIds = array_map('intval', $validated['booking_status_ids'] ?? []);
-        $visibleEmergencyIds = array_map('intval', $validated['emergency_status_ids'] ?? []);
+        $rawBookingIds = $validated['booking_statuses'] ?? $validated['booking_status_ids'] ?? [];
+        $rawEmergencyIds = $validated['emergency_statuses'] ?? $validated['emergency_status_ids'] ?? [];
+
+        $visibleBookingIds = array_map('intval', $rawBookingIds);
+        $visibleEmergencyIds = array_map('intval', $rawEmergencyIds);
 
         DB::transaction(function () use ($visibleBookingIds, $visibleEmergencyIds) {
             foreach (BookingStatus::all() as $status) {
@@ -92,6 +101,7 @@ class OrderStatusAdminController extends Controller
         });
 
         return redirect()->route('admin.order-statuses.index')
-            ->with('status', __('Status visibility updated successfully.'));
+            ->with('status', 'تم حفظ إعدادات ظهور الحالات بنجاح.');
     }
 }
+

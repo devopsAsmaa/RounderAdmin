@@ -26,6 +26,7 @@ use App\Modules\Providers\Enums\ContractStatusCode;
 use App\Modules\Providers\Models\ProviderContract;
 use App\Modules\Providers\Models\ProviderContractStatus;
 use App\Modules\Providers\Models\ProviderProfile;
+use App\Modules\Emergencies\Models\EmergencyRequestStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -192,12 +193,23 @@ class ProviderPortalService
             ->with('translations')->orderBy('services.code')->get();
         $emergencies = $this->emergencyAssignments($profile)->latest('emergency_provider_assignments.assigned_at')->limit(5)->get();
 
+        $visibleBookingStatuses = BookingStatus::query()
+            ->where('show_in_provider_portal', true)
+            ->with('translations')
+            ->orderBy('id')
+            ->get()
+            ->map(function (BookingStatus $st) use ($orders) {
+                $st->provider_orders_count = (clone $orders)->where('booking_status_id', $st->id)->count();
+                return $st;
+            });
+
         return [
             'profile' => $profile,
             'ordersCount' => (clone $orders)->count(),
             'pendingCount' => (clone $orders)->whereHas('status', fn (Builder $query) => $query->where('code', BookingStatusCode::Pending->value))->count(),
             'activeCount' => (clone $orders)->whereHas('status', fn (Builder $query) => $query->whereIn('code', [BookingStatusCode::Confirmed->value, BookingStatusCode::InProgress->value]))->count(),
             'completedCount' => (clone $orders)->whereHas('status', fn (Builder $query) => $query->where('code', BookingStatusCode::Completed->value))->count(),
+            'visibleBookingStatuses' => $visibleBookingStatuses,
             'orders' => $this->ordersQuery($profile)->latest('bookings.created_at')->limit(8)->get(),
             'services' => $services,
             'emergencies' => $emergencies,
@@ -206,10 +218,24 @@ class ProviderPortalService
 
     public function emergencies(ProviderProfile $profile): array
     {
+        $visibleStatuses = EmergencyRequestStatus::query()
+            ->where('show_in_provider_portal', true)
+            ->with('translations')
+            ->orderBy('id')
+            ->get();
+
+        $selectedStatus = request()->query('status');
+        $query = $this->emergencyAssignments($profile);
+        if ($selectedStatus && $visibleStatuses->contains('code', $selectedStatus)) {
+            $query->whereHas('emergencyRequest.status', fn (Builder $q) => $q->where('code', $selectedStatus));
+        }
+
         return [
-            'emergencies' => $this->emergencyAssignments($profile)
+            'emergencies' => $query
                 ->latest('emergency_provider_assignments.assigned_at')
                 ->paginate(20)->withQueryString(),
+            'visibleStatuses' => $visibleStatuses,
+            'selectedStatus' => $selectedStatus,
         ];
     }
 
@@ -248,7 +274,23 @@ class ProviderPortalService
 
     public function orders(ProviderProfile $profile): array
     {
-        return ['orders' => $this->ordersQuery($profile)->latest('bookings.created_at')->paginate(20)->withQueryString()];
+        $visibleStatuses = BookingStatus::query()
+            ->where('show_in_provider_portal', true)
+            ->with('translations')
+            ->orderBy('id')
+            ->get();
+
+        $selectedStatus = request()->query('status');
+        $query = $this->ordersQuery($profile);
+        if ($selectedStatus && $visibleStatuses->contains('code', $selectedStatus)) {
+            $query->where('booking_statuses.code', $selectedStatus);
+        }
+
+        return [
+            'orders' => $query->latest('bookings.created_at')->paginate(20)->withQueryString(),
+            'visibleStatuses' => $visibleStatuses,
+            'selectedStatus' => $selectedStatus,
+        ];
     }
 
     public function showOrder(ProviderProfile $profile, int $bookingId): array
