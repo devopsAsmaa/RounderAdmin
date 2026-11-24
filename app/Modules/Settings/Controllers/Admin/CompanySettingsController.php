@@ -54,6 +54,9 @@ class CompanySettingsController extends Controller
             $settings->support_email = $validated['support_email'] ?? 'support@rounder.sa';
             $settings->support_working_hours = $validated['support_working_hours'] ?? 'الأحد إلى الخميس، 9 ص - 6 م';
             $settings->support_chat_enabled = $request->boolean('support_chat_enabled');
+            $settings->app_store_url = $validated['app_store_url'] ?? 'https://apps.apple.com/sa/app/6829814780';
+            $settings->play_store_url = $validated['play_store_url'] ?? 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa';
+            $settings->app_download_enabled = $request->boolean('app_download_enabled');
 
             // حذف الختم الحالي إن طُلب ذلك
             if ($request->boolean('remove_stamp') && $settings->stamp_path) {

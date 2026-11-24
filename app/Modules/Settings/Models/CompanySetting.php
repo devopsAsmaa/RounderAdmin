@@ -24,12 +24,16 @@ class CompanySetting extends Model
         'support_email',
         'support_working_hours',
         'support_chat_enabled',
+        'app_store_url',
+        'play_store_url',
+        'app_download_enabled',
     ];
 
     protected function casts(): array
     {
         return [
             'support_chat_enabled' => 'boolean',
+            'app_download_enabled' => 'boolean',
         ];
     }
 
@@ -52,7 +56,20 @@ class CompanySetting extends Model
             'support_email' => 'support@rounder.sa',
             'support_working_hours' => 'الأحد إلى الخميس، 9 ص - 6 م',
             'support_chat_enabled' => true,
+            'app_store_url' => 'https://apps.apple.com/sa/app/6829814780',
+            'play_store_url' => 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa',
+            'app_download_enabled' => true,
         ]);
+    }
+
+    public function getAppStoreUrlAttribute(?string $value): string
+    {
+        return $value ?: 'https://apps.apple.com/sa/app/6829814780';
+    }
+
+    public function getPlayStoreUrlAttribute(?string $value): string
+    {
+        return $value ?: 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa';
     }
 
     /**

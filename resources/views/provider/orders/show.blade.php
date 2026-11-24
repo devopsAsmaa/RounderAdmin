@@ -23,6 +23,10 @@
                 <dt class="col-sm-4">{{ __('Resident') }}</dt><dd class="col-sm-8">{{ $booking->resident->name }}</dd>
                 <dt class="col-sm-4">{{ __('Property') }}</dt><dd class="col-sm-8">{{ $booking->home->name }} · {{ $booking->residentHome?->unit_label }}</dd>
                 <dt class="col-sm-4">{{ __('Service') }}</dt><dd class="col-sm-8">{{ $booking->service->translations->firstWhere('locale', app()->getLocale())?->name ?? $booking->service->code }}</dd>
+                @if($booking->subService)
+                    <dt class="col-sm-4">{{ __('Sub-service') }}</dt><dd class="col-sm-8">{{ $booking->subService->translations->firstWhere('locale', app()->getLocale())?->name ?? $booking->subService->code }}</dd>
+                @endif
+                <dt class="col-sm-4">{{ __('Technician') }}</dt><dd class="col-sm-8">{{ $booking->technician?->name ?? '—' }}</dd>
                 <dt class="col-sm-4">{{ __('Scheduled at') }}</dt><dd class="col-sm-8">{{ $booking->scheduled_at?->translatedFormat('Y-m-d H:i') }}</dd>
                 <dt class="col-sm-4">{{ __('Total') }}</dt><dd class="col-sm-8">{{ number_format((float) $booking->total_amount, 2) }}</dd>
                 <dt class="col-sm-4">{{ __('Notes') }}</dt><dd class="col-sm-8">{{ $booking->notes ?: '—' }}</dd>
@@ -36,6 +40,25 @@
         @endif
     </div>
     <div class="col-lg-5">
+        @if(in_array($booking->status->code, ['pending', 'confirmed', 'in_progress'], true) && app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), app(\App\Modules\Providers\Services\ProviderPortalService::class)->profileFor(auth('provider')->user()), 'orders.manage'))
+            <section class="panel p-3 p-lg-4 mb-3">
+                <h2 class="h5 fw-bold">{{ __('Assign technician') }}</h2>
+                <form method="post" action="{{ route('provider.orders.technician', $booking->id) }}">
+                    @csrf @method('put')
+                    <label class="form-label" for="technician_id">{{ __('Technician') }}</label>
+                    <select class="form-select mb-3" id="technician_id" name="technician_id">
+                        <option value="">{{ __('Not assigned') }}</option>
+                        @if($booking->technician && !$technicians->contains('id', $booking->technician_id))
+                            <option value="{{ $booking->technician_id }}" selected>{{ $booking->technician->name }} ({{ __('Current assignment') }})</option>
+                        @endif
+                        @foreach($technicians as $technician)
+                            <option value="{{ $technician->id }}" @selected((int) old('technician_id', $booking->technician_id) === (int) $technician->id)>{{ $technician->name }}</option>
+                        @endforeach
+                    </select>
+                    <button class="btn btn-outline-primary" type="submit">{{ __('Save assignment') }}</button>
+                </form>
+            </section>
+        @endif
         @if($nextStatus && app(\App\Modules\Providers\Services\ProviderPortalService::class)->allows(auth('provider')->user(), app(\App\Modules\Providers\Services\ProviderPortalService::class)->profileFor(auth('provider')->user()), 'orders.manage'))
             <section class="panel p-3 p-lg-4 mb-3">
                 <h2 class="h5 fw-bold">{{ $statusLabels[$nextStatus] ?? __('Update status') }}</h2>
@@ -53,6 +76,18 @@
                     @else
                         <input type="hidden" name="status" value="{{ $nextStatus }}">
                     @endif
+
+                    <label class="form-label" for="provider_transition_technician_id">{{ __('Technician / Delegate') }}</label>
+                    <select class="form-select mb-3" id="provider_transition_technician_id" name="technician_id">
+                        <option value="">{{ __('Not assigned') }}</option>
+                        @if($booking->technician && !$technicians->contains('id', $booking->technician_id))
+                            <option value="{{ $booking->technician_id }}" selected>{{ $booking->technician->name }} ({{ __('Current assignment') }})</option>
+                        @endif
+                        @foreach($technicians as $technician)
+                            <option value="{{ $technician->id }}" @selected((int) old('technician_id', $booking->technician_id) === (int) $technician->id)>{{ $technician->name }}</option>
+                        @endforeach
+                    </select>
+
                     <div id="grossAmountWrap" style="display: {{ old('status', $nextStatus) === 'completed' ? 'block' : 'none' }};">
                         <label class="form-label" for="gross_amount">{{ __('Final amount') }}</label>
                         <input class="form-control mb-3" id="gross_amount" name="gross_amount" type="number" min="0" step="0.01" value="{{ old('gross_amount', $booking->total_amount) }}">

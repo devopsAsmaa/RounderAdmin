@@ -136,5 +136,16 @@ class LegalPagesTest extends TestCase
             ->assertJsonPath('data.title', 'الشروط والأحكام المحدثة')
             ->assertJsonPath('data.content', 'محتوى تجريبي للشروط والأحكام المحدثة.');
     }
+
+    public function test_public_can_view_terms_and_privacy_web_pages(): void
+    {
+        $responsePrivacy = $this->get('/privacy');
+        $responsePrivacy->assertOk()
+            ->assertSee('سياسة الخصوصية');
+
+        $responseTerms = $this->get('/terms');
+        $responseTerms->assertOk()
+            ->assertSee('الشروط والأحكام');
+    }
 }
 

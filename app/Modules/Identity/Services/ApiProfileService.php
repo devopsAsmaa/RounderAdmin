@@ -90,4 +90,44 @@ class ApiProfileService
         return $this->profile($input, $actor);
     }
 
+    /**
+     * حذف حساب المستخدم نهائياً بطريقة الحذف المرن (Soft Delete).
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     * @throws \Throwable
+     */
+    public function deleteAccount(array $input, ?User $actor): array
+    {
+        return DB::transaction(function () use ($input, $actor): array {
+            $result = $this->performDeleteAccount($input, $actor);
+            DB::afterCommit(fn () => event(new IdentityChanged(Operation::ApiDeleteAccount, $actor?->id)));
+            return $result;
+        });
+    }
+
+    /**
+     * قواعد عملية حذف الحساب؛ إلغاء الرموز وتطبيق الحذف المرن.
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     */
+    private function performDeleteAccount(array $input, ?User $actor): array
+    {
+        if (!$actor) {
+            throw ValidationException::withMessages([
+                'account' => __('Unauthenticated.'),
+            ]);
+        }
+
+        // إلغاء جميع رموز الوصول (Sanctum Tokens)
+        $actor->tokens()->delete();
+
+        // تنفيذ الحذف المرن (Soft Delete)
+        $actor->delete();
+
+        return [
+            'message' => __('Account deleted successfully.'),
+        ];
+    }
 }

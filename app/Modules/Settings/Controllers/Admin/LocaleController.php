@@ -18,7 +18,8 @@ class LocaleController extends Controller
      */
     public function update(UpdateLocaleRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $locale = $this->service->update($request->validated(), $request->user());
+        $actor = $request->user('provider') ?? $request->user('web') ?? $request->user();
+        $locale = $this->service->update($request->validated(), $actor);
         $request->session()->put('locale', $locale);
         return back();
     }

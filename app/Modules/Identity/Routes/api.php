@@ -14,10 +14,14 @@ Route::prefix('v1')->group(function () {
 Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/me', [\App\Modules\Identity\Controllers\Api\AuthController::class, 'me']);
     Route::post('/auth/logout', [\App\Modules\Identity\Controllers\Api\AuthController::class, 'logout']);
+    Route::delete('/account', [\App\Modules\Identity\Controllers\Api\AuthController::class, 'deleteAccount']);
+    Route::post('/auth/delete-account', [\App\Modules\Identity\Controllers\Api\AuthController::class, 'deleteAccount']);
 });
 Route::prefix('v1/resident')->middleware(['auth:sanctum', 'resident'])->group(function () {
     Route::get('/profile', [\App\Modules\Identity\Controllers\Api\ProfileController::class, 'profile']);
     Route::put('/profile', [\App\Modules\Identity\Controllers\Api\ProfileController::class, 'updateProfile']);
+    Route::delete('/profile', [\App\Modules\Identity\Controllers\Api\ProfileController::class, 'deleteAccount']);
+    Route::delete('/account', [\App\Modules\Identity\Controllers\Api\ProfileController::class, 'deleteAccount']);
     Route::put('/mobile', [\App\Modules\Identity\Controllers\Api\ProfileController::class, 'updateMobile'])
         ->middleware('throttle:5,1');
 });

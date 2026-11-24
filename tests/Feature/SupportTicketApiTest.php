@@ -53,6 +53,8 @@ class SupportTicketApiTest extends TestCase
             ->assertJsonPath('status', true)
             ->assertJsonPath('data.phone', '920000488')
             ->assertJsonPath('data.email', 'support@rounder.sa')
+            ->assertJsonPath('data.categories.0.code', 'order')
+            ->assertJsonPath('data.categories.0.name', 'مشكلة في طلب')
             ->assertJsonStructure([
                 'status',
                 'data' => [
@@ -60,6 +62,8 @@ class SupportTicketApiTest extends TestCase
                     'email',
                     'working_hours',
                     'chat_available',
+                    'categories',
+                    'notice',
                 ],
             ]);
     }
@@ -72,22 +76,55 @@ class SupportTicketApiTest extends TestCase
         $file = UploadedFile::fake()->image('problem.jpg', 600, 400);
 
         $response = $this->postJson('/api/v1/resident/support/tickets', [
-            'category' => 'order_issue',
+            'category' => 'order',
             'subject' => 'تأخر في وصول الفني',
-            'message' => 'الفني لم يحضر في الموعد المحدد للطلب وأرجو المساعدة.',
+            'description' => 'الفني لم يحضر في الموعد المحدد للطلب وأرجو المساعدة.',
             'attachment' => $file,
         ]);
 
         $response->assertStatus(201)
             ->assertJsonPath('status', true)
-            ->assertJsonPath('data.category', 'order_issue')
+            ->assertJsonPath('data.category', 'order')
             ->assertJsonPath('data.subject', 'تأخر في وصول الفني')
+            ->assertJsonPath('data.description', 'الفني لم يحضر في الموعد المحدد للطلب وأرجو المساعدة.')
             ->assertJsonPath('data.status', 'open');
 
         $this->assertDatabaseHas('support_tickets', [
             'user_id' => $this->resident->id,
-            'category' => 'order_issue',
+            'category' => 'order',
             'subject' => 'تأخر في وصول الفني',
+            'status' => 'open',
+        ]);
+    }
+
+    public function test_resident_can_create_ticket_with_alias_fields_order_and_description(): void
+    {
+        Storage::fake('public');
+        Sanctum::actingAs($this->resident);
+
+        $file = UploadedFile::fake()->image('problem.jpg', 600, 400);
+
+        // نفس البيانات التي أرسلها تطبيق الموبايل في الصورة
+        $response = $this->postJson('/api/v1/resident/support/tickets', [
+            'category' => 'order',
+            'subject' => 'app down space',
+            'description' => 'big problem pro',
+            'attachment' => $file,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.category', 'order')
+            ->assertJsonPath('data.subject', 'app down space')
+            ->assertJsonPath('data.message', 'big problem pro')
+            ->assertJsonPath('data.description', 'big problem pro')
+            ->assertJsonPath('data.status', 'open');
+
+        $this->assertDatabaseHas('support_tickets', [
+            'user_id' => $this->resident->id,
+            'category' => 'order',
+            'subject' => 'app down space',
+            'message' => 'big problem pro',
             'status' => 'open',
         ]);
     }

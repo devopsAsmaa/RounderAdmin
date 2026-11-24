@@ -10,6 +10,7 @@
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="assets/fonts/tajawal-bold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="assets/vendor/select2/select2.min.css?v=4.1.0">
     <link rel="stylesheet" href="assets/vendor/select2/select2-bootstrap-5-theme.rtl.min.css?v=1.3.0">
     <link rel="stylesheet" href="assets/css/style.css?v={{ filemtime(public_path('assets/css/style.css')) }}">
@@ -19,6 +20,177 @@
     <script>
       window.ROUNDER_CONFIG = {!! json_encode($clientConfig ?? [], JSON_UNESCAPED_UNICODE) !!};
     </script>
+    <style>
+      .app-showcase-section { padding-block: 50px 80px; }
+      .app-showcase-card {
+        background: radial-gradient(circle at 85% 20%, rgba(255, 123, 36, 0.22) 0%, transparent 50%),
+                    radial-gradient(circle at 15% 85%, rgba(0, 84, 97, 0.35) 0%, transparent 45%),
+                    linear-gradient(135deg, #00222a 0%, #003742 50%, #004654 100%);
+        border-radius: 28px;
+        padding: 56px 48px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 34, 42, 0.18);
+      }
+      .app-showcase-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        background-size: 26px 26px;
+        pointer-events: none;
+      }
+      .app-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(8px);
+        padding: 7px 18px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #e0f2ef;
+      }
+      .app-title {
+        font-size: clamp(2rem, 3.5vw, 2.7rem);
+        font-weight: 800;
+        line-height: 1.25;
+        margin-bottom: 18px;
+        letter-spacing: -0.5px;
+      }
+      .app-description {
+        color: #b7d1ce;
+        font-size: 1.05rem;
+        line-height: 1.8;
+        max-width: 580px;
+        margin-bottom: 32px;
+      }
+      .app-store-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        background: #001a20;
+        color: #ffffff !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 12px 24px;
+        min-width: 175px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+      .app-store-btn:hover {
+        background: #002730;
+        border-color: #ff7b24;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(255, 123, 36, 0.35);
+        color: #ffffff !important;
+      }
+      .store-btn-icon { font-size: 2.1rem; line-height: 1; }
+      .store-btn-text {
+        display: flex;
+        flex-direction: column;
+        text-align: start;
+        line-height: 1.2;
+      }
+      .store-sub {
+        font-size: 0.68rem;
+        color: #a4bebc;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .store-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .app-mockup-wrapper {
+        position: relative;
+        display: inline-block;
+        padding: 15px;
+      }
+      .app-mockup-wrapper::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(255, 123, 36, 0.25) 0%, rgba(0, 168, 150, 0.18) 50%, transparent 75%);
+        filter: blur(45px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .app-mockup-img {
+        max-height: 480px;
+        width: auto;
+        position: relative;
+        z-index: 1;
+        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .app-mockup-img:hover {
+        transform: scale(1.03) translateY(-4px);
+      }
+      .floating-app-badge {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(14px);
+        color: #00343e;
+        border-radius: 16px;
+        padding: 11px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 16px 36px rgba(0, 20, 26, 0.32);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        text-align: start;
+        z-index: 2;
+        transition: transform 0.3s ease;
+      }
+      .float-top-right {
+        top: 20px;
+        inset-inline-end: -25px;
+        animation: float-slow 4s ease-in-out infinite;
+      }
+      .float-bottom-left {
+        bottom: 25px;
+        inset-inline-start: -25px;
+        animation: float-slow 4s ease-in-out infinite 2s;
+      }
+      @keyframes float-slow {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+      .floating-app-badge .badge-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: #edf6f5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+      }
+      .floating-app-badge strong {
+        display: block;
+        font-size: 0.85rem;
+        line-height: 1.25;
+        color: #00343e;
+      }
+      .floating-app-badge small { font-size: 0.72rem; color: #697e82; }
+      @media (max-width: 991.98px) {
+        .app-showcase-card { padding: 40px 24px; text-align: center; }
+        .app-description { margin-inline: auto; }
+        .app-showcase-card .d-flex.pt-2 { justify-content: center; }
+        .floating-app-badge { display: none; }
+        .app-mockup-img { max-height: 350px; }
+      }
+    </style>
     <script src="assets/js/app.js?v={{ filemtime(public_path('assets/js/app.js')) }}" defer></script>
   </head>
   <body>
@@ -84,6 +256,10 @@
               <li class="nav-item"><a class="nav-link" href="#business">للأعمال</a></li>
               <li class="nav-item"><a class="nav-link" href="#how">كيف نعمل</a></li>
               <li class="nav-item"><a class="nav-link" href="#faq">الأسئلة الشائعة</a></li>
+              @if($companySettings->app_download_enabled ?? true)
+                <li class="nav-item"><a class="nav-link" href="#app-download">حمّل التطبيق</a></li>
+              @endif
+              <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">تواصل معنا</a></li>
               @auth
                 <li class="nav-item d-md-none"><a class="nav-link text-warning fw-bold" href="{{ route('admin.dashboard') }}">لوحة التحكم</a></li>
               @else
@@ -341,7 +517,21 @@
       <section id="faq" class="section-space" aria-labelledby="faq-title">
         <div class="container">
           <div class="row g-4 g-lg-5">
-            <div class="col-lg-5 faq-intro"><span class="eyebrow">قبل ما تبدأ</span><h2 id="faq-title">في بالك سؤال؟</h2><p>هنا أهم التفاصيل عن تجربة راوندر.</p><div class="faq-note d-none d-lg-flex"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg><span>الراحة تبدأ<br>من وضوح التفاصيل.</span></div></div>
+            <div class="col-lg-5 faq-intro">
+              <span class="eyebrow">قبل ما تبدأ</span>
+              <h2 id="faq-title">في بالك سؤال؟</h2>
+              <p>هنا أهم التفاصيل عن تجربة راوندر وحلول الصيانة.</p>
+              <div class="faq-note d-none d-lg-flex">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                <span>الراحة تبدأ<br>من وضوح التفاصيل.</span>
+              </div>
+              <div class="mt-4 d-none d-lg-block">
+                <a href="{{ route('faq') }}" class="btn btn-outline-primary btn-sm">
+                  <span>عرض جميع الأسئلة الشائعة</span>
+                  <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+                </a>
+              </div>
+            </div>
             <div class="col-lg-7">
               <div class="accordion accordion-flush" id="faq-accordion">
                 
@@ -350,12 +540,12 @@
                   <button class="accordion-button" type="button"
                     data-bs-toggle="collapse" data-bs-target="#faq-1"
                     aria-expanded="true" aria-controls="faq-1">
-                    كيف أطلب خدمة من راوندر؟
+                    كيف أطلب خدمة صيانة منزلية من راوندر؟
                   </button>
                 </h3>
                 <div id="faq-1" class="accordion-collapse collapse show"
                   data-bs-parent="#faq-accordion">
-                  <div class="accordion-body">اختر الخدمة التي تحتاجها، ثم حدّد المدينة والموعد والتفاصيل. يمكنك الآن تجربة الخطوات واستعراض ملخص طلبك في هذا النموذج.</div>
+                  <div class="accordion-body">اختر نوع الخدمة (تكييف، سباكة، كهرباء، نظافة، وغيرها)، ثم حدّد العنوان والوقت الأنسب لزيارتك في مدينة الرياض. سيصلك فني معتمد ومؤهل لإنجاز الصيانة في الموعد المحدد.</div>
                 </div>
               </div>
 
@@ -364,12 +554,12 @@
                   <button class="accordion-button collapsed" type="button"
                     data-bs-toggle="collapse" data-bs-target="#faq-2"
                     aria-expanded="false" aria-controls="faq-2">
-                    هل يمكن تجربة حجز حقيقي هنا؟
+                    كيف يتم تحديد تكلفة وأسعار الخدمات؟
                   </button>
                 </h3>
                 <div id="faq-2" class="accordion-collapse collapse"
                   data-bs-parent="#faq-accordion">
-                  <div class="accordion-body">هذه نسخة تصميم تجريبية. الطلبات لا تُرسل إلى فنيين، ولا توجد مدفوعات أو حجوزات فعلية. الهدف هو معاينة شكل الموقع وتجربة الاستخدام.</div>
+                  <div class="accordion-body">تعتمد راوندر تسعيراً واضحاً وشفافاً لكل خدمة وباقة قبل تأكيد الطلب، دون أي رسوم خفية. في حال وجود أعمال إضافية أو قطع غيار، يتم إبلاغك بالتكلفة والموافقة عليها مسبقاً قبل البدء.</div>
                 </div>
               </div>
 
@@ -378,12 +568,12 @@
                   <button class="accordion-button collapsed" type="button"
                     data-bs-toggle="collapse" data-bs-target="#faq-3"
                     aria-expanded="false" aria-controls="faq-3">
-                    كيف يتم تحديد تكلفة الخدمة؟
+                    هل تتوفر ضمانات على أعمال الصيانة المنفذة؟
                   </button>
                 </h3>
                 <div id="faq-3" class="accordion-collapse collapse"
                   data-bs-parent="#faq-accordion">
-                  <div class="accordion-body">يقترح التصميم توضيح نطاق العمل والتكلفة قبل تأكيد أي طلب. الأسعار الفعلية وسياسة المعاينة تُضاف عند تجهيز المنصة للتشغيل.</div>
+                  <div class="accordion-body">نعم، تخضع كافة خدمات راوندر لضمان الجودة؛ حيث نتابع معك بعد انتهاء الزيارة للتأكد من حل المشكلة بالكامل ورضاك التام عن مستوى الخدمة.</div>
                 </div>
               </div>
 
@@ -392,12 +582,12 @@
                   <button class="accordion-button collapsed" type="button"
                     data-bs-toggle="collapse" data-bs-target="#faq-4"
                     aria-expanded="false" aria-controls="faq-4">
-                    هل توجد خدمات للشركات والعقارات؟
+                    هل توجد حلول صيانة مخصصة للشركات والعقارات؟
                   </button>
                 </h3>
                 <div id="faq-4" class="accordion-collapse collapse"
                   data-bs-parent="#faq-accordion">
-                  <div class="accordion-body">نعم، يضم التصوّر قسمًا للأعمال يوضّح إدارة صيانة المواقع والفروع. جرّب نموذج الأعمال لتحديد نوع المنشأة والخدمات المطلوبة.</div>
+                  <div class="accordion-body">نعم، نوفر لقطاع الأعمال عقود صيانة دورية وتشغيلية شاملة للمكاتب والفروع والمجمعات التجارية، تشمل فرق عمل مخصصة وفواتير ضريبية إلكترونية معتمدة لـ ZATCA.</div>
                 </div>
               </div>
 
@@ -406,19 +596,103 @@
                   <button class="accordion-button collapsed" type="button"
                     data-bs-toggle="collapse" data-bs-target="#faq-5"
                     aria-expanded="false" aria-controls="faq-5">
-                    كيف أسجل كمزود خدمة؟
+                    كيف يمكنني التسجيل كمزود خدمة أو فني معتمد؟
                   </button>
                 </h3>
                 <div id="faq-5" class="accordion-collapse collapse"
                   data-bs-parent="#faq-accordion">
-                  <div class="accordion-body">أرسل بيانات شركتك والخدمات التي تقدمها. تراجع الإدارة الطلب والمرفقات، وبعد الموافقة يظهر لك العقد في حسابك؛ اقبله للدخول إلى لوحة مزود الخدمة.</div>
+                  <div class="accordion-body">يمكنك التسجيل عبر بوابة مزودي الخدمة بالضغط على "انضم كمزود خدمة" وإرفاق مستندات منشأتك الرسمية، ليتم اعتماد الحساب وتوقيع العقد الإلكتروني والبدء في استقبال وإسناد الطلبات.</div>
                 </div>
               </div>
+              </div>
+
+              <div class="mt-4 text-center d-lg-none">
+                <a href="{{ route('faq') }}" class="btn btn-outline-primary btn-sm w-100">
+                  <span>عرض جميع الأسئلة الشائعة</span>
+                  <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+                </a>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      @if($companySettings->app_download_enabled ?? true)
+      <!-- قسم استعراض وتحميل تطبيق راوندر للجوال -->
+      <section id="app-download" class="app-showcase-section" aria-labelledby="app-showcase-title">
+        <div class="container">
+          <div class="app-showcase-card text-white">
+            <div class="row align-items-center gy-5">
+              <div class="col-lg-7">
+                <div class="app-badge mb-3">
+                  <i class="fa-solid fa-mobile-screen-button text-warning"></i>
+                  <span>تطبيق راوندر متوفر الآن على الجوال</span>
+                </div>
+                <h2 id="app-showcase-title" class="app-title text-white">
+                  كل خدمات بيتك وصيانتك<br>
+                  <span style="color: #ff7b24;">في جيبك.. بلمسة واحدة!</span>
+                </h2>
+                <p class="app-description">
+                  حمّل تطبيق راوندر على هاتفك الآن واستمتع بتجربة حجز فائقة السهولة والسرعة، تتبّع الفني المعتمد لحظة بلحظة، وادفع بأمان عبر وسائل الدفع المفضلة لديك مع ضمان شامل لكل خدمة.
+                </p>
+
+                <div class="d-flex flex-wrap align-items-center gap-3 pt-2">
+                  @if(!empty($companySettings->app_store_url ?? 'https://apps.apple.com/sa/app/6829814780'))
+                    <a href="{{ $companySettings->app_store_url ?? 'https://apps.apple.com/sa/app/6829814780' }}"
+                       target="_blank" rel="noopener noreferrer" class="app-store-btn"
+                       aria-label="تحميل تطبيق راوندر من متجر آبل App Store">
+                      <i class="fa-brands fa-apple store-btn-icon"></i>
+                      <div class="store-btn-text">
+                        <span class="store-sub">Download on the</span>
+                        <span class="store-name">App Store</span>
+                      </div>
+                    </a>
+                  @endif
+
+                  @if(!empty($companySettings->play_store_url ?? 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa'))
+                    <a href="{{ $companySettings->play_store_url ?? 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa' }}"
+                       target="_blank" rel="noopener noreferrer" class="app-store-btn"
+                       aria-label="تحميل تطبيق راوندر من متجر جوجل بلاي Google Play">
+                      <i class="fa-brands fa-google-play store-btn-icon"></i>
+                      <div class="store-btn-text">
+                        <span class="store-sub">GET IT ON</span>
+                        <span class="store-name">Google Play</span>
+                      </div>
+                    </a>
+                  @endif
+                </div>
+              </div>
+
+              <div class="col-lg-5 text-center">
+                <div class="app-mockup-wrapper">
+                  <img src="{{ asset('assets/images/app-mockup.png') }}?v={{ filemtime(public_path('assets/images/app-mockup.png')) }}"
+                       alt="معاينة شاشات تطبيق راوندر على الجوال"
+                       class="img-fluid app-mockup-img"
+                       width="920" height="1040"
+                       loading="lazy">
+
+                  <div class="floating-app-badge float-top-right">
+                    <span class="badge-icon">⭐</span>
+                    <div>
+                      <strong>تقييم 4.8 / 5</strong>
+                      <small>أكثر من 10,000+ طلب ناجح</small>
+                    </div>
+                  </div>
+
+                  <div class="floating-app-badge float-bottom-left">
+                    <span class="badge-icon">⚡</span>
+                    <div>
+                      <strong>وصول سريع</strong>
+                      <small>فني معتمد على بعد دقائق منك</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      @endif
 
       <section class="final-section" aria-labelledby="final-title">
         <div class="container">
@@ -439,10 +713,42 @@
             <p>عناية للمنزل. راحة لك.</p>
           </div>
           <div class="col-6 col-lg-3"><h3>اكتشف راوندر</h3><ul class="list-unstyled footer-links"><li><a href="#services">الخدمات المنزلية</a></li><li><a href="#business">حلول الأعمال</a></li><li><a href="{{ route('provider.register') }}">التسجيل كمزود خدمة</a></li><li><a href="{{ route('provider.login') }}">دخول مزود الخدمة</a></li>@auth<li><a href="{{ route('admin.dashboard') }}">لوحة التحكم</a></li>@else<li><a href="{{ route('admin.login') }}">دخول الإدارة</a></li>@endauth</ul></div>
-          <div class="col-6 col-lg-3"><h3>كيف نقدر نساعدك؟</h3><ul class="list-unstyled footer-links"><li><a href="#how">طريقة الحجز</a></li><li><a href="#faq">الأسئلة الشائعة</a></li><li><button type="button" data-modal="help">اختيار الخدمة المناسبة</button></li></ul></div>
-          <div class="col-12 col-lg-3 footer-note"><span class="concept-label">نسخة تصميم تجريبية</span><p>واجهة راوندر للخدمات المنزلية.<br>المحتوى والطلبات لأغراض المعاينة.</p></div>
+          <div class="col-6 col-lg-3"><h3>كيف نقدر نساعدك؟</h3><ul class="list-unstyled footer-links"><li><a href="#how">طريقة الحجز</a></li><li><a href="{{ route('faq') }}">الأسئلة الشائعة</a></li><li><a href="{{ route('terms') }}">الشروط والأحكام</a></li><li><a href="{{ route('privacy') }}">سياسة الخصوصية</a></li><li><a href="{{ route('contact') }}">تواصل معنا</a></li><li><button type="button" data-modal="help">اختيار الخدمة المناسبة</button></li></ul></div>
+          <div class="col-12 col-lg-3 footer-note">
+            <span class="concept-label">راوندر لخدمات التشغيل والصيانة</span>
+            <p>منصة الصيانة والخدمات المنزلية المعتمدة.<br>عناية للمنزل. راحة لك.</p>
+            @if($companySettings->app_download_enabled ?? true)
+            <div class="d-flex flex-column gap-2 mt-3">
+              <span class="text-white-50 small fw-bold">حمّل تطبيق راوندر:</span>
+              <div class="d-flex align-items-center gap-2">
+                @if(!empty($companySettings->app_store_url ?? 'https://apps.apple.com/sa/app/6829814780'))
+                <a href="{{ $companySettings->app_store_url ?? 'https://apps.apple.com/sa/app/6829814780' }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light btn-sm px-2 py-1 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" aria-label="تحميل من App Store">
+                  <i class="fa-brands fa-apple"></i> App Store
+                </a>
+                @endif
+                @if(!empty($companySettings->play_store_url ?? 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa'))
+                <a href="{{ $companySettings->play_store_url ?? 'https://play.google.com/store/apps/details?id=com.futuretec.rounderapp.sa' }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light btn-sm px-2 py-1 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" aria-label="تحميل من Google Play">
+                  <i class="fa-brands fa-google-play"></i> Google Play
+                </a>
+                @endif
+              </div>
+            </div>
+            @endif
+          </div>
         </div>
-        <div class="footer-bottom d-flex flex-column flex-sm-row justify-content-between gap-2"><span>راوندر © 2026 — تصوّر لمنصة الخدمات المنزلية</span><span>صُمّم ليكون أقرب لك <span class="brand-heart" aria-hidden="true">♡</span></span></div>
+        <div class="footer-bottom d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+          <span>راوندر © {{ date('Y') }} — جميع الحقوق محفوظة</span>
+          <div class="d-flex align-items-center gap-2 small">
+            <a href="{{ route('terms') }}" class="text-white-50 text-decoration-none">الشروط والأحكام</a>
+            <span class="text-white-50">|</span>
+            <a href="{{ route('privacy') }}" class="text-white-50 text-decoration-none">سياسة الخصوصية</a>
+            <span class="text-white-50">|</span>
+            <a href="{{ route('faq') }}" class="text-white-50 text-decoration-none">الأسئلة الشائعة</a>
+            <span class="text-white-50">|</span>
+            <a href="{{ route('contact') }}" class="text-white-50 text-decoration-none">تواصل معنا</a>
+          </div>
+          <span>صُمّم ليكون أقرب لك <span class="brand-heart" aria-hidden="true">♡</span></span>
+        </div>
       </div>
     </footer>
 

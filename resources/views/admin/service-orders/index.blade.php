@@ -32,6 +32,74 @@
 
             @include('admin.partials.feedback')
 
+            @adminCan('admin.service-orders.update','PUT')
+            <div class="panel p-3 mb-4 shadow-sm" style="border-radius: 14px; border: 1.5px solid #dce8e4; background: #ffffff;">
+                <form id="adminBulkActionForm" method="post" action="{{ route('admin.service-orders.bulk-update') }}">
+                    @csrf
+                    @method('put')
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(2, 51, 62, 0.08); color: var(--petrol);">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark small">{{ __('Bulk action') }}</div>
+                                <span class="badge rounded-pill bg-light text-secondary border fw-normal" id="adminSelectedBadge">
+                                    <span id="adminSelectedCount">0</span> {{ __('orders selected') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1 justify-content-end">
+                            <!-- Status select -->
+                            <div style="min-width: 165px;">
+                                <select class="form-select form-select-sm" name="booking_status_id" style="border-radius: 8px;">
+                                    <option value="">-- {{ __('Status (no change)') }} --</option>
+                                    @foreach($statuses as $st)
+                                        <option value="{{ $st->id }}">{{ $st->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Technician / Delegate select -->
+                            <div style="min-width: 185px;">
+                                <select class="form-select form-select-sm" name="technician_id" style="border-radius: 8px;">
+                                    <option value="">-- {{ __('Technician (no change)') }} --</option>
+                                    <option value="unassign">{{ __('Unassign technician') }}</option>
+                                    @foreach($technicians as $tech)
+                                        <option value="{{ $tech->id }}">{{ $tech->name }} @if($tech->provider_name) ({{ $tech->provider_name }}) @endif</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Provider select (optional) -->
+                            <div style="min-width: 165px;">
+                                <select class="form-select form-select-sm" name="provider_profile_id" style="border-radius: 8px;">
+                                    <option value="">-- {{ __('Provider (no change)') }} --</option>
+                                    @foreach($providers as $pr)
+                                        <option value="{{ $pr->id }}">{{ $pr->company_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Note input -->
+                            <div style="min-width: 150px;">
+                                <input type="text" name="note" class="form-control form-control-sm" placeholder="{{ __('Internal note') }}" style="border-radius: 8px;" maxlength="500">
+                            </div>
+
+                            <!-- Submit button -->
+                            <button type="submit" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1.5 shadow-sm" id="adminBulkSubmitBtn" disabled style="border-radius: 8px; font-weight: 600; padding: 0.42rem 1rem;">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>{{ __('Apply to selected') }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Hidden container for selected order IDs -->
+                    <div id="adminSelectedOrdersContainer"></div>
+                </form>
+            </div>
+            @endadminCan
+
             <!-- ========================================== -->
             <!-- 1. CLEAN EXECUTIVE TABLE VIEW (DEFAULT)    -->
             <!-- ========================================== -->
@@ -41,9 +109,12 @@
                         <table class="table align-middle mb-0" style="min-width: 860px;">
                             <thead>
                                 <tr style="border-bottom: 2px solid #e5ede9;">
-                                    <th style="width: 14%;">{{ __('Order') }}</th>
-                                    <th style="width: 16%;">{{ __('Resident and home') }}</th>
-                                    <th style="width: 18%;">{{ __('Service') }}</th>
+                                    <th style="width: 38px;">
+                                        <input type="checkbox" id="selectAllAdminTable" class="form-check-input" title="{{ __('Select all') }}">
+                                    </th>
+                                    <th style="width: 13%;">{{ __('Order') }}</th>
+                                    <th style="width: 15%;">{{ __('Resident and home') }}</th>
+                                    <th style="width: 17%;">{{ __('Service') }}</th>
                                     <th style="width: 22%;">{{ __('Assigned provider') }}</th>
                                     <th style="width: 8%;">{{ __('Photos') }}</th>
                                     <th style="width: 11%;">{{ __('Status') }}</th>
@@ -66,6 +137,11 @@
                                         }
                                     @endphp
                                     <tr style="border-bottom: 1px solid #edf3f0;">
+                                        <!-- Checkbox -->
+                                        <td class="py-3">
+                                            <input type="checkbox" value="{{ $order->id }}" class="form-check-input admin-order-cb" data-order-id="{{ $order->id }}">
+                                        </td>
+
                                         <!-- 1. Order ID & Schedule -->
                                         <td class="py-3">
                                             <div class="d-flex align-items-center gap-1.5 mb-1">
@@ -123,6 +199,12 @@
                                                         <span class="badge mt-1" style="background: #eef8f4; color: #0e6c51; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem;">
                                                             <i class="fa-solid fa-check-circle me-1"></i>{{ __('Assigned') }}
                                                         </span>
+                                                        @if($order->technician_name)
+                                                            <div class="small text-secondary mt-1" style="font-size: 0.74rem;">
+                                                                <i class="fa-solid fa-user-gear text-rounder-orange me-1"></i>
+                                                                <span>{{ $order->technician_name }}</span>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             @else
@@ -197,7 +279,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5 text-secondary">
+                                        <td colspan="8" class="text-center py-5 text-secondary">
                                             <i class="fa-solid fa-clipboard-list fs-1 mb-2 text-secondary opacity-50"></i>
                                             <div>{{ __('No service orders found') }}</div>
                                         </td>
@@ -231,6 +313,7 @@
                         <!-- Card Header -->
                         <div class="card-header bg-white py-3 px-3 px-lg-4 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2" style="border-color: #eaf1ee !important;">
                             <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <input type="checkbox" value="{{ $order->id }}" class="form-check-input admin-order-cb" data-order-id="{{ $order->id }}" title="{{ __('Select') }}">
                                 <span class="badge" style="background: var(--petrol); color: #fff; font-size: 0.85rem; padding: 0.42rem 0.8rem; border-radius: 9px; font-weight: 700;">
                                     #{{ $order->id }}
                                 </span>
@@ -312,10 +395,15 @@
                                         </div>
                                         @if($order->provider_name)
                                             <div class="fw-bold text-dark fs-6" style="line-height: 1.4;">{{ $order->provider_name }}</div>
-                                            <div class="mt-1">
+                                            <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
                                                 <span class="badge" style="background: #eef8f4; color: #0e6c51; font-weight: 600; font-size: 0.75rem;">
                                                     <i class="fa-solid fa-check-circle me-1"></i> {{ __('Assigned') }}
                                                 </span>
+                                                @if($order->technician_name)
+                                                    <span class="badge" style="background: #e8f4f8; color: var(--petrol); font-weight: 600; font-size: 0.75rem;">
+                                                        <i class="fa-solid fa-user-gear text-rounder-orange me-1"></i> {{ $order->technician_name }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         @else
                                             <div class="text-secondary small fst-italic mt-1">
@@ -404,8 +492,8 @@
                                     </div>
 
                                     <div class="row g-3">
-                                        <!-- Provider Selection (FULL WIDTH - NEVER TRUNCATED!) -->
-                                        <div class="col-12">
+                                        <!-- Provider Selection -->
+                                        <div class="col-md-6">
                                             <label class="form-label fw-bold text-dark small mb-1">
                                                 <i class="fa-solid fa-truck-fast text-rounder-orange me-1"></i> {{ __('Choose provider') }}
                                             </label>
@@ -417,9 +505,21 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <div class="form-text text-secondary small" style="font-size: 0.78rem;">
-                                                {{ __('Select the approved service provider to assign this order to.') }}
-                                            </div>
+                                        </div>
+
+                                        <!-- Technician / Delegate Selection -->
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold text-dark small mb-1">
+                                                <i class="fa-solid fa-user-gear text-rounder-orange me-1"></i> {{ __('Technician / Delegate') }}
+                                            </label>
+                                            <select class="form-select technician-select" name="technician_id" style="border-radius: 10px; border-color: #ccdcd6; padding: 0.6rem 0.9rem;">
+                                                <option value="">{{ __('No technician / Not assigned') }}</option>
+                                                @foreach($technicians as $tech)
+                                                    <option value="{{ $tech->id }}" data-provider-id="{{ $tech->provider_profile_id }}" @selected((int)$order->technician_id === (int)$tech->id)>
+                                                        {{ $tech->name }} @if($tech->provider_name) ({{ $tech->provider_name }}) @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
 
                                         <!-- Order Status Selection -->
@@ -539,6 +639,95 @@ document.addEventListener('DOMContentLoaded', function() {
             switchOrdersView('cards');
         }
     } catch(e) {}
+
+    // Bulk selection management
+    const bulkForm = document.getElementById('adminBulkActionForm');
+    const selectAllTable = document.getElementById('selectAllAdminTable');
+    const checkboxes = document.querySelectorAll('.admin-order-cb');
+    const selectedCountEl = document.getElementById('adminSelectedCount');
+    const bulkSubmitBtn = document.getElementById('adminBulkSubmitBtn');
+    const container = document.getElementById('adminSelectedOrdersContainer');
+
+    function updateAdminSelection() {
+        const selected = new Set();
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                selected.add(cb.value);
+            }
+        });
+
+        if (selectedCountEl) {
+            selectedCountEl.textContent = selected.size;
+        }
+
+        if (bulkSubmitBtn) {
+            bulkSubmitBtn.disabled = selected.size === 0;
+        }
+
+        const totalUniqueOrders = new Set(Array.from(checkboxes).map(cb => cb.value)).size;
+        if (selectAllTable) {
+            selectAllTable.checked = totalUniqueOrders > 0 && selected.size === totalUniqueOrders;
+            selectAllTable.indeterminate = selected.size > 0 && selected.size < totalUniqueOrders;
+        }
+
+        // Sync table and card checkboxes for the same order
+        checkboxes.forEach(cb => {
+            cb.checked = selected.has(cb.value);
+        });
+
+        if (container) {
+            container.innerHTML = '';
+            selected.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'order_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+        }
+    }
+
+    if (selectAllTable) {
+        selectAllTable.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                cb.checked = selectAllTable.checked;
+            });
+            updateAdminSelection();
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            // Keep all matching checkboxes in sync
+            const val = this.value;
+            const isChecked = this.checked;
+            document.querySelectorAll('.admin-order-cb[value="' + val + '"]').forEach(c => {
+                c.checked = isChecked;
+            });
+            updateAdminSelection();
+        });
+    });
+
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function(e) {
+            const selected = container ? container.querySelectorAll('input[name="order_ids[]"]') : [];
+            if (selected.length === 0) {
+                e.preventDefault();
+                alert(@json(__('Select at least one order.')));
+                return;
+            }
+
+            const statusVal = bulkForm.querySelector('[name="booking_status_id"]')?.value;
+            const techVal = bulkForm.querySelector('[name="technician_id"]')?.value;
+            const provVal = bulkForm.querySelector('[name="provider_profile_id"]')?.value;
+
+            if (!statusVal && !techVal && !provVal) {
+                e.preventDefault();
+                alert(@json(__('Select a status, a technician, or a provider to update.')));
+                return;
+            }
+        });
+    }
 });
 </script>
 @endpush

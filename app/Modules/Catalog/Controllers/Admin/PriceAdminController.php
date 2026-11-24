@@ -4,8 +4,8 @@ namespace App\Modules\Catalog\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Catalog\Requests\AdminPriceRequest;
+use App\Modules\Catalog\Requests\AdminReviewPriceRequest;
 use App\Modules\Catalog\Services\AdminPriceAdminService;
-use App\Modules\Properties\Models\Region;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,7 +41,7 @@ class PriceAdminController extends Controller
     public function edit(AdminPriceRequest $request, int $priceId): View
     {
         $price = $this->service->edit($priceId);
-        $regions = Region::query()->with('translations')->where('is_active', true)->get();
+        $regions = $this->service->getActiveRegions();
 
         return view('admin.prices.edit', compact('price', 'regions'));
     }
@@ -54,12 +54,9 @@ class PriceAdminController extends Controller
             ->with('status', __('Pricing updated successfully.'));
     }
 
-    public function review(Request $request, int $priceId): RedirectResponse
+    public function review(AdminReviewPriceRequest $request, int $priceId): RedirectResponse
     {
-        $input = $request->validate([
-            'decision' => ['required', 'in:approved,rejected'],
-            'rejection_reason' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $input = $request->validated();
         $this->service->review($priceId, $input['decision'], $input['rejection_reason'] ?? null, $request->user());
 
         return redirect()->route('admin.prices.index')->with('status', __('Price review saved successfully.'));

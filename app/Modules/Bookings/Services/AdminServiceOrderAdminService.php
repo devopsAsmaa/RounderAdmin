@@ -61,6 +61,7 @@ class AdminServiceOrderAdminService
             })
             ->leftJoin('booking_provider_assignments', 'bookings.id', '=', 'booking_provider_assignments.booking_id')
             ->leftJoin('provider_profiles', 'booking_provider_assignments.provider_profile_id', '=', 'provider_profiles.id')
+            ->leftJoin('users as technicians', 'bookings.technician_id', '=', 'technicians.id')
             ->leftJoin('sub_services', 'bookings.sub_service_id', '=', 'sub_services.id')
             ->leftJoin('sub_service_translations', function ($join) use ($locale) {
                 $join->on('sub_services.id', '=', 'sub_service_translations.sub_service_id')
@@ -70,7 +71,8 @@ class AdminServiceOrderAdminService
                 'services.code as service_code', 'service_translations.name as service_name',
                 'sub_services.code as sub_service_code', 'sub_service_translations.name as sub_service_name',
                 'booking_statuses.code as status_code', 'booking_status_translations.name as status_name',
-                'provider_profiles.id as provider_profile_id', 'provider_profiles.company_name as provider_name')
+                'provider_profiles.id as provider_profile_id', 'provider_profiles.company_name as provider_name',
+                'technicians.name as technician_name')
             ->orderByDesc('bookings.created_at')->paginate(25);
 
         $providers = ProviderProfile::query()->join('users', 'provider_profiles.user_id', '=', 'users.id')
@@ -81,7 +83,12 @@ class AdminServiceOrderAdminService
                 ->where('booking_status_translations.locale', '=', $locale);
         })->select('booking_statuses.id', 'booking_statuses.code', 'booking_status_translations.name')->get();
 
-        return compact('orders', 'providers', 'statuses');
+        $technicians = User::query()->where('is_technician', true)
+            ->leftJoin('provider_profiles', 'users.provider_profile_id', '=', 'provider_profiles.id')
+            ->select('users.id', 'users.name', 'users.phone', 'users.provider_profile_id', 'provider_profiles.company_name as provider_name')
+            ->orderBy('users.name')->get();
+
+        return compact('orders', 'providers', 'statuses', 'technicians');
     }
 
     /**
@@ -138,7 +145,12 @@ class AdminServiceOrderAdminService
                 ->where('booking_status_translations.locale', '=', $locale);
         })->select('booking_statuses.id', 'booking_statuses.code', 'booking_status_translations.name')->get();
 
-        return compact('booking', 'providers', 'statuses');
+        $technicians = User::query()->where('is_technician', true)
+            ->leftJoin('provider_profiles', 'users.provider_profile_id', '=', 'provider_profiles.id')
+            ->select('users.id', 'users.name', 'users.phone', 'users.provider_profile_id', 'provider_profiles.company_name as provider_name')
+            ->orderBy('users.name')->get();
+
+        return compact('booking', 'providers', 'statuses', 'technicians');
     }
 
     /**
@@ -177,6 +189,14 @@ class AdminServiceOrderAdminService
       $previousStatusId = (int) $booking->booking_status_id;
         $assignment = BookingProviderAssignment::query()->where('booking_id', $bookingId)->first();
         $providerId = $data['provider_profile_id'] ?? $assignment?->provider_profile_id;
+        $hasTechnician = array_key_exists('technician_id', $data);
+        $technicianId = $hasTechnician ? (!empty($data['technician_id']) && $data['technician_id'] !== 'unassign' ? (int) $data['technician_id'] : null) : null;
+        if (!$providerId && $technicianId) {
+            $techUser = User::query()->where('id', $technicianId)->first();
+            if ($techUser?->provider_profile_id) {
+                $providerId = $techUser->provider_profile_id;
+            }
+        }
         $contract = null;
 
         if ($providerId) {
@@ -202,7 +222,7 @@ class AdminServiceOrderAdminService
             throw ValidationException::withMessages(['gross_amount' => __('Assign a provider and enter the final amount before completing this booking.')]);
         }
 
-        DB::transaction(function () use ($input, $actor, $booking, $bookingId, $data, $targetStatus, $providerId, $contract, $assignment,$previousStatusId) {
+        DB::transaction(function () use ($input, $actor, $booking, $bookingId, $data, $targetStatus, $providerId, $contract, $assignment, $previousStatusId, $hasTechnician, $technicianId) {
             if ($providerId && $contract) {
                 $providerUserId = ProviderProfile::query()->where('id', $providerId)->value('user_id');
                 BookingProviderAssignment::query()->updateOrCreate(
@@ -224,10 +244,14 @@ class AdminServiceOrderAdminService
                 ]);
             }
 
-            Booking::query()->where('id', $bookingId)->update([
+            $bookingUpdateData = [
                 'booking_status_id' => $targetStatus->id,
                 'updated_at' => now(),
-            ]);
+            ];
+            if ($hasTechnician) {
+                $bookingUpdateData['technician_id'] = $technicianId;
+            }
+            Booking::query()->where('id', $bookingId)->update($bookingUpdateData);
 
             $images = $input['images'] ?? [];
             if (!empty($images) && is_array($images)) {
@@ -278,5 +302,60 @@ class AdminServiceOrderAdminService
         });
 
         return __('Service order updated and commission recalculated when completed.');
+    }
+
+    /**
+     * تحديث جماعي لحالة أو مندوب أو مزود خدمة لعدة طلبات خدمة في نفس الوقت.
+     * @param array $input
+     * @param User|\App\Modules\Identity\Models\Admin|null $actor
+     * @return string
+     * @throws \Throwable
+     */
+    public function bulkUpdate(array $input, User|\App\Modules\Identity\Models\Admin|null $actor): string
+    {
+        $orderIds = $input['order_ids'] ?? [];
+        if (empty($orderIds) || !is_array($orderIds)) {
+            throw ValidationException::withMessages(['order_ids' => __('Select at least one order.')]);
+        }
+
+        $targetStatusId = !empty($input['booking_status_id']) ? (int) $input['booking_status_id'] : null;
+        $hasTechnician = array_key_exists('technician_id', $input) && $input['technician_id'] !== '' && $input['technician_id'] !== null && $input['technician_id'] !== 'no_change';
+        $technicianId = $hasTechnician ? ($input['technician_id'] === 'unassign' ? null : (int) $input['technician_id']) : null;
+        $providerProfileId = !empty($input['provider_profile_id']) ? (int) $input['provider_profile_id'] : null;
+        $note = $input['note'] ?? null;
+
+        if (!$targetStatusId && !$hasTechnician && !$providerProfileId) {
+            throw ValidationException::withMessages(['bulk' => __('Select a status, a technician, or a provider to update.')]);
+        }
+
+        return DB::transaction(function () use ($orderIds, $targetStatusId, $hasTechnician, $technicianId, $providerProfileId, $note, $actor, $input) {
+            foreach ($orderIds as $bookingId) {
+                $booking = Booking::query()->where('id', $bookingId)->first();
+                if (!$booking) {
+                    continue;
+                }
+
+                $updatePayload = [];
+                $updatePayload['booking_status_id'] = $targetStatusId ?? $booking->booking_status_id;
+                if ($providerProfileId) {
+                    $updatePayload['provider_profile_id'] = $providerProfileId;
+                }
+                if ($hasTechnician) {
+                    $updatePayload['technician_id'] = $technicianId;
+                }
+                if ($note) {
+                    $updatePayload['note'] = $note;
+                }
+                if (!empty($input['gross_amount'])) {
+                    $updatePayload['gross_amount'] = $input['gross_amount'];
+                }
+
+                $this->performUpdate($updatePayload, $actor, (int) $bookingId);
+            }
+
+            DB::afterCommit(fn () => event(new BookingsChanged(Operation::AdminOrderAdminServiceUpdate, $actor?->id)));
+
+            return __('Selected orders updated successfully.');
+        });
     }
 }

@@ -23,6 +23,7 @@ final class ProviderAccountService
                 'phone' => $input['phone'], 'locale' => $input['locale'], 'password' => $input['password'],
                 'provider_profile_id' => $input['provider_profile_id'] ?? null,
                 'permissions' => $input['permissions'] ?? null,
+                'is_technician' => $input['is_technician'] ?? false,
             ]);
             DB::afterCommit(fn () => event(new IdentityChanged(Operation::CreateProviderAccount, $actorId)));
             return $user;
@@ -40,8 +41,11 @@ final class ProviderAccountService
         DB::transaction(function () use ($userId, $input) {
             $user = User::lockForUpdate()->findOrFail($userId);
             $user->update([
-                'name' => $input['name'], 'email' => $input['email'] ?? null,
-                'phone' => $input['phone'], 'locale' => $input['locale'],
+                'name' => $input['name'],
+                'email' => $input['email'] ?? null,
+                'phone' => $input['phone'],
+                'locale' => $input['locale'],
+                ...(!empty($input['password']) ? ['password' => $input['password']] : []),
             ]);
         });
     }

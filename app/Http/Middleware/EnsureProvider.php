@@ -17,7 +17,11 @@ class EnsureProvider
 
         $portal = app(ProviderPortalService::class);
         $profile = $portal->profileFor($user);
-        abort_unless($profile && $profile->is_approved && $profile->contract_accepted_at, 403);
+        abort_unless($profile && $profile->is_approved, 403);
+
+        if (!$profile->contract_accepted_at && !$request->routeIs('provider.settings.*', 'provider.contract*')) {
+            abort(403);
+        }
 
         foreach ($permissions as $permission) {
             abort_unless($portal->allows($user, $profile, $permission), 403);

@@ -11,6 +11,7 @@ use App\Modules\Bookings\Models\BookingProviderAssignment;
 use App\Modules\Bookings\Models\BookingRating;
 use App\Modules\Bookings\Models\BookingStatusHistory;
 use App\Modules\Bookings\Models\BookingWarranty;
+use App\Modules\Catalog\Models\Service;
 use App\Modules\Community\Models\CommunityComment;
 use App\Modules\Community\Models\CommunityPost;
 use App\Modules\Community\Models\CommunityReaction;
@@ -29,6 +30,7 @@ use App\Modules\Properties\Models\ResidentVisit;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,9 +40,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 /** حسابات الدخول؛ كلمة المرور تُشفّر تلقائياً ولا تُعرض في JSON. */
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    protected $hidden = ['password', 'remember_token', 'permissions', 'provider_profile_id'];
+    protected $hidden = ['password', 'remember_token', 'permissions', 'provider_profile_id', 'is_technician'];
 
     protected $table = 'users';
 
@@ -54,6 +56,7 @@ class User extends Authenticatable
         'password',
         'provider_profile_id',
         'permissions',
+        'is_technician',
     ];
 
     /**
@@ -66,7 +69,9 @@ class User extends Authenticatable
             'role_id' => 'integer',
             'provider_profile_id' => 'integer',
             'permissions' => 'array',
+            'is_technician' => 'boolean',
             'email_verified_at' => 'datetime:Y-m-d H:i:s',
+            'deleted_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -124,6 +129,23 @@ class User extends Authenticatable
     public function providerBookings(): HasMany
     {
         return $this->hasMany(Booking::class, 'provider_id');
+    }
+
+    public function technicianBookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'technician_id');
+    }
+
+    public function technicianServices(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'provider_technician_services', 'technician_id', 'service_id')
+            ->withTimestamps();
+    }
+
+    public function technicianSubServices(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Modules\Catalog\Models\SubService::class, 'provider_technician_sub_services', 'technician_id', 'sub_service_id')
+            ->withTimestamps();
     }
 
     /**

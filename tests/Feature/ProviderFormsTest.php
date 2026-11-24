@@ -72,8 +72,7 @@ class ProviderFormsTest extends TestCase
         $data['name'] = 'Updated contact';
         $data['is_approved'] = 0;
         $data['service_ids'] = [];
-        // هذه الحقول ليست ضمن قائمة التعديل المسموح بها.
-        $data['password'] = 'InjectedPassword123!';
+        unset($data['password'], $data['password_confirmation']);
         $data['service_commission_percent'] = 99;
         $this->put('/admin/providers/'.$provider->id,$data)->assertRedirect(route('admin.providers.index'))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('provider_profiles',['id'=>$provider->id,'company_name'=>'Updated company','is_approved'=>0]);
@@ -85,6 +84,18 @@ class ProviderFormsTest extends TestCase
         $this->assertTrue(Hash::check('StrongPassword123!',$provider->user->fresh()->password));
         $this->assertEquals(10, $contract->fresh()->service_commission_percent);
         $this->assertSame(1,$provider->contracts()->count());
+
+        // التحقق من تغيير كلمة المرور عند تقديمها مع التأكيد
+        $data['password'] = 'NewValidPass123!';
+        $data['password_confirmation'] = 'NewValidPass123!';
+        $this->put('/admin/providers/'.$provider->id, $data)->assertRedirect(route('admin.providers.index'))->assertSessionHasNoErrors();
+        $this->assertTrue(Hash::check('NewValidPass123!', $provider->user->fresh()->password));
+
+        // التحقق من رفض كلمة المرور عند عدم تطابق التأكيد
+        $data['password'] = 'MismatchPass123!';
+        $data['password_confirmation'] = 'Different123!';
+        $this->put('/admin/providers/'.$provider->id, $data)->assertSessionHasErrors('password');
+
         $this->get('/admin/providers/999999/edit')->assertNotFound();
     }
 

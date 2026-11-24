@@ -812,6 +812,20 @@
 
                                 <div>
                                     <label class="form-label fw-semibold text-dark small mb-1">
+                                        <i class="fa-solid fa-user-gear text-primary me-1"></i>{{ __('Technician / Delegate') }}
+                                    </label>
+                                    <select class="form-select form-select-sm technician-select" name="technician_id">
+                                        <option value="">{{ __('No technician / Not assigned') }}</option>
+                                        @foreach($technicians as $tech)
+                                            <option value="{{ $tech->id }}" @selected((int)$booking->technician_id === (int)$tech->id)>
+                                                {{ $tech->name }} @if($tech->provider_name) ({{ $tech->provider_name }}) @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="form-label fw-semibold text-dark small mb-1">
                                         <i class="fa-solid fa-coins text-primary me-1"></i>{{ __('Final amount for commission') }}
                                     </label>
                                     <div class="input-group input-group-sm">

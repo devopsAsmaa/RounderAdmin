@@ -48,6 +48,8 @@ class ProviderPortalPermissionsTest extends TestCase
         $this->get('/provider/ratings')->assertOk();
         $this->get('/provider/settings')->assertOk();
         $profile->update(['contract_accepted_at' => null]);
+        $owner->update(['permissions' => []]);
+        $this->assertTrue($portal->allows($owner, $profile, 'contract.view'));
         $this->get('/provider/contract')->assertOk();
         $profile->update(['contract_accepted_at' => now()]);
         $teamResponse = $this->get('/provider/team')->assertOk();

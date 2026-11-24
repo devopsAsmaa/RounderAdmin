@@ -36,6 +36,7 @@ class Booking extends Model
         'notes',
         'resident_home_id',
         'service_provider_id',
+        'technician_id',
     ];
 
     /**
@@ -56,6 +57,7 @@ class Booking extends Model
             'total_amount' => 'decimal:2',
             'resident_home_id' => 'integer',
             'service_provider_id' => 'integer',
+            'technician_id' => 'integer',
         ];
     }
 
@@ -120,6 +122,11 @@ class Booking extends Model
     public function serviceProvider(): BelongsTo
     {
         return $this->belongsTo(ProviderProfile::class, 'service_provider_id');
+    }
+
+    public function technician(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'technician_id');
     }
 
     /**

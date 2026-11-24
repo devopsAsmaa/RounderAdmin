@@ -10,6 +10,7 @@ use App\Modules\Identity\Requests\ApiAuthLoginRequest;
 use App\Modules\Identity\Requests\ApiSocialLoginRequest;
 use App\Modules\Identity\Requests\ApiAuthLogoutRequest;
 use App\Modules\Identity\Requests\ApiAuthMeRequest;
+use App\Modules\Identity\Requests\ApiDeleteAccountRequest;
 use App\Modules\Identity\Requests\ApiValidateMobileRequest;
 use App\Modules\Identity\Requests\ApiSendOtpRequest;
 use App\Modules\Identity\Requests\ApiVerifyOtpRequest;
@@ -68,6 +69,17 @@ class AuthController extends Controller
     public function logout(ApiAuthLogoutRequest $request): \Illuminate\Http\JsonResponse
     {
         return response()->json($this->service->logout($request->validated(), $request->user()), 200);
+    }
+
+    /**
+     * حذف حساب المستخدم المرتبط بالطلب الحالي (Soft Delete).
+     * @param ApiDeleteAccountRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Throwable
+     */
+    public function deleteAccount(ApiDeleteAccountRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->deleteAccount($request->validated(), $request->user()), 200);
     }
 
     /**

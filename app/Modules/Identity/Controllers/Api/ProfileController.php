@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Requests\ApiProfileProfileRequest;
 use App\Modules\Identity\Requests\ApiProfileUpdateProfileRequest;
 use App\Modules\Identity\Requests\ApiProfileUpdateMobileRequest;
+use App\Modules\Identity\Requests\ApiDeleteAccountRequest;
 
 /** متحكم HTTP لمجال Identity؛ يفوض جميع العمليات إلى الخدمة. */
 class ProfileController extends Controller
@@ -47,5 +48,15 @@ class ProfileController extends Controller
     public function updateMobile(ApiProfileUpdateMobileRequest $request): \Illuminate\Http\JsonResponse
     {
         return response()->json($this->service->updateMobile($request->validated(), $request->user()), 200);
+    }
+
+    /**
+     * حذف حساب المستخدم المرتبط بالطلب الحالي (Soft Delete).
+     * @param ApiDeleteAccountRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteAccount(ApiDeleteAccountRequest $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->service->deleteAccount($request->validated(), $request->user()), 200);
     }
 }

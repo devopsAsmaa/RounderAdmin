@@ -38,6 +38,7 @@ class AdminProviderUpdateRequest extends AdminRequest
             'email' => ['nullable', 'email:rfc', 'max:254', Rule::unique('users', 'email')->ignore($userId)],
             'phone' => ['required', 'string', 'regex:' . SaudiPhone::REGEX, Rule::unique('users', 'phone')->ignore($userId)],
             'locale' => ['required', Rule::enum(SupportedLocale::class)],
+            'password' => ['nullable', 'string', 'min:8', 'max:72', 'confirmed', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/'],
             'company_name' => ['required', 'string', 'min:2', 'max:160'],
             'trade_name' => ['nullable', 'string', 'min:2', 'max:160'],
             'provider_type' => ['nullable', 'string', 'max:80'],
@@ -84,6 +85,9 @@ class AdminProviderUpdateRequest extends AdminRequest
         return [
             'phone.required' => 'رقم الهاتف مطلوب.',
             'phone.regex' => 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.',
+            'password.min' => 'كلمة المرور يجب أن تكون 8 خانات على الأقل.',
+            'password.regex' => 'كلمة المرور يجب أن تتضمن حرفاً كبيراً (A-Z) وحرفاً صغيراً (a-z) ورقماً (0-9).',
+            'password.confirmed' => 'تأكيد كلمة المرور غير متطابق.',
         ];
     }
 }

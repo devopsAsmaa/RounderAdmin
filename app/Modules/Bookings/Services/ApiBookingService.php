@@ -308,7 +308,7 @@ class ApiBookingService
         }
 
         $serviceId = !empty($input['service_id']) ? (int) $input['service_id'] : null;
-        $subServiceRaw = $input['sub_service'] ?? $input['sub_service_id'] ?? null;
+        $subServiceRaw = $input['sub_service'] ?? $input['sub_service_id'] ?? $input['sub_services_id'] ?? null;
         $homeId = !empty($input['home_id']) ? (int) $input['home_id'] : null;
 
         $subServiceId = null;
@@ -328,26 +328,40 @@ class ApiBookingService
         if (!$cityId && $homeId) {
             $cityId = Home::where('id', $homeId)->value('city_id');
         } elseif (!$cityId && $actor) {
-            $cityId = ResidentHome::with('home')->where('user_id', $actor->id)->first()?->home?->city_id;
+            $cityId = ResidentHome::with('home')
+                ->where('user_id', $actor->id)
+                ->orderByDesc('is_primary')
+                ->first()?->home?->city_id;
         }
 
-        // جلب الأسعار المخصصة إذا توفرت الخدمة الفرعية والمدينة
+        // جلب الأسعار المعتمدة فقط إذا توفرت الخدمة الفرعية (مع مطابقة المدينة إن وُجدت)
         $prices = collect();
-        if ($subServiceId && $cityId) {
-            $prices = SubServicePrice::query()
+        if ($subServiceId) {
+            $pricesQuery = SubServicePrice::query()
                 ->where('sub_service_id', $subServiceId)
                 ->where('is_active', true)
-                ->where('approval_status', SubServicePrice::APPROVAL_APPROVED)
-                ->whereHas('cities', fn ($q) => $q->where('cities.id', $cityId))
-                ->get()
-                ->keyBy('provider_profile_id');
+                ->where('approval_status', SubServicePrice::APPROVAL_APPROVED);
+
+            if ($cityId) {
+                $pricesQuery->whereHas('cities', fn ($q) => $q->where('cities.id', $cityId));
+            }
+
+            $prices = $pricesQuery->get()->keyBy('provider_profile_id');
         }
 
-        $providers = ProviderProfile::query()
+        $providersQuery = ProviderProfile::query()
             ->where('is_approved', true)
             ->when($serviceId, fn ($query) => $query->whereHas('services', fn ($services) => $services->whereKey($serviceId)))
             ->with('user:id,name,phone')
-            ->orderBy('company_name')
+            ->orderBy('company_name');
+
+        // إذا تم تحديد خدمة فرعية: يتم قصر النتائج حصراً على مزودي الخدمة الذين لديهم سعر معتمد ونشط
+        if ($subServiceId) {
+            $approvedProviderIds = $prices->keys()->all();
+            $providersQuery->whereIn('id', $approvedProviderIds);
+        }
+
+        $providers = $providersQuery
             ->get()
             ->map(function (ProviderProfile $p) use ($prices) {
                 $priceRecord = $prices->get($p->id);
@@ -361,6 +375,11 @@ class ApiBookingService
                     'price_id' => $priceRecord?->id,
                 ];
             });
+
+        // فلترة نهائية: استبعاد أي مزود ليس له سعر معتمد ومطابق
+        if ($subServiceId) {
+            $providers = $providers->filter(fn ($p) => $p['price'] !== null && $p['price'] > 0)->values();
+        }
 
         return ['data' => $providers];
     }

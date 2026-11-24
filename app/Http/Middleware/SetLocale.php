@@ -11,8 +11,10 @@ class SetLocale {
  * @throws \Throwable
  */
  public function handle(Request $request, Closure $next) {
-  $locale=$request->user('provider')?->locale ?? $request->user()?->locale ?? $request->session()->get('locale',config('app.locale','ar'));
-  App::setLocale(in_array($locale,['ar','en'],true)?$locale:'ar');
+  $actor = $request->user('provider') ?? $request->user('web') ?? $request->user();
+  $userLocale = $actor?->locale instanceof \BackedEnum ? $actor->locale->value : $actor?->locale;
+  $locale = $request->session()->get('locale') ?? $userLocale ?? config('app.locale', 'ar');
+  App::setLocale(in_array($locale, ['ar', 'en'], true) ? $locale : 'ar');
   return $next($request);
  }
 }

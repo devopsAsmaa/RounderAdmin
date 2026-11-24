@@ -26,10 +26,14 @@ Route::prefix('provider')->name('provider.')->middleware('auth:provider')->group
         ->middleware('provider:orders.create')->name('orders.create');
     Route::post('/orders', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'storeOrder'])
         ->middleware('provider:orders.create')->name('orders.store');
+    Route::put('/orders/bulk-update', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'bulkUpdateOrders'])
+        ->middleware('provider:orders.manage')->name('orders.bulk-update');
     Route::get('/orders/{bookingId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'showOrder'])
         ->whereNumber('bookingId')->middleware('provider:orders.view')->name('orders.show');
     Route::put('/orders/{bookingId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'updateOrder'])
         ->whereNumber('bookingId')->middleware('provider:orders.manage')->name('orders.update');
+    Route::put('/orders/{bookingId}/technician', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'assignTechnician'])
+        ->whereNumber('bookingId')->middleware('provider:orders.manage')->name('orders.technician');
     Route::get('/prices', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'prices'])
         ->middleware('provider:prices.view')->name('prices.index');
     Route::get('/prices/create', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'createPrice'])
@@ -50,6 +54,8 @@ Route::prefix('provider')->name('provider.')->middleware('auth:provider')->group
         ->middleware('provider:profile.manage')->name('settings.index');
     Route::put('/settings', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'updateSettings'])
         ->middleware('provider:profile.manage')->name('settings.update');
+    Route::get('/documents/{document}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'downloadDocument'])
+        ->middleware('provider:profile.manage')->name('documents.show');
     Route::post('/settings/services', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'addService'])
         ->middleware('provider:profile.manage')->name('settings.services.store');
     Route::delete('/settings/services/{serviceId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'removeService'])
@@ -66,6 +72,18 @@ Route::prefix('provider')->name('provider.')->middleware('auth:provider')->group
         ->whereNumber('memberId')->middleware('provider:users.manage')->name('team.update');
     Route::delete('/team/{memberId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'destroyTeamMember'])
         ->whereNumber('memberId')->middleware('provider:users.manage')->name('team.destroy');
+    Route::get('/technicians', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'technicians'])
+        ->middleware('provider:users.manage')->name('technicians.index');
+    Route::get('/technicians/create', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'createTechnician'])
+        ->middleware('provider:users.manage')->name('technicians.create');
+    Route::post('/technicians', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'storeTechnician'])
+        ->middleware('provider:users.manage')->name('technicians.store');
+    Route::get('/technicians/{technicianId}/edit', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'editTechnician'])
+        ->whereNumber('technicianId')->middleware('provider:users.manage')->name('technicians.edit');
+    Route::put('/technicians/{technicianId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'updateTechnician'])
+        ->whereNumber('technicianId')->middleware('provider:users.manage')->name('technicians.update');
+    Route::delete('/technicians/{technicianId}', [\App\Modules\Providers\Controllers\Portal\ProviderPortalController::class, 'destroyTechnician'])
+        ->whereNumber('technicianId')->middleware('provider:users.manage')->name('technicians.destroy');
 });
 
 // مسارات Providers فقط؛ الأسماء والروابط العامة محفوظة للتوافق مع العملاء.

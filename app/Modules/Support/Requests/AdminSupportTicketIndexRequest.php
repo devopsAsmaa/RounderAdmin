@@ -15,7 +15,7 @@ class AdminSupportTicketIndexRequest extends FormRequest
     {
         return [
             'status' => ['nullable', 'string', 'in:all,open,in_progress,resolved,closed'],
-            'category' => ['nullable', 'string', 'in:all,order_issue,payment,housing,other'],
+            'category' => ['nullable', 'string', 'max:50'],
             'q' => ['nullable', 'string', 'max:100'],
         ];
     }

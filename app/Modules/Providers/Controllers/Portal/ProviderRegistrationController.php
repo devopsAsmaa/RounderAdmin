@@ -19,7 +19,10 @@ class ProviderRegistrationController extends Controller
             return $this->destination($portal->profileFor(Auth::guard('provider')->user()));
         }
 
-        return view('provider.register', ['services' => $registration->services()]);
+        return view('provider.register', [
+            'services' => $registration->services(),
+            'serviceCategories' => $registration->serviceCategories(),
+        ]);
     }
 
     public function store(

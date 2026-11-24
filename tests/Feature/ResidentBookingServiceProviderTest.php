@@ -6,6 +6,8 @@ use App\Modules\Bookings\Models\Booking;
 use App\Modules\Bookings\Models\BookingStatus;
 use App\Modules\Catalog\Models\Service;
 use App\Modules\Catalog\Models\ServiceCategory;
+use App\Modules\Catalog\Models\SubService;
+use App\Modules\Catalog\Models\SubServicePrice;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Providers\Enums\ContractStatusCode;
@@ -120,8 +122,10 @@ class ResidentBookingServiceProviderTest extends TestCase
         $response = $this->getJson('/api/v1/resident/service-providers');
 
         $response->assertOk()
-            ->assertJsonPath('data.0.id', $this->approvedProvider->id)
-            ->assertJsonPath('data.0.company_name', 'شركة الصيانة السريعة')
+            ->assertJsonFragment([
+                'id' => $this->approvedProvider->id,
+                'company_name' => 'شركة الصيانة السريعة',
+            ])
             ->assertJsonMissing(['company_name' => 'شركة غير معتمدة']);
     }
 
@@ -315,5 +319,95 @@ class ResidentBookingServiceProviderTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $booking2->id)
             ->assertJsonPath('data.0.status_id', $confirmedStatus->id);
+    }
+
+    public function test_service_providers_only_returns_providers_with_approved_price_and_excludes_unpriced_or_pending(): void
+    {
+        Sanctum::actingAs($this->resident);
+
+        $subService = SubService::create([
+            'service_id' => $this->service->id,
+            'code' => 'test_sub_service_' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $providerRole = Role::where('code', 'provider')->firstOrFail();
+
+        $homeCityId = (int) DB::table('homes')->where('id', $this->homeId)->value('city_id');
+
+        // Provider A: Has approved price covering resident's city
+        $this->approvedProvider->services()->syncWithoutDetaching([$this->service->id]);
+        $priceA = SubServicePrice::create([
+            'provider_profile_id' => $this->approvedProvider->id,
+            'sub_service_id' => $subService->id,
+            'price' => 200.00,
+            'is_active' => true,
+            'approval_status' => SubServicePrice::APPROVAL_APPROVED,
+        ]);
+        $priceA->cities()->attach($homeCityId);
+
+        // Provider B: No price at all
+        $userB = User::create([
+            'role_id' => $providerRole->id,
+            'name' => 'Provider B No Price',
+            'phone' => '0555888001',
+            'locale' => 'ar',
+            'password' => 'Password123!',
+        ]);
+        $providerB = ProviderProfile::create([
+            'user_id' => $userB->id,
+            'company_name' => 'شركة بدون سعر',
+            'is_approved' => true,
+        ]);
+        $providerB->services()->syncWithoutDetaching([$this->service->id]);
+
+        // Provider C: Has pending price
+        $userC = User::create([
+            'role_id' => $providerRole->id,
+            'name' => 'Provider C Pending Price',
+            'phone' => '0555888002',
+            'locale' => 'ar',
+            'password' => 'Password123!',
+        ]);
+        $providerC = ProviderProfile::create([
+            'user_id' => $userC->id,
+            'company_name' => 'شركة سعرها معلق',
+            'is_approved' => true,
+        ]);
+        $providerC->services()->syncWithoutDetaching([$this->service->id]);
+        $priceC = SubServicePrice::create([
+            'provider_profile_id' => $providerC->id,
+            'sub_service_id' => $subService->id,
+            'price' => 250.00,
+            'is_active' => true,
+            'approval_status' => SubServicePrice::APPROVAL_PENDING,
+        ]);
+        $priceC->cities()->attach($homeCityId);
+
+        // Request with sub_service_id (without sending city_id)
+        $response = $this->getJson('/api/v1/resident/service-providers?sub_service_id=' . $subService->id);
+        $response->assertOk();
+
+        // Must include Provider A with price 200
+        $response->assertJsonFragment([
+            'id' => $this->approvedProvider->id,
+            'company_name' => $this->approvedProvider->company_name,
+            'price' => 200,
+        ]);
+
+        // Must exclude Provider B (no price) and Provider C (pending price)
+        $response->assertJsonMissing(['company_name' => 'شركة بدون سعر']);
+        $response->assertJsonMissing(['company_name' => 'شركة سعرها معلق']);
+
+        // Request with sub_services_id (plural param without sending city_id)
+        $responsePlural = $this->getJson('/api/v1/resident/service-providers?sub_services_id=' . $subService->id);
+        $responsePlural->assertOk();
+        $responsePlural->assertJsonFragment([
+            'id' => $this->approvedProvider->id,
+            'company_name' => $this->approvedProvider->company_name,
+            'price' => 200,
+        ]);
+        $responsePlural->assertJsonMissing(['company_name' => 'شركة بدون سعر']);
+        $responsePlural->assertJsonMissing(['company_name' => 'شركة سعرها معلق']);
     }
 }

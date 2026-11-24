@@ -400,6 +400,16 @@ class AdminPriceAdminService
     }
 
     /**
+     * جلب قائمة المناطق المفعلة مع الترجمات.
+     *
+     * @return Collection
+     */
+    public function getActiveRegions(): Collection
+    {
+        return Region::query()->with('translations')->where('is_active', true)->get();
+    }
+
+    /**
      * جلب تفاصيل المدن التابعة لتسعير محدد لعرضها في النافذة المنبثقة.
      *
      * @param int $priceId
@@ -412,25 +422,22 @@ class AdminPriceAdminService
                 'provider',
                 'subService.translations',
                 'region.translations',
+                'cities.translations',
             ])
             ->findOrFail($priceId);
 
         $locale = app()->getLocale();
 
-        $cities = DB::table('sub_service_price_cities')
-            ->join('cities', 'cities.id', '=', 'sub_service_price_cities.city_id')
-            ->leftJoin('city_translations', function ($join) use ($locale) {
-                $join->on('city_translations.city_id', '=', 'cities.id')
-                    ->where('city_translations.locale', '=', $locale);
-            })
-            ->leftJoin('city_translations as ct_ar', function ($join) {
-                $join->on('ct_ar.city_id', '=', 'cities.id')
-                    ->where('ct_ar.locale', '=', 'ar');
-            })
-            ->where('sub_service_price_cities.sub_service_price_id', $priceId)
-            ->select('cities.id', DB::raw('COALESCE(city_translations.name, ct_ar.name, cities.code) as name'))
-            ->orderBy('name')
-            ->get();
+        $cities = $price->cities->map(function ($city) use ($locale) {
+            $name = $city->translations->firstWhere('locale', $locale)?->name
+                ?? $city->translations->firstWhere('locale', 'ar')?->name
+                ?? $city->code;
+
+            return (object) [
+                'id' => $city->id,
+                'name' => $name,
+            ];
+        })->sortBy('name')->values();
 
         $providerName = $price->provider?->company_name ?? '—';
         $subServiceName = $price->subService?->translations->firstWhere('locale', $locale)?->name

@@ -16,6 +16,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Properties\Models\City;
 use App\Modules\Properties\Models\Home;
 use App\Modules\Properties\Models\ResidentHome;
+use App\Modules\Settings\Models\CompanySetting;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -146,7 +147,9 @@ class LandingController extends Controller
             })->values()->all(),
         ];
 
-        return view('landing', compact('categories', 'services', 'clientConfig'));
+        $companySettings = CompanySetting::current();
+
+        return view('landing', compact('categories', 'services', 'clientConfig', 'companySettings'));
     }
 
     /**

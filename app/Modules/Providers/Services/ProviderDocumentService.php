@@ -60,4 +60,13 @@ class ProviderDocumentService
 
         return Storage::disk('local')->download($path, __(self::DOCUMENTS[$key]) . '.' . pathinfo($path, PATHINFO_EXTENSION));
     }
+
+    public function show(ProviderProfile $profile, string $key): \Symfony\Component\HttpFoundation\Response
+    {
+        abort_unless(array_key_exists($key, self::DOCUMENTS), 404);
+        $path = $profile->getAttribute($key);
+        abort_unless(is_string($path) && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, __(self::DOCUMENTS[$key]) . '.' . pathinfo($path, PATHINFO_EXTENSION));
+    }
 }

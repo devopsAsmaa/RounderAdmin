@@ -9,8 +9,10 @@ enum Operation: string
     case ApiAuthValidateMobile = 'ApiAuthService.validateMobile';
     case ApiAuthSendOtp = 'ApiAuthService.sendOtp';
     case ApiAuthVerifyOtp = 'ApiAuthService.verifyOtp';
+    case ApiAuthDeleteAccount = 'ApiAuthService.deleteAccount';
     case ApiProfileUpdateProfile = 'ApiProfileService.updateProfile';
     case ApiProfileUpdateMobile = 'ApiProfileService.updateMobile';
+    case ApiDeleteAccount = 'ApiProfileService.deleteAccount';
     case AdminUserDelete = 'AdminUserService.delete';
     case AdminUserStore = 'AdminUserService.store';
     case AdminUserUpdate = 'AdminUserService.update';

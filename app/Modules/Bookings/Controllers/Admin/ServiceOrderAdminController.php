@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Bookings\Requests\AdminServiceOrderAdminIndexRequest;
 use App\Modules\Bookings\Requests\AdminServiceOrderAdminShowRequest;
 use App\Modules\Bookings\Requests\AdminServiceOrderAdminUpdateRequest;
+use App\Modules\Bookings\Requests\AdminServiceOrderAdminBulkUpdateRequest;
 
 /** متحكم HTTP لمجال Bookings؛ يفوض جميع العمليات إلى الخدمة. */
 class ServiceOrderAdminController extends Controller
@@ -55,5 +56,16 @@ class ServiceOrderAdminController extends Controller
     public function update(AdminServiceOrderAdminUpdateRequest $request, int $bookingId): \Illuminate\Http\RedirectResponse
     {
         return back()->with('status', $this->service->update($request->validated(), $request->user(), $bookingId));
+    }
+
+    /**
+     * تحديث مجموعة من طلبات الخدمة دفعة واحدة.
+     * @param AdminServiceOrderAdminBulkUpdateRequest $request
+     * @return \Illuminate\Http\RedirectResponse
+     * @throws \Throwable
+     */
+    public function bulkUpdate(AdminServiceOrderAdminBulkUpdateRequest $request): \Illuminate\Http\RedirectResponse
+    {
+        return back()->with('status', $this->service->bulkUpdate($request->validated(), $request->user()));
     }
 }

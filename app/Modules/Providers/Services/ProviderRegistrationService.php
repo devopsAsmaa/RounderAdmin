@@ -24,14 +24,23 @@ class ProviderRegistrationService
         return Service::query()->with('translations')->where('is_active', true)->orderBy('code')->get();
     }
 
+    public function serviceCategories(): \Illuminate\Database\Eloquent\Collection
+    {
+        return \App\Modules\Catalog\Models\ServiceCategory::with([
+            'translations',
+            'services' => fn ($query) => $query->where('is_active', true)->with('translations')->orderBy('code'),
+        ])->where('is_active', true)->orderBy('id')->get();
+    }
+
     /** @param array<string, mixed> $input */
     public function register(array $input): ProviderProfile
     {
         return DB::transaction(function () use ($input): ProviderProfile {
             $user = $this->accounts->create([
-                'name' => $input['trade_name'],
+                'name' => !empty($input['name']) ? $input['name'] : $input['trade_name'],
+                'email' => $input['email'] ?? null,
                 'phone' => $input['phone'],
-                'locale' => 'ar',
+                'locale' => $input['locale'] ?? 'ar',
                 'password' => $input['password'],
             ], null);
 
@@ -41,6 +50,9 @@ class ProviderRegistrationService
                 'trade_name' => $input['trade_name'],
                 'provider_type' => $input['provider_type'],
                 'years_of_experience' => $input['years_of_experience'],
+                'commercial_registration' => $input['commercial_registration'] ?? null,
+                'legal_representative' => $input['legal_representative'] ?? null,
+                'legal_representative_id' => $input['legal_representative_id'] ?? null,
                 'is_approved' => false,
             ]);
             $profile->services()->sync($input['service_ids']);

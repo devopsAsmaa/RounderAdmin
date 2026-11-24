@@ -3,12 +3,10 @@
 namespace App\Modules\Identity\Controllers\Provider;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Identity\Enums\RoleCode;
-use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Requests\ProviderLoginRequest;
 use App\Modules\Providers\Services\ProviderPortalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -24,32 +22,14 @@ class AuthController extends Controller
         return view('provider.login');
     }
 
-    public function login(Request $request, ProviderPortalService $portal): \Illuminate\Http\RedirectResponse
+    public function login(ProviderLoginRequest $request, ProviderPortalService $portal): \Illuminate\Http\RedirectResponse
     {
         if (Auth::guard('provider')->check()) {
             return $this->destination($portal->profileFor(Auth::guard('provider')->user()));
         }
 
-        $data = $request->validate([
-            'login' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string'],
-        ]);
-        $login = trim($data['login']);
-        $key = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
-
-        if ($key === 'phone') {
-            $login = \App\Core\Support\SaudiPhone::normalize($login);
-        }
-
-        $user = User::query()->where($key, $login)
-            ->whereHas('role', fn ($query) => $query->where('code', RoleCode::Provider->value))
-            ->first();
-
-        if (!$user || !$portal->profileFor($user) ||
-            !Auth::guard('provider')->attempt(['id' => $user->id, 'password' => $data['password']])) {
-            Auth::guard('provider')->logout();
-            throw ValidationException::withMessages(['login' => __('auth.failed')]);
-        }
+        $data = $request->validated();
+        $user = $portal->authenticateProvider($data['login'], $data['password']);
 
         $request->session()->regenerate();
 
@@ -80,3 +60,4 @@ class AuthController extends Controller
         return redirect()->route('provider.dashboard');
     }
 }
+

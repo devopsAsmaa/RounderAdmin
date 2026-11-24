@@ -62,7 +62,7 @@ class SupportTicket extends Model
 
     public function getCategoryNameAttribute(): string
     {
-        return SupportCategory::tryFrom($this->category)?->label() ?? $this->category;
+        return $this->getCategoryLabelAttribute();
     }
 
     public function getStatusLabelAttribute(): string

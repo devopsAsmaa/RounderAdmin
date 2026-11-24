@@ -192,7 +192,12 @@ body{
 }
 
 @media print {
-  .topbar, .admin-sidebar, #admin-menu, .modal, .d-print-none {
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  .topbar, .admin-sidebar, #admin-menu, .modal, .d-print-none, .btn {
     display: none !important;
   }
   .admin-main {
@@ -202,6 +207,9 @@ body{
   }
   body {
     background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 }
 
@@ -426,7 +434,7 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $isPackagesActive = request()->routeIs('admin.packages.*') || request()->routeIs('admin.package-features.*') || request()->routeIs('admin.subscriptions.*');
     $isPropertiesActive = request()->routeIs('admin.realestate.*') || request()->routeIs('admin.regions.*') || request()->routeIs('admin.cities.*');
     $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*') || request()->routeIs('admin.support-tickets.*');
-    $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.pages.*') || request()->routeIs('admin.content.*') || request()->routeIs('admin.company-settings.*');
+    $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.pages.*') || request()->routeIs('admin.faqs.*') || request()->routeIs('admin.content.*') || request()->routeIs('admin.company-settings.*');
 @endphp
 <aside class="offcanvas-lg offcanvas-start admin-sidebar d-print-none" tabindex="-1" id="admin-menu" aria-labelledby="admin-menu-title">
 <div class="sidebar-brand-header d-flex align-items-center justify-content-between px-3 px-lg-4">
@@ -687,6 +695,10 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 
             @if($permService->allowsRoute($currentUser, 'admin.pages.index', 'GET'))
                 <a class="{{ request()->routeIs('admin.pages.*') ? 'active' : '' }}" href="{{ route('admin.pages.index') }}"><i class="fa-solid fa-file-contract me-2" aria-hidden="true"></i>{{ __('Pages and policies') }}</a>
+            @endif
+
+            @if($permService->allowsRoute($currentUser, 'admin.faqs.index', 'GET'))
+                <a class="{{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}" href="{{ route('admin.faqs.index') }}"><i class="fa-solid fa-circle-question me-2" aria-hidden="true"></i>الأسئلة الشائعة</a>
             @endif
 
             @if($permService->allowsRoute($currentUser, 'admin.content.index', 'GET'))

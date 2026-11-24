@@ -32,6 +32,9 @@ class CompanySettingsRequest extends AdminRequest
             'support_email' => ['nullable', 'email', 'max:190'],
             'support_working_hours' => ['nullable', 'string', 'max:190'],
             'support_chat_enabled' => ['nullable', 'boolean'],
+            'app_store_url' => ['nullable', 'url', 'max:255'],
+            'play_store_url' => ['nullable', 'url', 'max:255'],
+            'app_download_enabled' => ['nullable', 'boolean'],
         ];
     }
 

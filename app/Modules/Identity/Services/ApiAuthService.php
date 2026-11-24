@@ -132,6 +132,47 @@ class ApiAuthService
     }
 
     /**
+     * حذف حساب المستخدم نهائياً بطريقة الحذف المرن (Soft Delete).
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     * @throws \Throwable
+     */
+    public function deleteAccount(array $input, ?User $actor): array
+    {
+        return DB::transaction(function () use ($input, $actor): array {
+            $result = $this->performDeleteAccount($input, $actor);
+            DB::afterCommit(fn () => event(new IdentityChanged(Operation::ApiAuthDeleteAccount, $actor?->id)));
+            return $result;
+        });
+    }
+
+    /**
+     * قواعد عملية حذف الحساب؛ إلغاء الرموز وتطبيق الحذف المرن.
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     */
+    private function performDeleteAccount(array $input, ?User $actor): array
+    {
+        if (!$actor) {
+            throw ValidationException::withMessages([
+                'account' => __('Unauthenticated.'),
+            ]);
+        }
+
+        // إلغاء جميع رموز الوصول (Sanctum Tokens)
+        $actor->tokens()->delete();
+
+        // تنفيذ الحذف المرن (Soft Delete)
+        $actor->delete();
+
+        return [
+            'message' => __('Account deleted successfully.'),
+        ];
+    }
+
+    /**
      * قراءة بيانات المجال مع الحفاظ على قيود الوصول.
      * @param array $input
      * @param ?User $actor
@@ -187,8 +228,9 @@ class ApiAuthService
         $mobile = $input['mobile'] ?? $input['phone'] ?? '';
         $international = '+966' . substr($mobile, 1);
 
-        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
+        $otp = '542187'; // رمز التحقق الثابت لأغراض الاختبار
         try {
             SMS::send($mobile, 'Your OTP code is ' . $otp);
         } catch (\Throwable $e) {

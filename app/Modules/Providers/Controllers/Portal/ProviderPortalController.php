@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Identity\Models\User;
 use App\Modules\Providers\Models\ProviderProfile;
 use App\Modules\Providers\Requests\ProviderPriceRequest;
+use App\Modules\Providers\Requests\ProviderSettingsUpdateRequest;
+use App\Modules\Providers\Services\ProviderDocumentService;
 use App\Modules\Providers\Services\ProviderPortalService;
 use App\Core\Support\SaudiPhone;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class ProviderPortalController extends Controller
     {
         $profile = $this->profile($request);
         abort_if($profile->is_approved, 404);
+        $profile->loadMissing(['services.translations', 'services.category.translations', 'user']);
 
         return view('provider.pending', compact('profile'));
     }
@@ -33,8 +36,9 @@ class ProviderPortalController extends Controller
     public function contract(Request $request): \Illuminate\Contracts\View\View
     {
         $profile = $this->profile($request);
-        abort_unless($profile->is_approved, 403);
-        abort_unless($this->portal->allows($this->actor($request), $profile, 'contract.view'), 403);
+       abort_unless($profile->is_approved, 403);
+// dd($profile);
+         abort_unless($this->portal->allows($this->actor($request), $profile, 'contract.view'), 403);
         $contract = $this->portal->contractFor($profile);
         abort_unless($contract, 404);
         $terms = app(\App\Services\RichTextSanitizer::class)->clean($contract->terms);
@@ -95,12 +99,43 @@ class ProviderPortalController extends Controller
     {
         $input = $request->validate([
             'status' => ['required', Rule::in(['confirmed', 'in_progress', 'completed'])],
+            'technician_id' => ['nullable'],
             'gross_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
         $message = $this->portal->transitionOrder($this->profile($request), $this->actor($request), $bookingId, $input);
 
         return back()->with('status', $message);
+    }
+
+    public function bulkUpdateOrders(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $input = $request->validate([
+            'order_ids' => ['required', 'array', 'min:1'],
+            'order_ids.*' => ['required', 'integer'],
+            'status' => ['nullable', 'string'],
+            'technician_id' => ['nullable'],
+            'gross_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $message = $this->portal->bulkUpdateOrders($this->profile($request), $this->actor($request), $input);
+
+        return back()->with('status', $message);
+    }
+
+    public function assignTechnician(Request $request, int $bookingId): \Illuminate\Http\RedirectResponse
+    {
+        $input = $request->validate([
+            'technician_id' => ['nullable', 'integer'],
+        ]);
+        $this->portal->assignTechnician(
+            $this->profile($request),
+            $bookingId,
+            isset($input['technician_id']) ? (int) $input['technician_id'] : null,
+        );
+
+        return back()->with('status', __('Technician assignment updated successfully.'));
     }
 
     public function prices(Request $request): \Illuminate\Contracts\View\View
@@ -128,17 +163,19 @@ class ProviderPortalController extends Controller
         return view('provider.settings.index', $this->portal->profileSettings($this->profile($request)));
     }
 
-    public function updateSettings(Request $request): \Illuminate\Http\RedirectResponse
+    public function updateSettings(ProviderSettingsUpdateRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $input = $request->validate([
-            'company_name' => ['required', 'string', 'max:160'],
-            'trade_name' => ['nullable', 'string', 'max:160'],
-            'provider_type' => ['nullable', 'string', 'max:80'],
-            'years_of_experience' => ['nullable', 'integer', 'min:0', 'max:100'],
-        ]);
-        $this->portal->updateProfile($this->profile($request), $input);
+        $this->portal->updateProfile($this->profile($request), $request->validated());
 
         return back()->with('status', __('Provider profile updated successfully.'));
+    }
+
+    public function downloadDocument(Request $request, string $document): \Symfony\Component\HttpFoundation\Response
+    {
+        $profile = $this->profile($request);
+        abort_unless($this->portal->allows($this->actor($request), $profile, 'profile.manage'), 403);
+
+        return app(ProviderDocumentService::class)->show($profile, $document);
     }
 
     public function addService(Request $request): \Illuminate\Http\RedirectResponse
@@ -220,6 +257,77 @@ class ProviderPortalController extends Controller
         $this->portal->removeTeamMember($this->profile($request), $memberId);
 
         return redirect()->route('provider.team.index')->with('status', __('Team member access revoked.'));
+    }
+
+    public function technicians(Request $request): \Illuminate\Contracts\View\View
+    {
+        return view('provider.technicians.index', $this->portal->technicians($this->profile($request)));
+    }
+
+    public function createTechnician(Request $request): \Illuminate\Contracts\View\View
+    {
+        return view('provider.technicians.form', $this->portal->technicianForm($this->profile($request)));
+    }
+
+    public function storeTechnician(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $this->portal->saveTechnician(
+            $this->profile($request),
+            $this->actor($request),
+            $this->technicianInput($request),
+        );
+
+        return redirect()->route('provider.technicians.index')->with('status', __('Technician added successfully.'));
+    }
+
+    public function editTechnician(Request $request, int $technicianId): \Illuminate\Contracts\View\View
+    {
+        return view('provider.technicians.form', $this->portal->technicianForm($this->profile($request), $technicianId));
+    }
+
+    public function updateTechnician(Request $request, int $technicianId): \Illuminate\Http\RedirectResponse
+    {
+        $this->portal->saveTechnician(
+            $this->profile($request),
+            $this->actor($request),
+            $this->technicianInput($request, $technicianId),
+            $technicianId,
+        );
+
+        return redirect()->route('provider.technicians.index')->with('status', __('Technician updated successfully.'));
+    }
+
+    public function destroyTechnician(Request $request, int $technicianId): \Illuminate\Http\RedirectResponse
+    {
+        $this->portal->removeTechnician($this->profile($request), $technicianId);
+
+        return redirect()->route('provider.technicians.index')->with('status', __('Technician deleted successfully.'));
+    }
+
+    private function technicianInput(Request $request, ?int $technicianId = null): array
+    {
+        if ($request->has('phone')) {
+            $request->merge(['phone' => SaudiPhone::normalize((string) $request->input('phone'))]);
+        }
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'phone' => [
+                'required',
+                'string',
+                'regex:' . SaudiPhone::REGEX,
+                Rule::unique('users', 'phone')->ignore($technicianId ?? 0),
+            ],
+            'password' => [$technicianId === null ? 'required' : 'nullable', 'string', 'min:8', 'confirmed'],
+            'service_ids' => ['required', 'array', 'min:1'],
+            'service_ids.*' => ['integer', 'distinct', 'exists:services,id'],
+            'sub_service_ids' => ['sometimes', 'array'],
+            'sub_service_ids.*' => ['integer', 'distinct', 'exists:sub_services,id'],
+        ]);
+
+        $data['sub_service_ids'] = $data['sub_service_ids'] ?? [];
+
+        return $data;
     }
 
     private function teamInput(Request $request, ?int $memberId = null): array

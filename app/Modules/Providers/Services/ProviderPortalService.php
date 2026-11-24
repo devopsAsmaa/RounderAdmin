@@ -12,6 +12,7 @@ use App\Modules\Bookings\Models\BookingStatus;
 use App\Modules\Bookings\Models\BookingStatusHistory;
 use App\Modules\Bookings\Services\AdminServiceOrderAdminService;
 use App\Modules\Catalog\Models\Service;
+use App\Modules\Catalog\Models\ServiceCategory;
 use App\Modules\Catalog\Models\SubService;
 use App\Modules\Catalog\Models\SubServicePrice;
 use App\Modules\Properties\Models\Home;
@@ -59,6 +60,28 @@ class ProviderPortalService
         return $user->provider_profile_id
             ? ProviderProfile::query()->find($user->provider_profile_id)
             : ProviderProfile::query()->where('user_id', $user->id)->first();
+    }
+
+    public function authenticateProvider(string $login, string $password): User
+    {
+        $login = trim($login);
+        $key = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        if ($key === 'phone') {
+            $login = \App\Core\Support\SaudiPhone::normalize($login);
+        }
+
+        $user = User::query()->where($key, $login)
+            ->whereHas('role', fn ($query) => $query->where('code', RoleCode::Provider->value))
+            ->first();
+
+        if (!$user || !$this->profileFor($user) ||
+            !\Illuminate\Support\Facades\Auth::guard('provider')->attempt(['id' => $user->id, 'password' => $password])) {
+            \Illuminate\Support\Facades\Auth::guard('provider')->logout();
+            throw ValidationException::withMessages(['login' => __('auth.failed')]);
+        }
+
+        return $user;
     }
 
     public function acceptContract(ProviderProfile $profile): void
@@ -119,10 +142,19 @@ class ProviderPortalService
 
     public function profileSettings(ProviderProfile $profile): array
     {
+        $profile->loadMissing(['user', 'contracts.status']);
         $services = $profile->services()->with('translations')->orderBy('services.code')->get();
         $availableServices = Service::query()->where('is_active', true)
             ->whereNotIn('id', $services->modelKeys())
             ->with('translations')->orderBy('code')->get();
+        $serviceCategories = ServiceCategory::with([
+            'translations',
+            'services' => fn ($query) => $query->where('is_active', true)->with('translations')->orderBy('code'),
+        ])->where('is_active', true)->orderBy('id')->get();
+
+        $contract = $this->contractFor($profile);
+        $terms = $contract && $contract->terms ? app(\App\Services\RichTextSanitizer::class)->clean($contract->terms) : null;
+
         $ordersByService = Booking::query()
             ->whereIn('service_id', $services->modelKeys())
             ->where(fn (Builder $query) => $query->where('service_provider_id', $profile->id)
@@ -134,12 +166,54 @@ class ProviderPortalService
             ]))
             ->select('service_id')->distinct()->pluck('service_id')->mapWithKeys(fn ($id) => [$id => true]);
 
-        return compact('profile', 'services', 'availableServices', 'ordersByService');
+        return compact('profile', 'services', 'availableServices', 'serviceCategories', 'contract', 'terms', 'ordersByService');
     }
 
     public function updateProfile(ProviderProfile $profile, array $input): void
     {
-        $profile->update($input);
+        DB::transaction(function () use ($profile, $input) {
+            // 1. تحديث بيانات المستخدم (الاسم، الجوال، الإيميل، اللغة، وكلمة المرور إن أُدخلت)
+            $this->accounts->updateContact($profile->user_id, $input);
+
+            // 2. تحديث بيانات المنشأة والممثل النظامي
+            $profile->update([
+                'company_name' => $input['company_name'],
+                'trade_name' => $input['trade_name'] ?? null,
+                'provider_type' => $input['provider_type'] ?? null,
+                'years_of_experience' => $input['years_of_experience'] ?? null,
+                'commercial_registration' => $input['commercial_registration'] ?? null,
+                'legal_representative' => $input['legal_representative'] ?? null,
+                'legal_representative_id' => $input['legal_representative_id'] ?? null,
+            ]);
+
+            // 3. حفظ المستندات الرسمية المرفوعة
+            app(ProviderDocumentService::class)->save($profile, $input);
+
+            // 4. تحديث ومزامنة الخدمات مع الحفاظ على الخدمات المرتبطة بطلبات نشطة
+            if (array_key_exists('service_ids', $input) || !empty($input['_service_ids_submitted'])) {
+                $requestedServices = collect($input['service_ids'] ?? [])->map(fn ($id) => (int) $id)->all();
+
+                $lockedServices = Booking::query()
+                    ->where(fn (Builder $query) => $query->where('service_provider_id', $profile->id)
+                        ->orWhereHas('assignment', fn (Builder $assignment) => $assignment->where('provider_profile_id', $profile->id)))
+                    ->whereHas('status', fn (Builder $status) => $status->whereIn('code', [
+                        BookingStatusCode::Pending->value,
+                        BookingStatusCode::Confirmed->value,
+                        BookingStatusCode::InProgress->value,
+                    ]))
+                    ->distinct()
+                    ->pluck('service_id')
+                    ->all();
+
+                $finalServices = array_values(array_unique(array_merge($requestedServices, $lockedServices)));
+                $profile->services()->sync($finalServices);
+            }
+
+            // 5. قبول العقد إذا قام المزود بالتأشير على الموافقة ولم يكن معتمداً بعد
+            if (!empty($input['accept_contract']) && !$profile->contract_accepted_at && $profile->is_approved) {
+                $this->acceptContract($profile);
+            }
+        });
     }
 
     public function addService(ProviderProfile $profile, int $serviceId): void
@@ -178,12 +252,13 @@ class ProviderPortalService
 
     public function allows(User $user, ProviderProfile $profile, string $permission): bool
     {
-        $permissions = $user->permissions;
-        if ($permissions === null && $this->isOwner($user, $profile)) {
-            $permissions = self::PERMISSIONS;
+        if ($this->isOwner($user, $profile)) {
+            return true;
         }
 
-        return in_array($permission, $permissions ?? [], true);
+        $permissions = $user->permissions ?? [];
+
+        return in_array($permission, $permissions, true);
     }
 
     public function dashboard(ProviderProfile $profile): array
@@ -286,24 +361,33 @@ class ProviderPortalService
             $query->where('booking_statuses.code', $selectedStatus);
         }
 
+        $technicians = User::query()->where('provider_profile_id', $profile->id)
+            ->where('is_technician', true)
+            ->whereHas('role', fn ($q) => $q->where('code', RoleCode::Provider->value))
+            ->orderBy('name')
+            ->get(['users.id', 'users.name']);
+
         return [
             'orders' => $query->latest('bookings.created_at')->paginate(20)->withQueryString(),
             'visibleStatuses' => $visibleStatuses,
             'selectedStatus' => $selectedStatus,
+            'technicians' => $technicians,
         ];
     }
 
     public function showOrder(ProviderProfile $profile, int $bookingId): array
     {
         $booking = $this->providerOrders($profile)->with([
-            'resident', 'residentHome', 'home.city.translations', 'service.translations', 'subService.translations',
+            'resident', 'residentHome', 'home.city.translations', 'service.translations', 'subService.translations', 'technician',
             'status.translations', 'assignment.providerContract', 'bookingMedia',
             'bookingStatusHistory' => fn ($q) => $q->whereHas('status', fn (Builder $sq) => $sq->where('show_in_provider_portal', true))->with('status.translations'),
         ])->whereKey($bookingId)->firstOrFail();
 
         $availableNextStatuses = $this->visibleNextStatuses($booking->status->code);
+        $technicians = $this->eligibleTechnicians($profile, $booking->service_id, $booking->sub_service_id)
+            ->orderBy('name')->get(['users.id', 'users.name']);
 
-        return compact('booking', 'availableNextStatuses');
+        return compact('booking', 'availableNextStatuses', 'technicians');
     }
 
     public function orderForm(ProviderProfile $profile): array
@@ -463,12 +547,86 @@ class ProviderPortalService
             throw ValidationException::withMessages(['status' => __('The requested order status is not configured.')]);
         }
 
+        if (array_key_exists('technician_id', $input)) {
+            $techId = (!empty($input['technician_id']) && $input['technician_id'] !== 'unassign') ? (int) $input['technician_id'] : null;
+            $this->assignTechnician($profile, $bookingId, $techId);
+        }
+
         return $this->orderAdmin->update([
             'booking_status_id' => $statusId,
             'provider_profile_id' => $profile->id,
+            'technician_id' => array_key_exists('technician_id', $input) ? (!empty($input['technician_id']) && $input['technician_id'] !== 'unassign' ? (int) $input['technician_id'] : null) : $booking->technician_id,
             'gross_amount' => $input['gross_amount'] ?? null,
             'note' => $input['note'] ?? null,
         ], $actor, $bookingId);
+    }
+
+    /**
+     * تحديث جماعي لحالة أو مندوب لعدة طلبات خدمة لمزود الخدمة.
+     */
+    public function bulkUpdateOrders(ProviderProfile $profile, User $actor, array $input): string
+    {
+        $orderIds = $input['order_ids'] ?? [];
+        if (empty($orderIds) || !is_array($orderIds)) {
+            throw ValidationException::withMessages(['order_ids' => __('Select at least one order.')]);
+        }
+
+        $orders = $this->providerOrders($profile)
+            ->with(['status', 'assignment.providerContract'])
+            ->whereIn('bookings.id', $orderIds)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            throw ValidationException::withMessages(['order_ids' => __('No valid orders selected.')]);
+        }
+
+        $targetStatusCode = !empty($input['status']) && $input['status'] !== 'no_change' ? $input['status'] : null;
+        $hasTechnician = array_key_exists('technician_id', $input) && $input['technician_id'] !== '' && $input['technician_id'] !== null && $input['technician_id'] !== 'no_change';
+        $techId = $hasTechnician ? ($input['technician_id'] === 'unassign' ? null : (int) $input['technician_id']) : null;
+        $note = $input['note'] ?? null;
+
+        if (!$targetStatusCode && !$hasTechnician) {
+            throw ValidationException::withMessages(['bulk' => __('Select a status or a technician to update.')]);
+        }
+
+        $targetStatus = null;
+        if ($targetStatusCode) {
+            $targetStatus = BookingStatus::query()
+                ->where('code', $targetStatusCode)
+                ->where('show_in_provider_portal', true)
+                ->first();
+            if (!$targetStatus) {
+                throw ValidationException::withMessages(['status' => __('The requested order status is not configured.')]);
+            }
+        }
+
+        DB::transaction(function () use ($orders, $profile, $actor, $targetStatus, $hasTechnician, $techId, $note, $input) {
+            foreach ($orders as $booking) {
+                if ($hasTechnician) {
+                    if ($techId === null) {
+                        $booking->update(['technician_id' => null]);
+                    } else {
+                        $isEligible = $this->eligibleTechnicians($profile, $booking->service_id, $booking->sub_service_id)
+                            ->where('users.id', $techId)->exists();
+                        if ($isEligible) {
+                            $booking->update(['technician_id' => $techId]);
+                        }
+                    }
+                }
+
+                if ($targetStatus && (int) $booking->booking_status_id !== (int) $targetStatus->id) {
+                    $this->orderAdmin->update([
+                        'booking_status_id' => $targetStatus->id,
+                        'provider_profile_id' => $profile->id,
+                        'technician_id' => $hasTechnician ? $techId : $booking->technician_id,
+                        'gross_amount' => $input['gross_amount'] ?? $booking->total_amount,
+                        'note' => $note,
+                    ], $actor, $booking->id);
+                }
+            }
+        });
+
+        return __('Selected orders updated successfully.');
     }
 
     /**
@@ -597,6 +755,7 @@ class ProviderPortalService
     public function team(ProviderProfile $profile): array
     {
         $members = User::query()->with('role')->where('provider_profile_id', $profile->id)
+            ->where('is_technician', false)
             ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
             ->latest('id')->paginate(20)->withQueryString();
 
@@ -610,6 +769,7 @@ class ProviderPortalService
     public function teamMember(ProviderProfile $profile, int $memberId): array
     {
         $member = User::query()->where('provider_profile_id', $profile->id)
+            ->where('is_technician', false)
             ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
             ->whereKey($memberId)->firstOrFail();
         abort_if((int) $member->id === (int) $profile->user_id, 403);
@@ -632,6 +792,7 @@ class ProviderPortalService
             }
 
             $member = User::query()->where('provider_profile_id', $profile->id)
+                ->where('is_technician', false)
                 ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
                 ->whereKey($memberId)->lockForUpdate()->firstOrFail();
             abort_if((int) $member->id === (int) $profile->user_id, 403);
@@ -654,10 +815,169 @@ class ProviderPortalService
     public function removeTeamMember(ProviderProfile $profile, int $memberId): void
     {
         $member = User::query()->where('provider_profile_id', $profile->id)
+            ->where('is_technician', false)
             ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
             ->whereKey($memberId)->firstOrFail();
         abort_if((int) $member->id === (int) $profile->user_id, 403);
         $member->update(['provider_profile_id' => null, 'permissions' => []]);
+    }
+
+    public function technicians(ProviderProfile $profile): array
+    {
+        $technicians = User::query()->where('provider_profile_id', $profile->id)
+            ->where('is_technician', true)
+            ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
+            ->with(['technicianServices.translations', 'technicianSubServices.translations'])
+            ->withCount(['technicianBookings as assigned_bookings_count'])
+            ->latest('id')->paginate(20)->withQueryString();
+
+        return compact('technicians');
+    }
+
+    public function technicianForm(ProviderProfile $profile, ?int $technicianId = null): array
+    {
+        $technician = null;
+        if ($technicianId !== null) {
+            $technician = User::query()->where('provider_profile_id', $profile->id)
+                ->where('is_technician', true)
+                ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
+                ->with(['technicianServices:id', 'technicianSubServices:id'])
+                ->whereKey($technicianId)->firstOrFail();
+        }
+
+        $services = $profile->services()->where('services.is_active', true)
+            ->with(['translations', 'subServices' => fn ($query) => $query
+                ->where('is_active', true)->with('translations')->orderBy('sort_order')->orderBy('id')])
+            ->orderBy('services.code')->get();
+
+        return compact('technician', 'services');
+    }
+
+    public function saveTechnician(ProviderProfile $profile, User $actor, array $input, ?int $technicianId = null): int
+    {
+        return DB::transaction(function () use ($profile, $actor, $input, $technicianId) {
+            $serviceIds = collect($input['service_ids'])->map(fn ($id) => (int) $id)->unique()->values();
+            $subServiceIds = collect($input['sub_service_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
+            $validServiceCount = $profile->services()->where('services.is_active', true)
+                ->whereIn('services.id', $serviceIds)->count();
+            if ($validServiceCount !== $serviceIds->count()) {
+                throw ValidationException::withMessages(['service_ids' => __('Choose only active services offered by your company.')]);
+            }
+
+            $validSubServiceCount = SubService::query()->whereIn('id', $subServiceIds)
+                ->whereIn('service_id', $serviceIds)->where('is_active', true)->count();
+            if ($validSubServiceCount !== $subServiceIds->count()) {
+                throw ValidationException::withMessages(['sub_service_ids' => __('Choose active sub-services that belong to the selected services.')]);
+            }
+
+            if ($technicianId === null) {
+                $technician = $this->accounts->create([
+                    'name' => $input['name'],
+                    'email' => null,
+                    'phone' => $input['phone'],
+                    'locale' => 'ar',
+                    'password' => $input['password'],
+                    'provider_profile_id' => $profile->id,
+                    'permissions' => [],
+                    'is_technician' => true,
+                ], $actor->id);
+            } else {
+                $technician = User::query()->where('provider_profile_id', $profile->id)
+                    ->where('is_technician', true)
+                    ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
+                    ->whereKey($technicianId)->lockForUpdate()->firstOrFail();
+                $activeBookings = $technician->technicianBookings()
+                    ->whereHas('status', fn (Builder $query) => $query->whereIn('code', [
+                        BookingStatusCode::Pending->value,
+                        BookingStatusCode::Confirmed->value,
+                        BookingStatusCode::InProgress->value,
+                    ]))->get(['service_id', 'sub_service_id']);
+                foreach ($activeBookings as $booking) {
+                    if (!$serviceIds->contains((int) $booking->service_id)) {
+                        throw ValidationException::withMessages([
+                            'service_ids' => __('Keep services required by the technician’s active orders selected.'),
+                        ]);
+                    }
+                    if ($booking->sub_service_id !== null && !$subServiceIds->contains((int) $booking->sub_service_id)) {
+                        throw ValidationException::withMessages([
+                            'sub_service_ids' => __('Keep sub-services required by the technician’s active orders selected.'),
+                        ]);
+                    }
+                }
+                $technician->update([
+                    'name' => $input['name'],
+                    'phone' => $input['phone'],
+                    ...(!empty($input['password']) ? ['password' => $input['password']] : []),
+                ]);
+            }
+
+            $technician->technicianServices()->sync($serviceIds->all());
+            $technician->technicianSubServices()->sync($subServiceIds->all());
+
+            return (int) $technician->id;
+        });
+    }
+
+    public function removeTechnician(ProviderProfile $profile, int $technicianId): void
+    {
+        DB::transaction(function () use ($profile, $technicianId) {
+            $technician = User::query()->where('provider_profile_id', $profile->id)
+                ->where('is_technician', true)
+                ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
+                ->whereKey($technicianId)->lockForUpdate()->firstOrFail();
+
+            if ($technician->technicianBookings()->exists()) {
+                throw ValidationException::withMessages([
+                    'technician' => __('A technician assigned to service orders cannot be deleted.'),
+                ]);
+            }
+
+            $technician->delete();
+        });
+    }
+
+    public function assignTechnician(ProviderProfile $profile, int $bookingId, ?int $technicianId): void
+    {
+        DB::transaction(function () use ($profile, $bookingId, $technicianId) {
+            $booking = $this->providerOrders($profile)->whereKey($bookingId)->lockForUpdate()->firstOrFail();
+            if (!in_array($booking->status->code, [
+                BookingStatusCode::Pending->value,
+                BookingStatusCode::Confirmed->value,
+                BookingStatusCode::InProgress->value,
+            ], true)) {
+                throw ValidationException::withMessages([
+                    'technician_id' => __('Technicians can only be assigned to active service orders.'),
+                ]);
+            }
+            if ($technicianId !== null) {
+                $eligible = $this->eligibleTechnicians($profile, $booking->service_id, $booking->sub_service_id)
+                    ->whereKey($technicianId)->exists();
+                if (!$eligible) {
+                    throw ValidationException::withMessages([
+                        'technician_id' => __('Choose a technician assigned to this service and sub-service.'),
+                    ]);
+                }
+            }
+
+            $booking->update(['technician_id' => $technicianId]);
+        });
+    }
+
+    private function eligibleTechnicians(ProviderProfile $profile, int $serviceId, ?int $subServiceId): Builder
+    {
+        $technicians = User::query()->where('provider_profile_id', $profile->id)
+            ->where('is_technician', true)
+            ->whereHas('role', fn (Builder $query) => $query->where('code', RoleCode::Provider->value))
+            ->whereHas('technicianServices', fn (Builder $query) => $query->where('services.id', $serviceId));
+
+        if ($subServiceId !== null) {
+            $technicians->whereHas(
+                'technicianSubServices',
+                fn (Builder $query) => $query->where('sub_services.id', $subServiceId),
+            );
+        }
+
+        return $technicians;
     }
 
     private function providerOrders(ProviderProfile $profile): Builder
@@ -690,11 +1010,12 @@ class ProviderPortalService
             })
             ->join('booking_provider_assignments', 'bookings.id', '=', 'booking_provider_assignments.booking_id')
             ->where('booking_provider_assignments.provider_profile_id', $profile->id)
+            ->leftJoin('users as technicians', 'bookings.technician_id', '=', 'technicians.id')
             ->select(
                 'bookings.*', 'residents.name as resident_name', 'homes.name as home_name',
                 'resident_homes.unit_label', 'services.code as service_code',
                 'service_translations.name as service_name', 'booking_statuses.code as status_code',
-                'booking_status_translations.name as status_name'
+                'booking_status_translations.name as status_name', 'technicians.name as technician_name'
             );
     }
 

@@ -22,13 +22,19 @@ class ProviderRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => ['nullable', 'string', 'min:2', 'max:120'],
+            'email' => ['nullable', 'email:rfc', 'max:254', 'unique:users,email'],
             'company_name' => ['required', 'string', 'min:2', 'max:160'],
             'trade_name' => ['required', 'string', 'min:2', 'max:160'],
             'provider_type' => ['required', Rule::in(['فني مستقل', 'مؤسسة خدمات', 'شركة صيانة'])],
             'years_of_experience' => ['required', 'integer', 'between:0,100'],
+            'commercial_registration' => ['nullable', 'string', 'max:80'],
+            'legal_representative' => ['nullable', 'string', 'max:160'],
+            'legal_representative_id' => ['nullable', 'string', 'max:30'],
             'service_ids' => ['required', 'array', 'min:1'],
             'service_ids.*' => ['required', 'integer', 'distinct', Rule::exists('services', 'id')->where('is_active', true)],
             'phone' => ['required', 'string', 'regex:' . SaudiPhone::REGEX, 'unique:users,phone'],
+            'locale' => ['nullable', 'string', 'in:ar,en,ur'],
             'password' => ['required', 'string', 'min:6','confirmed'],
             'company_seal' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
             'commercial_registration_document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],

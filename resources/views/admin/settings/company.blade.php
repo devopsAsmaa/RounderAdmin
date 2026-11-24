@@ -315,6 +315,69 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Card 4: Mobile App Links --}}
+                <div class="settings-card mb-4" id="app-settings">
+                    <div class="settings-card-header d-flex align-items-center gap-3">
+                        <span class="form-section-icon bg-white text-primary border" style="color: #0f4c5c !important;">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                        </span>
+                        <div>
+                            <h2 class="h6 fw-bold mb-0 text-dark">روابط تحميل تطبيق راوندر (App Store & Google Play)</h2>
+                            <small class="text-secondary">روابط التطبيق الرسمية التي تظهر للزوار في الموقع الخارجي والفوتر</small>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="app_store_url" class="form-label fw-semibold small text-dark mb-1">
+                                    <i class="fa-brands fa-apple text-dark me-1"></i> رابط متجر أبل (App Store)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="fa-brands fa-apple"></i></span>
+                                    <input type="url" 
+                                           class="form-control border-start-0 font-monospace @error('app_store_url') is-invalid @enderror" 
+                                           id="app_store_url" 
+                                           name="app_store_url" 
+                                           value="{{ old('app_store_url', $settings->app_store_url) }}" 
+                                           placeholder="https://apps.apple.com/..." 
+                                           dir="ltr">
+                                </div>
+                                @error('app_store_url')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="play_store_url" class="form-label fw-semibold small text-dark mb-1">
+                                    <i class="fa-brands fa-google-play text-success me-1"></i> رابط متجر جوجل (Google Play)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="fa-brands fa-google-play"></i></span>
+                                    <input type="url" 
+                                           class="form-control border-start-0 font-monospace @error('play_store_url') is-invalid @enderror" 
+                                           id="play_store_url" 
+                                           name="play_store_url" 
+                                           value="{{ old('play_store_url', $settings->play_store_url) }}" 
+                                           placeholder="https://play.google.com/store/apps/..." 
+                                           dir="ltr">
+                                </div>
+                                @error('play_store_url')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-12">
+                                <div class="form-check form-switch mt-1">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="app_download_enabled" name="app_download_enabled" value="1" @checked(old('app_download_enabled', $settings->app_download_enabled ?? true))>
+                                    <label class="form-check-label small fw-semibold text-dark" for="app_download_enabled">
+                                        تفعيل وإظهار قسم "حمّل تطبيق راوندر" في الموقع الخارجي والصفحة الرئيسية
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Column 2: Official Stamp --}}

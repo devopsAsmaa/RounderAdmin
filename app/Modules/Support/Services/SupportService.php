@@ -27,6 +27,11 @@ class SupportService
             'email' => $settings->support_email ?: 'support@rounder.sa',
             'working_hours' => $settings->support_working_hours ?: 'الأحد إلى الخميس، 10 ص - 8 م',
             'chat_available' => (bool) $settings->support_chat_enabled,
+            'categories' => array_map(fn(SupportCategory $cat) => [
+                'code' => $cat->value,
+                'name' => $cat->label(),
+            ], SupportCategory::cases()),
+            'notice' => 'نرد عادة خلال يوم عمل واحد.',
         ];
     }
 
@@ -48,7 +53,7 @@ class SupportService
                 'user_id' => $user->id,
                 'category' => $validated['category'],
                 'subject' => $validated['subject'],
-                'message' => $validated['message'],
+                'message' => $validated['description'],
                 'attachment_path' => $attachmentPath,
                 'status' => SupportStatus::Open->value,
             ]);
@@ -64,19 +69,20 @@ class SupportService
      */
     public function residentTickets(User $user, int $perPage = 15): LengthAwarePaginator
     {
-        return SupportTicket::where('user_id', $user->id)
+        return SupportTicket::query()
+            ->where('user_id', $user->id)
             ->latest('id')
             ->paginate($perPage);
     }
 
     /**
-     * جلب تفاصيل تذكرة محددة للمستخدم الحالي.
+     * العثور على تذكرة محددة للساكن.
      */
-    public function findForResident(User $user, int $ticketId): ?SupportTicket
+    public function findForResident(User $user, int $id): ?SupportTicket
     {
-        return SupportTicket::where('user_id', $user->id)
-            ->where('id', $ticketId)
+        return SupportTicket::query()
+            ->where('user_id', $user->id)
+            ->where('id', $id)
             ->first();
     }
 }
-

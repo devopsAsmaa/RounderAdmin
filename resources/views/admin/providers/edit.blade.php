@@ -2,7 +2,7 @@
 @section('title', __('Edit company').' · '.$provider->company_name.' · Rounder')
 @section('body')
 @php
-    $tab1Errors = $errors->hasAny(['company_name','trade_name','provider_type','years_of_experience','name','phone','email','locale','is_approved','commercial_registration','legal_representative','legal_representative_id']);
+    $tab1Errors = $errors->hasAny(['company_name','trade_name','provider_type','years_of_experience','name','phone','email','locale','is_approved','password','password_confirmation','commercial_registration','legal_representative','legal_representative_id']);
     $tab2Errors = $errors->hasAny(['service_ids','service_ids.*']);
     $tab3Errors = $errors->hasAny(array_keys(\App\Modules\Providers\Services\ProviderDocumentService::DOCUMENTS));
     $tab4Errors = $errors->hasAny(['service_commission_percent','emergency_commission_percent','starts_on','ends_on','terms']);
@@ -364,6 +364,48 @@
                             </select>
                             @error('is_approved')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                         </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">
+                                {{ __('New password') }}
+                                <span class="badge bg-secondary-subtle text-secondary fw-normal ms-1">{{ __('Optional') }}</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-secondary"><i class="fa-solid fa-key"></i></span>
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" id="provider_password_input" minlength="8" maxlength="72" autocomplete="new-password" placeholder="اتركها فارغة للإبقاء على الحالية">
+                                <button type="button" class="btn btn-outline-secondary bg-light text-secondary border-start-0 toggle-password-btn" data-target="provider_password_input" title="إظهار / إخفاء كلمة المرور" style="border-color: #dee2e6;">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            @error('password')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">
+                                {{ __('Confirm password') }}
+                                <span class="badge bg-secondary-subtle text-secondary fw-normal ms-1">{{ __('Optional') }}</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-secondary"><i class="fa-solid fa-lock"></i></span>
+                                <input type="password" class="form-control" name="password_confirmation" id="provider_password_confirm_input" minlength="8" maxlength="72" autocomplete="new-password" placeholder="أعد إدخال كلمة المرور للتأكيد">
+                                <button type="button" class="btn btn-outline-secondary bg-light text-secondary border-start-0 toggle-password-btn" data-target="provider_password_confirm_input" title="إظهار / إخفاء تأكيد كلمة المرور" style="border-color: #dee2e6;">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-1">
+                            <div class="p-2 px-3 rounded-3 border d-flex align-items-center gap-2 small" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <i class="fa-solid fa-circle-info text-primary fs-6"></i>
+                                <span class="text-secondary">
+                                    <strong class="text-dark">{{ __('Password requirements:') }}</strong>
+                                    {{ __('At least 8 characters, containing uppercase (A-Z), lowercase (a-z), and numbers (0-9).') }}
+                                    <span class="text-muted">(اترك الحقلين فارغين إذا لم ترغب بتغيير كلمة المرور)</span>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -595,6 +637,28 @@
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('edit-provider-form');
     if (!form) return;
+
+    // زر إظهار / إخفاء كلمة المرور
+    form.querySelectorAll('.toggle-password-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const input = document.getElementById(this.dataset.target);
+            if (!input) return;
+            const icon = this.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash', 'text-rounder-orange');
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.classList.remove('fa-eye-slash', 'text-rounder-orange');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        });
+    });
 
     const approvalSelect = document.getElementById('is_approved_select');
     const typeSelect = document.getElementById('provider_type_select');
