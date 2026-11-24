@@ -8,4 +8,6 @@ enum Operation: string
     case AdminOrderAdminServiceUpdate = 'AdminServiceOrderAdminService.update';
     case ApiBookingRatingRateBooking = 'ApiBookingRatingService.rateBooking';
     case AdminOrderCreationStoreService = 'AdminOrderCreationService.storeService';
+    case ApiTechnicianConfirmOrder = 'ApiTechnicianBookingService.confirmOrder';
+    case ApiTechnicianUpdateStatus = 'ApiTechnicianBookingService.updateStatus';
 }

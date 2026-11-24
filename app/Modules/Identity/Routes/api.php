@@ -25,3 +25,16 @@ Route::prefix('v1/resident')->middleware(['auth:sanctum', 'resident'])->group(fu
     Route::put('/mobile', [\App\Modules\Identity\Controllers\Api\ProfileController::class, 'updateMobile'])
         ->middleware('throttle:5,1');
 });
+
+// مسارات الفني - المصادقة والملف الشخصي
+Route::prefix('v1/technician')->group(function () {
+    Route::post('/auth/login', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/login', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'login'])->middleware('throttle:10,1');
+});
+Route::prefix('v1/technician')->middleware(['auth:sanctum', 'technician'])->group(function () {
+    Route::get('/profile', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'profile']);
+    Route::get('/me', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'profile']);
+    Route::get('/info', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'profile']);
+    Route::post('/auth/logout', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'logout']);
+    Route::post('/logout', [\App\Modules\Identity\Controllers\Api\TechnicianAuthController::class, 'logout']);
+});

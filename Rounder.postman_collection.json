@@ -17,7 +17,7 @@
     "variable": [
         {
             "key": "base_url",
-            "value": "http://localhost:8000",
+            "value": "https://rounder-sa.com",
             "type": "string"
         },
         {
@@ -2055,6 +2055,273 @@
                             }
                         }
                     ],
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Technician",
+            "description": "APIs الفني المعتمد (Technician APIs)",
+            "item": [
+                {
+                    "name": "POST /technician/auth/login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var res = pm.response.json();",
+                                    "    if (res.data && res.data.token) {",
+                                    "        pm.variables.set('token', res.data.token);",
+                                    "        if (pm.environment) pm.environment.set('token', res.data.token);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"mobile\": \"{{mobile}}\",\n    \"password\": \"{{password}}\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/technician/auth/login",
+                        "description": "تسجيل دخول الفني برقم الجوال وكلمة المرور وحفظ الـ Token تلقائياً."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/profile",
+                        "description": "استعراض بيانات الملف الشخصي للفني والشركة التابع لها والخدمات والإحصائيات."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/statuses",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/statuses",
+                        "description": "استعراض قائمة حالات الطلبات المعتمدة مع الترجمة."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/orders",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var res = pm.response.json();",
+                                    "    if (res.data && res.data.length > 0) {",
+                                    "        pm.variables.set('booking_id', res.data[0].id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/technician/orders?tab=active&per_page=15",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "technician",
+                                "orders"
+                            ],
+                            "query": [
+                                {
+                                    "key": "tab",
+                                    "value": "active"
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15"
+                                }
+                            ]
+                        },
+                        "description": "استعراض الطلبات المسندة للفني مع خيارات الفلترة."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/orders/:bookingId",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}",
+                        "description": "استعراض تفاصيل طلب محدد لبيانات العميل والموقع والمرفقات."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST /technician/orders/:bookingId/send-otp",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var res = pm.response.json();",
+                                    "    if (res.data && res.data.otp) {",
+                                    "        pm.variables.set('otp', res.data.otp);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/send-otp",
+                        "description": "إرسال رمز تحقق OTP مكون من 6 أرقام إلى جوال العميل الساكن."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT /technician/orders/:bookingId/status",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"in_progress\",\n    \"note\": \"الفني في الطريق إلى الموقع\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/status",
+                        "description": "تحديث حالة الطلب إلى in_progress (الفني في الطريق)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST /technician/orders/:bookingId/confirm",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "otp",
+                                    "value": "{{otp}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "image_after",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "note",
+                                    "value": "تم إتمام الصيانة وتأكيد الرمز مع العميل",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/confirm",
+                        "description": "تأكيد إتمام الطلب برفع صورة بعد العمل وإدخال رمز الـ OTP من العميل."
+                    },
                     "response": []
                 }
             ]

@@ -3,6 +3,9 @@
 namespace App\Modules\Identity\Services;
 use App\Modules\Identity\Enums\RoleCode;
 use App\Core\Enums\SupportedLocale;
+use App\Core\Exceptions\DomainViolation;
+use App\Core\Enums\FailureReason;
+use App\Modules\Bookings\Enums\BookingStatusCode;
 
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
@@ -97,10 +100,143 @@ class ApiAuthService
             })
             ->first();
 
-        if (!$user || !Hash::check($data['password'], $user->password) || $user->role->code !== RoleCode::Resident->value) {
+        $isAllowed = ($user && (($user->role?->code === RoleCode::Resident->value) || (bool) $user->is_technician));
+        if (!$user || !Hash::check($data['password'], $user->password) || !$isAllowed) {
             throw ValidationException::withMessages(['mobile' => __('auth.failed')]);
         }
-        return ['data' => ['user' => $user->only(['id', 'name', 'email', 'phone', 'locale']) + ['mobile' => $user->phone], 'token' => $user->createToken('rounder-mobile')->plainTextToken]];
+        return ['data' => [
+            'user' => $user->only(['id', 'name', 'email', 'phone', 'locale']) + [
+                'mobile' => $user->phone,
+                'is_technician' => (bool) $user->is_technician,
+                'provider_profile_id' => $user->provider_profile_id,
+            ],
+            'token' => $user->createToken('rounder-mobile')->plainTextToken,
+        ]];
+    }
+
+    /**
+     * تسجيل دخول الفني المعتمد.
+     * @param array $input
+     * @param ?User $actor
+     * @return array
+     */
+    public function technicianLogin(array $input, ?User $actor): array
+    {
+        return DB::transaction(function () use ($input, $actor) {
+            $result = $this->performTechnicianLogin($input, $actor);
+            DB::afterCommit(fn () => event(new IdentityChanged(Operation::ApiTechnicianLogin, $actor?->id)));
+            return $result;
+        });
+    }
+
+    private function performTechnicianLogin(array $input, ?User $actor): array
+    {
+        $data = $input;
+        $mobile = $data['mobile'] ?? $data['phone'] ?? null;
+
+        $user = User::with(['role', 'providerProfile'])
+            ->where(function ($query) use ($mobile, $data) {
+                if ($mobile) {
+                    $international = '+966' . substr($mobile, 1);
+                    $query->where('phone', $mobile)
+                          ->orWhere('phone', $international)
+                          ->orWhere('phone', ltrim($mobile, '0'));
+                } elseif (!empty($data['email'])) {
+                    $query->where('email', $data['email']);
+                }
+            })
+            ->first();
+
+        if (!$user || !Hash::check($data['password'], $user->password) || !(bool) $user->is_technician) {
+            throw ValidationException::withMessages([
+                'mobile' => __('auth.failed'),
+            ]);
+        }
+
+        return [
+            'status' => true,
+            'message' => __('Login successful.'),
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'mobile' => $user->phone,
+                    'locale' => $user->locale,
+                    'is_technician' => true,
+                    'provider_profile_id' => $user->provider_profile_id,
+                    'provider_name' => $user->providerProfile?->company_name,
+                ],
+                'token' => $user->createToken('rounder-technician')->plainTextToken,
+            ],
+        ];
+    }
+
+    /**
+     * إرجاع بيانات الملف الشخصي للفني مع التخصصات والإحصائيات.
+     * @param ?User $actor
+     * @return array
+     */
+    public function technicianProfile(?User $actor): array
+    {
+        DomainViolation::unless($actor && (bool) $actor->is_technician, FailureReason::Forbidden, __('Technician profile not found.'));
+
+        $locale = app()->getLocale();
+        $actor->loadMissing([
+            'providerProfile',
+            'technicianServices.translations',
+            'technicianSubServices.translations',
+        ]);
+
+        $activeOrdersCount = $actor->technicianBookings()
+            ->whereHas('status', fn ($q) => $q->whereIn('code', [
+                BookingStatusCode::Pending->value,
+                BookingStatusCode::Confirmed->value,
+                BookingStatusCode::InProgress->value,
+            ]))->count();
+
+        $completedOrdersCount = $actor->technicianBookings()
+            ->whereHas('status', fn ($q) => $q->where('code', BookingStatusCode::Completed->value))->count();
+
+        $services = $actor->technicianServices->map(fn ($service) => [
+            'id' => $service->id,
+            'code' => $service->code,
+            'name' => $service->translations->firstWhere('locale', $locale)?->name ?? $service->code,
+        ])->values();
+
+        $subServices = $actor->technicianSubServices->map(fn ($sub) => [
+            'id' => $sub->id,
+            'service_id' => $sub->service_id,
+            'code' => $sub->code,
+            'name' => $sub->translations->firstWhere('locale', $locale)?->name ?? $sub->code,
+        ])->values();
+
+        return [
+            'status' => true,
+            'data' => [
+                'id' => $actor->id,
+                'name' => $actor->name,
+                'email' => $actor->email,
+                'phone' => $actor->phone,
+                'mobile' => $actor->phone,
+                'locale' => $actor->locale,
+                'is_technician' => true,
+                'provider' => $actor->providerProfile ? [
+                    'id' => $actor->providerProfile->id,
+                    'company_name' => $actor->providerProfile->company_name,
+                    'trade_name' => $actor->providerProfile->trade_name,
+                    'provider_type' => $actor->providerProfile->provider_type,
+                ] : null,
+                'services' => $services,
+                'sub_services' => $subServices,
+                'stats' => [
+                    'assigned_orders_count' => $actor->technicianBookings()->count(),
+                    'active_orders_count' => $activeOrdersCount,
+                    'completed_orders_count' => $completedOrdersCount,
+                ],
+            ],
+        ];
     }
 
     /**
@@ -181,7 +317,11 @@ class ApiAuthService
      */
     public function me(array $input, ?User $actor): mixed
     {
-        return ['data' => $actor->only(['id', 'name', 'email', 'phone', 'locale']) + ['mobile' => $actor->phone]];
+        return ['data' => $actor->only(['id', 'name', 'email', 'phone', 'locale']) + [
+            'mobile' => $actor->phone,
+            'is_technician' => (bool) $actor->is_technician,
+            'provider_profile_id' => $actor->provider_profile_id,
+        ]];
     }
 
     /**
@@ -304,7 +444,11 @@ class ApiAuthService
                 'message' => 'تم التحقق بنجاح وتسجيل الدخول.',
                 'data' => [
                     'is_registered' => true,
-                    'user' => $user->only(['id', 'name', 'email', 'phone', 'locale']) + ['mobile' => $user->phone],
+                    'user' => $user->only(['id', 'name', 'email', 'phone', 'locale']) + [
+                        'mobile' => $user->phone,
+                        'is_technician' => (bool) $user->is_technician,
+                        'provider_profile_id' => $user->provider_profile_id,
+                    ],
                     'token' => $token,
                 ],
             ];

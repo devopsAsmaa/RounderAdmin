@@ -1,0 +1,637 @@
+{
+    "info": {
+        "name": "Rounder API — Technician App",
+        "description": "مجموعة طلبات Postman لـ APIs الفني (Technician APIs) في منصة Rounder.\n\nتتضمن:\n1. المصادقة وتسجيل الدخول كفني أو مستخدم (Auth AS user).\n2. معلومات وبيانات الملف الشخصي والإحصائيات للفني (User info).\n3. استعراض الحالات المعتمدة للطلبات (list Statuses).\n4. استعراض وفلترة الطلبات المسندة للفني (list Orders).\n5. إرسال رمز التحقق للعميل وتأكيد إتمام الطلب بالصورة والرمز (confirm order status with image after and otp from client).\n\nالمتغيرات تحفظ تلقائياً (Token, Booking ID, OTP).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{technician_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://rounder-sa.com",
+            "type": "string"
+        },
+        {
+            "key": "technician_mobile",
+            "value": "0550000001",
+            "type": "string"
+        },
+        {
+            "key": "technician_password",
+            "value": "TechnicianPassword123!",
+            "type": "string"
+        },
+        {
+            "key": "technician_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "booking_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "otp",
+            "value": "542187",
+            "type": "string"
+        },
+        {
+            "key": "locale",
+            "value": "ar",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "1. Authentication",
+            "description": "عمليات تسجيل الدخول والمصادقة الخاصة بالفني.",
+            "item": [
+                {
+                    "name": "POST Technician Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Login successful\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    pm.expect(jsonData.data.token).to.not.be.empty;",
+                                    "    pm.collectionVariables.set(\"technician_token\", jsonData.data.token);",
+                                    "    if (pm.environment) {",
+                                    "        pm.environment.set(\"token\", jsonData.data.token);",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"mobile\": \"{{technician_mobile}}\",\n    \"password\": \"{{technician_password}}\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/technician/auth/login",
+                        "description": "تسجيل دخول الفني عبر مسار الفنيين. يحفظ الـ Token تلقائياً في متغير technician_token."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST Standard User Login (as Technician)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"User Auth Login successful\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data.token).to.not.be.empty;",
+                                    "    pm.collectionVariables.set(\"technician_token\", jsonData.data.token);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"mobile\": \"{{technician_mobile}}\",\n    \"password\": \"{{technician_password}}\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/auth/login",
+                        "description": "تسجيل دخول الفني عبر مسار المصادقة العام للمستخدمين (Auth AS user)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST Technician Logout",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Logout successful\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/auth/logout",
+                        "description": "تسجيل خروج الفني وإلغاء الـ Token الحالي."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "2. Technician Profile (User info)",
+            "description": "بيانات الفني الشخصية والشركة المسند إليها والخدمات والإحصائيات.",
+            "item": [
+                {
+                    "name": "GET Technician Profile",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Profile retrieved successfully\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    pm.expect(jsonData.data.is_technician).to.eql(true);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/profile",
+                        "description": "إرجاع بيانات الملف الشخصي للفني، بيانات مزود الخدمة، الخدمات المصرح بها، وإحصائيات الطلبات."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET Technician Me / Info",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/me",
+                        "description": "مسار بديل مطابق للملف الشخصي للفني."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET General Me",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/me",
+                        "description": "مسار /api/v1/me العام، يرجع بيانات المستخدم متضمنة is_technician و provider_profile_id."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "3. Statuses (list Statuses)",
+            "description": "استعراض حالات الطلبات المعتمدة.",
+            "item": [
+                {
+                    "name": "GET List Order Statuses",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Statuses retrieved successfully\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    pm.expect(jsonData.data).to.be.an(\"array\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/statuses",
+                        "description": "إرجاع قائمة حالات الطلبات المتاحة للفني مع التسميات المترجمة بحسب لغة الطلب (pending, confirmed, in_progress, completed, cancelled)."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "4. Orders (list Orders)",
+            "description": "استعراض طلبات الخدمة المسندة للفني وتفاصيلها.",
+            "item": [
+                {
+                    "name": "GET List All Assigned Orders",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Orders retrieved successfully\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    if (jsonData.data && jsonData.data.length > 0) {",
+                                    "        pm.collectionVariables.set(\"booking_id\", jsonData.data[0].id);",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/technician/orders?per_page=15&page=1",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "technician", "orders"],
+                            "query": [
+                                {
+                                    "key": "per_page",
+                                    "value": "15"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "إرجاع قائمة بكافة الطلبات المسندة للفني. يقوم بحفظ أول booking_id تلقائياً في المتغيرات."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET List Active Orders (Tab)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/technician/orders?tab=active",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "technician", "orders"],
+                            "query": [
+                                {
+                                    "key": "tab",
+                                    "value": "active",
+                                    "description": "الطلبات الجارية والنشطة (pending, confirmed, in_progress)"
+                                }
+                            ]
+                        },
+                        "description": "فلترة الطلبات النشطة فقط."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET List Completed Orders (Tab)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/technician/orders?tab=completed",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "technician", "orders"],
+                            "query": [
+                                {
+                                    "key": "tab",
+                                    "value": "completed",
+                                    "description": "الطلبات المكتملة"
+                                }
+                            ]
+                        },
+                        "description": "فلترة الطلبات المكتملة فقط."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET Filter Orders by Status Code",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/technician/orders?status_code=confirmed",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "technician", "orders"],
+                            "query": [
+                                {
+                                    "key": "status_code",
+                                    "value": "confirmed",
+                                    "description": "رمز الحالة المراد الفلترة بها"
+                                }
+                            ]
+                        },
+                        "description": "فلترة الطلبات بحسب كود الحالة المختار (مثال: confirmed أو in_progress)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET Show Order Details",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Order details retrieved\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    pm.expect(jsonData.data.client).to.not.be.null;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}",
+                        "description": "استعراض تفاصيل طلب محدد برقم الحجز booking_id متضمناً بيانات العميل (الاسم والجوال)، العنوان، الموعد، وسجل الحركات."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "5. Order Confirmation & OTP",
+            "description": "إجراءات تحديث الحالة، إرسال رمز التحقق للعميل، وتأكيد الإتمام بالصورة والرمز.",
+            "item": [
+                {
+                    "name": "PUT Update Status (In Progress)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status updated to in_progress\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    pm.expect(jsonData.data.order.status.code).to.eql(\"in_progress\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"in_progress\",\n    \"note\": \"الفني في الطريق إلى موقع العميل وبدء التنفيذ\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/status",
+                        "description": "تحديث حالة الطلب إلى (الفني في الطريق / قيد التنفيذ) دون اشتراط رمز أو صورة."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST Send Completion OTP to Client",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"OTP sent successfully\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    if (jsonData.data && jsonData.data.otp) {",
+                                    "        pm.collectionVariables.set(\"otp\", jsonData.data.otp);",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/send-otp",
+                        "description": "توليد وإرسال رمز تحقق OTP مكون من 6 أرقام إلى جوال العميل الساكن وإشعاره داخل التطبيق لتأكيد إتمام الخدمة. في بيئة التطوير والاختبار، يُعاد الرمز في الاستجابة ويُحفظ تلقائياً في متغير otp."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST Confirm Order Status with Image After & Client OTP",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Order confirmed and completed\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.status).to.eql(true);",
+                                    "    pm.expect(jsonData.data.order.status.code).to.eql(\"completed\");",
+                                    "    pm.expect(jsonData.data.after_image).to.not.be.null;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "otp",
+                                    "value": "{{otp}}",
+                                    "description": "رمز التحقق المستلم من العميل (مطلوب)",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "image_after",
+                                    "description": "صورة العمل المنفذ بعد الانتهاء (مطلوب - ملف صورة jpeg, png, jpg, webp)",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "note",
+                                    "value": "تم إنجاز الصيانة بنجاح واختبار الخدمة بحضور العميل",
+                                    "description": "ملاحظات الفني (اختياري)",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/confirm",
+                        "description": "تأكيد إتمام الطلب بنجاح. يتطلب إرسال الـ OTP المستلم من العميل ورفع صورة بعد إنجاز العمل (image_after). يقوم بتحديث حالة الطلب إلى مكتمل completed وحفظ الصورة في الوسائط بنوع after وإشعار العميل وحساب عمولة المنصة."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
+}
