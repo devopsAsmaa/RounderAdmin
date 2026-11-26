@@ -9,9 +9,15 @@ use App\Modules\Bookings\Models\BookingProviderAssignment;
 use App\Modules\Bookings\Models\BookingStatus;
 use App\Modules\Catalog\Models\Service;
 use App\Modules\Catalog\Models\SubService;
+use App\Modules\Emergencies\Enums\EmergencyStatusCode;
+use App\Modules\Emergencies\Models\EmergencyProviderAssignment;
+use App\Modules\Emergencies\Models\EmergencyRequest;
+use App\Modules\Emergencies\Models\EmergencyRequestStatus;
+use App\Modules\Emergencies\Models\EmergencyType;
 use App\Modules\Identity\Enums\RoleCode;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
+use App\Modules\Notifications\Models\NotificationType;
 use App\Modules\Properties\Models\City;
 use App\Modules\Properties\Models\Home;
 use App\Modules\Properties\Models\ResidentHome;
@@ -61,12 +67,12 @@ class TechnicianApiTest extends TestCase
             'provider_type' => 'شركة صيانة',
             'years_of_experience' => 5,
             'service_ids' => [$this->service->id],
-            'phone' => '055' . random_int(10000000, 99999999),
+            'phone' => '055' . random_int(1000000, 9999999),
             'password' => 'StrongPass123!',
         ]);
         $this->profile->update(['is_approved' => true, 'contract_accepted_at' => now()]);
 
-        $this->techPhone = '055' . random_int(10000000, 99999999);
+        $this->techPhone = '055' . random_int(1000000, 9999999);
         $this->techPassword = 'TechnicianSecret123!';
 
         $portal = app(ProviderPortalService::class);
@@ -78,12 +84,16 @@ class TechnicianApiTest extends TestCase
             'sub_service_ids' => [$this->subService->id],
         ]);
         $this->technician = User::query()->findOrFail($technicianId);
+        $this->technician->update(['locale' => 'ar']);
+
+        NotificationType::query()->firstOrCreate(['code' => 'booking_status_changed'], ['name' => 'تغيير حالة الطلب']);
+        NotificationType::query()->firstOrCreate(['code' => 'emergency_status_changed'], ['name' => 'تغيير حالة الطوارئ']);
 
         $residentRole = Role::query()->where('code', RoleCode::Resident->value)->firstOrFail();
         $this->resident = User::query()->create([
             'role_id' => $residentRole->id,
             'name' => 'محمد العميل التجريبي',
-            'phone' => '050' . random_int(10000000, 99999999),
+            'phone' => '050' . random_int(1000000, 9999999),
             'locale' => 'ar',
             'password' => 'ResidentSecret123!',
         ]);
@@ -390,7 +400,7 @@ class TechnicianApiTest extends TestCase
         $this->assertNotNull($assignment->completed_at);
 
         // Verify status history
-        $this->assertDatabaseHas('booking_status_histories', [
+        $this->assertDatabaseHas('booking_status_history', [
             'booking_id' => $this->booking->id,
             'booking_status_id' => $completedStatusId,
             'changed_by' => $this->technician->id,
@@ -415,5 +425,266 @@ class TechnicianApiTest extends TestCase
 
         $inProgressId = BookingStatus::query()->where('code', BookingStatusCode::InProgress->value)->value('id');
         $this->assertSame($inProgressId, $this->booking->fresh()->booking_status_id);
+    }
+
+    public function test_technician_can_list_emergency_statuses(): void
+    {
+        Sanctum::actingAs($this->technician);
+
+        $response = $this->getJson('/api/v1/technician/emergencies/statuses');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    '*' => ['id', 'code', 'name', 'badge_label'],
+                ],
+            ]);
+
+        $codes = collect($response->json('data'))->pluck('code')->all();
+        $this->assertContains('assigned', $codes);
+        $this->assertContains('on_the_way', $codes);
+        $this->assertContains('resolved', $codes);
+    }
+
+    public function test_technician_can_list_assigned_emergency_requests_matching_mobile_design(): void
+    {
+        Sanctum::actingAs($this->technician);
+
+        $type = EmergencyType::query()->firstOrCreate(['code' => 'fire', 'is_active' => true]);
+        $type->translations()->updateOrCreate(['locale' => 'ar'], ['name' => 'حريق أو دخان']);
+
+        $assignedStatus = EmergencyRequestStatus::query()->where('code', EmergencyStatusCode::Assigned->value)->first();
+        $assignedStatusId = $assignedStatus?->id ?? DB::table('emergency_request_statuses')->insertGetId(['code' => EmergencyStatusCode::Assigned->value, 'created_at' => now(), 'updated_at' => now()]);
+
+        $emergency = EmergencyRequest::query()->create([
+            'resident_id' => $this->resident->id,
+            'resident_home_id' => $this->booking->resident_home_id,
+            'home_id' => $this->booking->home_id,
+            'emergency_type_id' => $type->id,
+            'status_id' => $assignedStatusId,
+            'reference' => 'RD-EM-1042',
+            'contact_phone' => '0551234567',
+            'location_details' => 'برج النخيل • وحدة 1204 • الدور 12',
+            'description' => 'رائحة دخان قوية قرب باب الشقة ولا يوجد لهب ظاهر.',
+            'requested_at' => now(),
+            'handled_by' => $this->technician->id,
+        ]);
+
+        $response = $this->getJson('/api/v1/technician/emergencies');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    '*' => [
+                        'id',
+                        'reference',
+                        'title',
+                        'status' => ['code', 'name', 'badge_label', 'badge_variant'],
+                        'location',
+                        'contact_phone',
+                        'description',
+                        'time_formatted',
+                    ],
+                ],
+            ]);
+
+        $item = collect($response->json('data'))->firstWhere('id', $emergency->id);
+        $this->assertNotNull($item);
+        $this->assertSame('RD-EM-1042', $item['reference']);
+        $this->assertSame('حريق أو دخان', $item['title']);
+        $this->assertSame('قيد المتابعة', $item['status']['badge_label']);
+        $this->assertSame('0551234567', $item['contact_phone']);
+
+        // Test tabs: active tab must have the emergency, completed tab must be empty
+        $activeTab = $this->getJson('/api/v1/technician/emergencies?tab=active');
+        $activeTab->assertStatus(200);
+        $this->assertCount(1, $activeTab->json('data'));
+
+        $completedTab = $this->getJson('/api/v1/technician/emergencies?tab=completed');
+        $completedTab->assertStatus(200);
+        $this->assertCount(0, $completedTab->json('data'));
+
+        // Test single show
+        $show = $this->getJson('/api/v1/technician/emergencies/' . $emergency->id);
+        $show->assertStatus(200)
+            ->assertJsonPath('data.reference', 'RD-EM-1042');
+    }
+
+    public function test_technician_can_update_emergency_status_to_on_the_way(): void
+    {
+        Sanctum::actingAs($this->technician);
+
+        $type = EmergencyType::query()->firstOrCreate(['code' => 'water_leak', 'is_active' => true]);
+        $type->translations()->updateOrCreate(['locale' => 'ar'], ['name' => 'تسريب مياه']);
+
+        $assignedStatus = EmergencyRequestStatus::query()->where('code', EmergencyStatusCode::Assigned->value)->first();
+        $assignedStatusId = $assignedStatus?->id ?? DB::table('emergency_request_statuses')->insertGetId(['code' => EmergencyStatusCode::Assigned->value, 'created_at' => now(), 'updated_at' => now()]);
+
+        $emergency = EmergencyRequest::query()->create([
+            'resident_id' => $this->resident->id,
+            'resident_home_id' => $this->booking->resident_home_id,
+            'home_id' => $this->booking->home_id,
+            'emergency_type_id' => $type->id,
+            'status_id' => $assignedStatusId,
+            'reference' => 'RD-EM-0981',
+            'contact_phone' => '0559876543',
+            'location_details' => 'الرياض - حي الروابي - شقة 204',
+            'description' => 'تسريب مياه في الحمام الرئيسي',
+            'requested_at' => now(),
+            'handled_by' => $this->technician->id,
+        ]);
+
+        $response = $this->putJson('/api/v1/technician/emergencies/' . $emergency->id . '/status', [
+            'status' => 'on_the_way',
+            'note' => 'الفريق في الطريق إلى الشقة',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.emergency.status.code', 'on_the_way')
+            ->assertJsonPath('data.emergency.status.badge_label', 'قيد المتابعة');
+
+        $onTheWayStatusId = EmergencyRequestStatus::query()->where('code', 'on_the_way')->value('id');
+        $this->assertSame($onTheWayStatusId, $emergency->fresh()->status_id);
+        $this->assertNotNull($emergency->fresh()->dispatched_at);
+    }
+
+    public function test_technician_can_resolve_emergency_request(): void
+    {
+        Sanctum::actingAs($this->technician);
+
+        $type = EmergencyType::query()->firstOrCreate(['code' => 'water_leak', 'is_active' => true]);
+        $type->translations()->updateOrCreate(['locale' => 'ar'], ['name' => 'تسريب مياه']);
+
+        $onTheWayStatus = EmergencyRequestStatus::query()->where('code', EmergencyStatusCode::OnTheWay->value)->first();
+        $onTheWayStatusId = $onTheWayStatus?->id ?? DB::table('emergency_request_statuses')->insertGetId(['code' => EmergencyStatusCode::OnTheWay->value, 'created_at' => now(), 'updated_at' => now()]);
+
+        $emergency = EmergencyRequest::query()->create([
+            'resident_id' => $this->resident->id,
+            'resident_home_id' => $this->booking->resident_home_id,
+            'home_id' => $this->booking->home_id,
+            'emergency_type_id' => $type->id,
+            'status_id' => $onTheWayStatusId,
+            'reference' => 'RD-EM-0981',
+            'contact_phone' => '0559876543',
+            'location_details' => 'الرياض - حي الروابي - شقة 204',
+            'description' => 'تسريب مياه تم التعامل معه',
+            'requested_at' => now()->subHour(),
+            'handled_by' => $this->technician->id,
+        ]);
+
+        $response = $this->postJson('/api/v1/technician/emergencies/' . $emergency->id . '/resolve', [
+            'status' => 'resolved',
+            'note' => 'تم استبدال وصلة التصريف واختبار المياه.',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.emergency.status.code', 'resolved')
+            ->assertJsonPath('data.emergency.status.badge_label', 'تمت المعالجة');
+
+        $resolvedStatusId = EmergencyRequestStatus::query()->where('code', 'resolved')->value('id');
+        $this->assertSame($resolvedStatusId, $emergency->fresh()->status_id);
+        $this->assertNotNull($emergency->fresh()->resolved_at);
+    }
+
+    public function test_technician_can_send_otp_and_confirm_emergency_request_with_client_otp(): void
+    {
+        Sanctum::actingAs($this->technician);
+
+        $type = EmergencyType::query()->firstOrCreate(['code' => 'water_leak', 'is_active' => true]);
+        $type->translations()->updateOrCreate(['locale' => 'ar'], ['name' => 'تسريب مياه']);
+
+        $onTheWayStatus = EmergencyRequestStatus::query()->where('code', EmergencyStatusCode::OnTheWay->value)->first();
+        $onTheWayStatusId = $onTheWayStatus?->id ?? DB::table('emergency_request_statuses')->insertGetId(['code' => EmergencyStatusCode::OnTheWay->value, 'created_at' => now(), 'updated_at' => now()]);
+
+        $emergency = EmergencyRequest::query()->create([
+            'resident_id' => $this->resident->id,
+            'resident_home_id' => $this->booking->resident_home_id,
+            'home_id' => $this->booking->home_id,
+            'emergency_type_id' => $type->id,
+            'status_id' => $onTheWayStatusId,
+            'reference' => 'RD-EM-OTP-01',
+            'contact_phone' => '0559876543',
+            'location_details' => 'الرياض - حي الروابي - شقة 204',
+            'description' => 'تسريب مياه يتطلب التحقق بـ OTP',
+            'requested_at' => now()->subHour(),
+            'handled_by' => $this->technician->id,
+        ]);
+
+        $contractStatus = \App\Modules\Providers\Models\ProviderContractStatus::query()
+            ->where('code', \App\Modules\Providers\Enums\ContractStatusCode::Active->value)->value('id');
+        $contract = $this->profile->contracts()->create([
+            'status_id' => $contractStatus,
+            'reference' => 'PC-TEST-EMG-01',
+            'service_commission_percent' => 15.0,
+            'emergency_commission_percent' => 20.0,
+            'starts_on' => today()->subMonth(),
+            'terms' => 'Test terms',
+        ]);
+
+        $region = \App\Modules\Properties\Models\Region::query()->firstOrCreate(['code' => 'test-reg-emg'], ['country_code' => 'SA', 'is_active' => true]);
+        $city = City::query()->find(Home::query()->find($this->booking->home_id)->city_id);
+        $city->update(['region_id' => $region->id]);
+        \App\Modules\Emergencies\Models\EmergencySetting::query()->updateOrCreate(
+            ['region_id' => $region->id],
+            ['price' => 300.0, 'is_active' => true, 'estimated_time_minutes' => 30]
+        );
+
+        EmergencyProviderAssignment::query()->create([
+            'emergency_request_id' => $emergency->id,
+            'provider_profile_id' => $this->profile->id,
+            'provider_contract_id' => $contract->id,
+            'assigned_at' => now()->subHour(),
+        ]);
+
+        // 1. Send OTP to client
+        $otpResponse = $this->postJson('/api/v1/technician/emergencies/' . $emergency->id . '/send-otp');
+        $otpResponse->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonStructure(['data' => ['emergency_id', 'client_phone', 'expires_in_minutes']]);
+
+        $otp = $otpResponse->json('data.otp') ?? '542187';
+
+        // 2. Reject incorrect OTP
+        $failResponse = $this->postJson('/api/v1/technician/emergencies/' . $emergency->id . '/confirm', [
+            'otp' => '000000',
+            'note' => 'كود خاطئ',
+        ]);
+        $failResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['otp']);
+
+        // 3. Confirm with valid OTP and optional after image
+        $imageFile = UploadedFile::fake()->image('emergency_after.jpg', 640, 480);
+        $confirmResponse = $this->postJson('/api/v1/technician/emergencies/' . $emergency->id . '/confirm', [
+            'otp' => $otp,
+            'image_after' => $imageFile,
+            'note' => 'تم إنهاء بلاغ الطوارئ بنجاح بـ OTP وتأكيد الساكن.',
+        ], ['Accept-Language' => 'ar']);
+
+        $confirmResponse->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.emergency.status.code', 'resolved')
+            ->assertJsonPath('data.emergency.status.badge_label', 'تمت المعالجة');
+
+        $resolvedStatusId = EmergencyRequestStatus::query()->where('code', 'resolved')->value('id');
+        $this->assertSame($resolvedStatusId, $emergency->fresh()->status_id);
+        $this->assertNotNull($emergency->fresh()->resolved_at);
+
+        $assignment = EmergencyProviderAssignment::query()->where('emergency_request_id', $emergency->id)->first();
+        $this->assertNotNull($assignment?->completed_at);
+
+        $commissionEntry = \App\Modules\Providers\Models\ProviderCommissionEntry::query()
+            ->where('emergency_request_id', $emergency->id)
+            ->first();
+        $this->assertNotNull($commissionEntry);
+        $this->assertSame($this->profile->id, $commissionEntry->provider_profile_id);
+        $this->assertEquals(20.0, (float) $commissionEntry->commission_percent_snapshot);
+        $this->assertEquals(300.0, (float) $commissionEntry->gross_amount);
+        $this->assertEquals(60.0, (float) $commissionEntry->commission_amount);
     }
 }

@@ -88,9 +88,14 @@ Route::prefix('provider')->name('provider.')->middleware('auth:provider')->group
 
 // مسارات Providers فقط؛ الأسماء والروابط العامة محفوظة للتوافق مع العملاء.
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    Route::get('/providers/finance', [\App\Modules\Providers\Controllers\Admin\ProviderFinanceController::class, 'index'])->name('providers.finance.index');
+    Route::get('/providers/commissions', [\App\Modules\Providers\Controllers\Admin\ProviderFinanceController::class, 'commissions'])->name('providers.commissions.index');
+    Route::post('/providers/commissions/{id}/toggle-status', [\App\Modules\Providers\Controllers\Admin\ProviderFinanceController::class, 'toggleStatus'])
+        ->whereNumber('id')->name('providers.commissions.toggle-status');
     Route::get('/providers', [\App\Modules\Providers\Controllers\Admin\ProviderController::class, 'index'])->name('providers.index');
     Route::post('/providers', [\App\Modules\Providers\Controllers\Admin\ProviderController::class, 'store'])->name('providers.store');
     Route::get('/providers/create', [\App\Modules\Providers\Controllers\Admin\ProviderController::class, 'create'])->name('providers.create');
+    Route::post('/providers/{provider}/approve', [\App\Modules\Providers\Controllers\Admin\ProviderController::class, 'approve'])->whereNumber('provider')->name('providers.approve');
     Route::get('/providers/{provider}/edit', [\App\Modules\Providers\Controllers\Admin\ProviderController::class, 'edit'])->whereNumber('provider')->name('providers.edit');
     Route::put('/providers/{provider}', [\App\Modules\Providers\Controllers\Admin\ProviderController::class, 'update'])->whereNumber('provider')->name('providers.update');
     Route::get('/providers/{provider}/documents/{document}', [\App\Modules\Providers\Controllers\Admin\ProviderDocumentController::class, 'show'])

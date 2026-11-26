@@ -74,4 +74,17 @@ class ProviderController extends Controller
         return redirect()->route('admin.providers.index')->with('status',
             $this->service->update($provider->getKey(), $request->validated(), $request->user()));
     }
+
+    /**
+     * اعتماد مزود الخدمة وتفعيل حسابه وإرسال رسالة SMS.
+     * @param AdminProviderIndexRequest $request
+     * @param \App\Modules\Providers\Models\ProviderProfile $provider
+     * @return \Illuminate\Http\RedirectResponse
+     * @throws \Throwable
+     */
+    public function approve(AdminProviderIndexRequest $request, \App\Modules\Providers\Models\ProviderProfile $provider): \Illuminate\Http\RedirectResponse
+    {
+        return redirect()->back()->with('status',
+            $this->service->approve($provider->getKey(), $request->user()));
+    }
 }

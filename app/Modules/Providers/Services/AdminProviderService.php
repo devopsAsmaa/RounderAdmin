@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use App\Modules\Providers\Events\ProvidersChanged;
 use App\Modules\Providers\Enums\Operation;
 use App\Modules\Catalog\Models\Service;
+use App\Modules\Identity\Services\SMS;
 
 /** قواعد عمل Providers؛ تستقبل بيانات متحققاً منها دون الاعتماد على HTTP. */
 class AdminProviderService
@@ -189,6 +190,9 @@ class AdminProviderService
     {
         return DB::transaction(function () use ($providerId, $input, $actor) {
             $provider = ProviderProfile::lockForUpdate()->findOrFail($providerId);
+            $wasApproved = (bool) $provider->is_approved;
+            $newApproved = (bool) ($input['is_approved'] ?? false);
+
             $this->accounts->updateContact($provider->user_id, $input);
             $contract = !empty($input['contract_id'])
                 ? $provider->contracts()->lockForUpdate()->findOrFail($input['contract_id'])
@@ -232,7 +236,90 @@ class AdminProviderService
                 ]);
             }
             DB::afterCommit(fn () => event(new ProvidersChanged(Operation::AdminProviderUpdate, $actor?->id)));
+
+            if (!$wasApproved && $newApproved) {
+                $this->sendApprovalNotification($provider);
+            }
+
             return __('Provider updated successfully.');
         });
+    }
+
+    /**
+     * اعتماد مزود الخدمة وتفعيل حسابه وعقده مع إرسال إشعار SMS.
+     *
+     * @param int $providerId
+     * @param User|\App\Modules\Identity\Models\Admin|null $actor
+     * @return string
+     * @throws \Throwable
+     */
+    public function approve(int $providerId, User|\App\Modules\Identity\Models\Admin|null $actor): string
+    {
+        return DB::transaction(function () use ($providerId, $actor) {
+            $provider = ProviderProfile::lockForUpdate()->findOrFail($providerId);
+
+            if ($provider->is_approved) {
+                return __('مزود الخدمة معتمد بالفعل.');
+            }
+
+            $provider->update([
+                'is_approved' => true,
+            ]);
+
+            // تفعيل العقد في حال كان مسودة
+            $contract = $provider->contracts()->latest('id')->first();
+            if ($contract && $contract->status?->code === ContractStatusCode::Draft->value) {
+                $activeStatusId = ProviderContractStatus::query()
+                    ->where('code', ContractStatusCode::Active->value)->value('id');
+                if ($activeStatusId) {
+                    $contract->update(['status_id' => $activeStatusId]);
+                }
+            }
+
+            DB::afterCommit(fn () => event(new ProvidersChanged(Operation::AdminProviderUpdate, $actor?->id)));
+
+            $this->sendApprovalNotification($provider);
+
+            return __('تم اعتماد مزود الخدمة بنجاح وتفعيل حسابه وإرسال رسالة التفعيل النصية.');
+        });
+    }
+
+    /**
+     * إرسال رسالة SMS للمزود تفيد باعتماد وتفعيل حسابه في راوندر.
+     *
+     * @param ProviderProfile $provider
+     * @return void
+     */
+    private function sendApprovalNotification(ProviderProfile $provider): void
+    {
+        $user = $provider->user ?? User::query()->find($provider->user_id);
+        $phone = $user?->phone;
+
+        if (!$phone) {
+            return;
+        }
+
+        $companyName = $provider->trade_name ?: $provider->company_name ?: ($user->name ?? 'شريكنا العزيز');
+        $loginUrl = url('/provider/login');
+        $locale = $user->locale ?: 'ar';
+        if (!in_array($locale, ['ar', 'en', 'ur'], true)) {
+            $locale = 'ar';
+        }
+
+        $message = __('providers.approval_sms', [
+            'company_name' => $companyName,
+            'login_url' => $loginUrl,
+        ], $locale);
+
+        try {
+            SMS::send($phone, $message);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to send provider approval SMS', [
+                'provider_id' => $provider->id,
+                'phone' => $phone,
+                'locale' => $locale,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

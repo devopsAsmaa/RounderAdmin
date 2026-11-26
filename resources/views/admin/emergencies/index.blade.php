@@ -99,11 +99,17 @@
                                         {{ $item->provider_name }}
                                     </div>
                                 @endif
+                                @if($item->technician_name)
+                                    <div class="small fw-semibold mt-1" style="color: #035368;">
+                                        <i class="fa-solid fa-user-gear text-rounder-orange me-1"></i>
+                                        <span>{{ $item->technician_name }}</span>
+                                    </div>
+                                @endif
                             </td>
                             <td>
                                 <div class="p-2 rounded-3 border bg-light-subtle">
                                     @adminCan('admin.emergencies.update', 'PUT')
-                                    <form method="post" action="{{ route('admin.emergencies.update', $item->id) }}" class="d-grid gap-2">
+                                    <form method="post" action="{{ route('admin.emergencies.update', $item->id) }}" id="dispatch-form-{{ $item->id }}" class="d-grid gap-2">
                                         @csrf
                                         @method('PUT')
                                         <div class="row g-1">
@@ -111,8 +117,18 @@
                                                 <select class="form-select form-select-sm provider-select" name="provider_profile_id" style="border-radius: 8px;">
                                                     <option value="">{{ __('Choose provider') }}</option>
                                                     @foreach($providers as $provider)
-                                                        <option value="{{ $provider->id }}" @selected($item->provider_name === $provider->company_name)>
+                                                        <option value="{{ $provider->id }}" @selected((int)($item->provider_profile_id ?? 0) === (int)$provider->id || $item->provider_name === $provider->company_name)>
                                                             {{ $provider->company_name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-sm-6">
+                                                <select class="form-select form-select-sm technician-select" name="technician_id" style="border-radius: 8px;">
+                                                    <option value="">{{ __('Technician / Delegate') }} ({{ __('Not assigned') }})</option>
+                                                    @foreach($technicians as $tech)
+                                                        <option value="{{ $tech->id }}" data-provider-id="{{ $tech->provider_profile_id }}" @selected((int)($item->technician_id ?? 0) === (int)$tech->id)>
+                                                            {{ $tech->name }} @if($tech->provider_name) ({{ $tech->provider_name }}) @endif
                                                         </option>
                                                     @endforeach
                                                 </select>
@@ -129,21 +145,25 @@
                                             <div class="col-12 col-sm-6">
                                                 <input type="number" step=".01" min="0" max="9999999999.99" name="gross_amount" class="form-control form-control-sm gross-amount font-monospace" placeholder="{{ __('Final amount for commission') }}" style="border-radius: 8px;">
                                             </div>
-                                            <div class="col-12 col-sm-6">
+                                            <div class="col-12">
                                                 <input name="note" maxlength="2000" class="form-control form-control-sm" placeholder="{{ __('Internal note') }}" style="border-radius: 8px;">
                                             </div>
                                         </div>
-                                        <div class="d-flex justify-content-between align-items-center gap-1 mt-1">
-                                            <button class="btn btn-sm btn-brand px-3 py-1 shadow-sm d-inline-flex align-items-center gap-1" style="border-radius: 8px;">
-                                                <i class="fa-solid fa-check"></i>
-                                                <span>{{ __('Save dispatch update') }}</span>
-                                            </button>
-                                            @adminCan('admin.emergencies.destroy', 'DELETE')
-                                            @include('admin.partials.delete-button', ['action' => route('admin.emergencies.destroy', $item->id)])
-                                            @endadminCan
-                                        </div>
                                     </form>
                                     @endadminCan
+
+                                    <div class="d-flex justify-content-between align-items-center gap-1 mt-2 pt-1 border-top">
+                                        @adminCan('admin.emergencies.update', 'PUT')
+                                        <button type="submit" form="dispatch-form-{{ $item->id }}" class="btn btn-sm btn-brand px-3 py-1 shadow-sm d-inline-flex align-items-center gap-1" style="border-radius: 8px;">
+                                            <i class="fa-solid fa-check"></i>
+                                            <span>{{ __('Save dispatch update') }}</span>
+                                        </button>
+                                        @endadminCan
+
+                                        @adminCan('admin.emergencies.destroy', 'DELETE')
+                                        @include('admin.partials.delete-button', ['action' => route('admin.emergencies.destroy', $item->id)])
+                                        @endadminCan
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -180,6 +200,33 @@ document.querySelectorAll('.emergency-status').forEach((select) => {
     };
     select.addEventListener('change', sync);
     sync();
+});
+
+document.querySelectorAll('form').forEach((form) => {
+    const provSelect = form.querySelector('.provider-select');
+    const techSelect = form.querySelector('.technician-select');
+    if (!provSelect || !techSelect) return;
+
+    provSelect.addEventListener('change', () => {
+        const provId = provSelect.value;
+        Array.from(techSelect.options).forEach((opt) => {
+            if (!opt.value) return;
+            const techProvId = opt.getAttribute('data-provider-id');
+            opt.hidden = provId && techProvId && techProvId !== provId;
+        });
+        const curOpt = techSelect.selectedOptions[0];
+        if (curOpt && curOpt.hidden) {
+            techSelect.value = '';
+        }
+    });
+
+    techSelect.addEventListener('change', () => {
+        const selected = techSelect.selectedOptions[0];
+        const techProvId = selected?.getAttribute('data-provider-id');
+        if (techProvId && !provSelect.value) {
+            provSelect.value = techProvId;
+        }
+    });
 });
 </script>
 @endpush

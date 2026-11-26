@@ -133,4 +133,70 @@ class ProviderFormsTest extends TestCase
         $this->assertSame('Text<p>Safe</p>', $html);
         $this->assertSame('Plain terms', $cleaner->clean('Plain terms'));
     }
+
+    public function test_admin_can_approve_provider_from_modal_route(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+
+        $data = $this->payload();
+        $data['is_approved'] = 0; // Create unapproved provider
+        $this->post('/admin/providers', $data)->assertRedirect(route('admin.providers.index'));
+
+        $provider = ProviderProfile::where('company_name', $data['company_name'])->firstOrFail();
+        $this->assertFalse((bool) $provider->is_approved);
+
+        // Verify index page displays approval modal for unapproved provider
+        $indexResponse = $this->get('/admin/providers');
+        $indexResponse->assertOk()
+            ->assertSee('approveProviderModal' . $provider->id)
+            ->assertSee(route('admin.providers.approve', $provider->id));
+
+        // Submit approval
+        $response = $this->post(route('admin.providers.approve', $provider->id));
+        $response->assertRedirect();
+
+        $this->assertTrue((bool) $provider->fresh()->is_approved);
+        $contract = $provider->fresh()->contracts()->latest('id')->first();
+        $this->assertSame('active', $contract?->status?->code);
+    }
+
+    public function test_admin_approving_provider_from_edit_updates_status(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+
+        $data = $this->payload();
+        $data['is_approved'] = 0;
+        $this->post('/admin/providers', $data);
+
+        $provider = ProviderProfile::where('company_name', $data['company_name'])->firstOrFail();
+        $this->assertFalse((bool) $provider->is_approved);
+
+        // Edit and set is_approved to 1
+        $data['is_approved'] = 1;
+        $contract = $provider->contracts()->latest('id')->first();
+        $data['contract_id'] = $contract->id;
+        $this->put('/admin/providers/' . $provider->id, $data)->assertRedirect(route('admin.providers.index'));
+
+        $this->assertTrue((bool) $provider->fresh()->is_approved);
+    }
+
+    public function test_provider_approval_sms_is_translated_in_all_three_languages(): void
+    {
+        $translations = [
+            'ar' => __('providers.approval_sms', ['company_name' => 'شركة راوندر', 'login_url' => 'https://rounder-sa.com/provider/login'], 'ar'),
+            'en' => __('providers.approval_sms', ['company_name' => 'Rounder Company', 'login_url' => 'https://rounder-sa.com/provider/login'], 'en'),
+            'ur' => __('providers.approval_sms', ['company_name' => 'راؤنڈر کمپنی', 'login_url' => 'https://rounder-sa.com/provider/login'], 'ur'),
+        ];
+
+        $this->assertStringContainsString('تم اعتماد وتفعيل حسابكم في منصة راوندر بنجاح', $translations['ar']);
+        $this->assertStringContainsString('شركة راوندر', $translations['ar']);
+
+        $this->assertStringContainsString('your account on Rounder has been successfully approved and activated', $translations['en']);
+        $this->assertStringContainsString('Rounder Company', $translations['en']);
+
+        $this->assertStringContainsString('راؤنڈر پر آپ کا اکاؤنٹ کامیابی سے منظور اور فعال کر دیا گیا ہے', $translations['ur']);
+        $this->assertStringContainsString('راؤنڈر کمپنی', $translations['ur']);
+    }
 }

@@ -18,6 +18,8 @@ class AdminEmergencyAdminUpdateRequest extends AdminRequest
     {
         return [
             'provider_profile_id' => ['nullable', 'integer', 'exists:provider_profiles,id'],
+            'technician_id' => ['nullable'],
+            'handled_by' => ['nullable'],
             'status_id' => ['required', 'integer', 'exists:emergency_request_statuses,id'],
             'gross_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'note' => ['nullable', 'string', 'max:2000'],

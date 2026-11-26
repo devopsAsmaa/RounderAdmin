@@ -9,6 +9,8 @@ class ApiEmergencyTypeIndexRequest extends ResidentRequest
 {
     public function rules(): array
     {
-        return [];
+        return [
+            'resident_home_id' => ['sometimes', 'nullable', 'integer'],
+        ];
     }
 }

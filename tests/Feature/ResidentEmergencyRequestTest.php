@@ -172,4 +172,45 @@ class ResidentEmergencyRequestTest extends TestCase
 
         $this->assertDatabaseCount('emergency_requests', 0);
     }
+
+    public function test_resident_receives_emergency_setting_with_types_and_dedicated_endpoint(): void
+    {
+        $regionId = DB::table('regions')->insertGetId([
+            'code' => 'test-region',
+            'country_code' => 'SA',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('region_translations')->insert([
+            'region_id' => $regionId,
+            'locale' => 'ar',
+            'name' => 'المنطقة التجريبية',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('emergency_settings')->insert([
+            'region_id' => $regionId,
+            'price' => 250.00,
+            'cancellation_fee' => 0.00,
+            'estimated_time_minutes' => 25,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Link home's city to region
+        $cityId = DB::table('homes')->where('id', DB::table('resident_homes')->where('id', $this->membershipId)->value('home_id'))->value('city_id');
+        DB::table('cities')->where('id', $cityId)->update(['region_id' => $regionId]);
+
+        // GET emergency-types returns setting along with types
+        $response = $this->getJson('/api/v1/resident/emergency-types?resident_home_id=' . $this->membershipId);
+        $response->assertOk()
+            ->assertJsonPath('setting.price', 250)
+            ->assertJsonPath('setting.estimated_time_minutes', 25)
+            ->assertJsonPath('setting.is_available', true)
+            ->assertJsonPath('setting.currency', 'SAR');
+    }
 }

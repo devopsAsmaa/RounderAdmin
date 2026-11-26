@@ -1501,10 +1501,29 @@
                                 "value": "{{locale}}"
                             }
                         ],
-                        "url": "{{base_url}}/api/v1/resident/emergency-types",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/resident/emergency-types?resident_home_id={{resident_home_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "resident",
+                                "emergency-types"
+                            ],
+                            "query": [
+                                {
+                                    "key": "resident_home_id",
+                                    "value": "{{resident_home_id}}",
+                                    "description": "اختياري: لتحديد تسعيرة وتغطية منطقة منزل محدد"
+                                }
+                            ]
+                        },
                         "description": "Returns active emergency types with names in the requested locale."
                     },
-                    "response": []
+                    "response": [],
+                    "description": "Returns active emergency types with names in the requested locale along with emergency setting/pricing for the resident home."
                 },
                 {
                     "name": "GET /resident/emergency-requests",
@@ -2321,6 +2340,197 @@
                         },
                         "url": "{{base_url}}/api/v1/technician/orders/{{booking_id}}/confirm",
                         "description": "تأكيد إتمام الطلب برفع صورة بعد العمل وإدخال رمز الـ OTP من العميل."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/emergencies/statuses",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/emergencies/statuses",
+                        "description": "استعراض حالات بلاغات الطوارئ المعتمدة للفني."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/emergencies",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/technician/emergencies?tab=active&per_page=15",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "technician",
+                                "emergencies"
+                            ],
+                            "query": [
+                                {
+                                    "key": "tab",
+                                    "value": "active"
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "15"
+                                }
+                            ]
+                        },
+                        "description": "استعراض بلاغات الطوارئ المسندة للفني مع خيارات التبويب (قيد المتابعة / مكتملة)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /technician/emergencies/:requestId",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/emergencies/{{emergency_request_id}}",
+                        "description": "استعراض تفاصيل بلاغ طوارئ محدد."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT /technician/emergencies/:requestId/status",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"on_the_way\",\n    \"note\": \"الفريق في الطريق إلى الموقع لمباشرة البلاغ\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/technician/emergencies/{{emergency_request_id}}/status",
+                        "description": "تحديث حالة بلاغ الطوارئ إلى (الفريق في الطريق / قيد المتابعة)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST /technician/emergencies/:requestId/send-otp",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/technician/emergencies/{{emergency_request_id}}/send-otp",
+                        "description": "إرسال رمز تحقق OTP للعميل / الساكن لتأكيد إنهاء ومعالجة بلاغ الطوارئ."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST /technician/emergencies/:requestId/confirm",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "otp",
+                                    "value": "{{otp}}",
+                                    "type": "text",
+                                    "description": "رمز التحقق المكون من 6 أرقام"
+                                },
+                                {
+                                    "key": "image_after",
+                                    "type": "file",
+                                    "description": "صورة بعد المعالجة والإنجاز"
+                                },
+                                {
+                                    "key": "note",
+                                    "value": "تمت معالجة عطل الطوارئ وتأكيد العميل بالرمز.",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/v1/technician/emergencies/{{emergency_request_id}}/confirm",
+                        "description": "تأكيد معالجة طلب الطوارئ برمز OTP للعميل وصورة بعد العمل."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST /technician/emergencies/:requestId/resolve",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept-Language",
+                                "value": "{{locale}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"resolved\",\n    \"note\": \"تمت المعالجة والسيطرة على العطل بنجاح.\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/technician/emergencies/{{emergency_request_id}}/resolve",
+                        "description": "تأكيد معالجة بلاغ الطوارئ (تمت المعالجة)."
                     },
                     "response": []
                 }

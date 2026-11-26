@@ -337,8 +337,16 @@ class ApiTechnicianBookingService
             // حساب العمولة لمزود الخدمة في حال وجود عقد سارٍ
             $contractId = $booking->assignment?->provider_contract_id;
             $providerProfileId = $booking->service_provider_id ?? $booking->assignment?->provider_profile_id;
-            if ($contractId && $providerProfileId) {
-                $contract = ProviderContract::query()->find($contractId);
+            if ($providerProfileId) {
+                $contract = $contractId
+                    ? ProviderContract::query()->find($contractId)
+                    : ProviderContract::query()->where('provider_profile_id', $providerProfileId)
+                        ->whereHas('status', fn ($query) => $query->where('code', \App\Modules\Providers\Enums\ContractStatusCode::Active->value))
+                        ->whereDate('starts_on', '<=', today())
+                        ->where(fn ($query) => $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))
+                        ->latest('starts_on')
+                        ->first();
+
                 if ($contract) {
                     $amount = (float) ($booking->total_amount ?? 0);
                     $this->commissions->record(

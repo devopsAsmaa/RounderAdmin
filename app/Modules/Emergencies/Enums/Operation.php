@@ -7,4 +7,7 @@ enum Operation: string
     case AdminEmergencyCreationStoreEmergency = 'AdminEmergencyCreationService.storeEmergency';
     case ApiEmergencyRequestStore = 'ApiEmergencyRequestService.store';
     case ApiEmergencyRequestCancel = 'ApiEmergencyRequestService.cancel';
+    case ApiTechnicianEmergencyUpdate = 'ApiTechnicianEmergencyService.update';
+    case ApiTechnicianEmergencySendOtp = 'ApiTechnicianEmergencyService.sendOtp';
+    case ApiTechnicianEmergencyConfirm = 'ApiTechnicianEmergencyService.confirm';
 }

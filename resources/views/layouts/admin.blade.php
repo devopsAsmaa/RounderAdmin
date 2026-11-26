@@ -433,8 +433,9 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $isOrdersActive = request()->routeIs('admin.service-orders.*') || request()->routeIs('admin.emergencies.*') || request()->routeIs('admin.bookings.*') || request()->routeIs('admin.order-statuses.*');
     $isPackagesActive = request()->routeIs('admin.packages.*') || request()->routeIs('admin.package-features.*') || request()->routeIs('admin.subscriptions.*');
     $isPropertiesActive = request()->routeIs('admin.realestate.*') || request()->routeIs('admin.regions.*') || request()->routeIs('admin.cities.*');
-    $isUsersActive = request()->routeIs('admin.providers.*') || request()->routeIs('admin.residents.*') || request()->routeIs('admin.support-tickets.*');
-    $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.pages.*') || request()->routeIs('admin.faqs.*') || request()->routeIs('admin.content.*') || request()->routeIs('admin.company-settings.*');
+    $isFinanceActive = request()->routeIs('admin.providers.finance.*') || request()->routeIs('admin.providers.commissions.*');
+    $isUsersActive = (request()->routeIs('admin.providers.*') && !$isFinanceActive) || request()->routeIs('admin.residents.*') || request()->routeIs('admin.support-tickets.*');
+    $isSettingsActive = request()->routeIs('admin.permissions.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.pages.*') || request()->routeIs('admin.faqs.*') || request()->routeIs('admin.content.*') || request()->routeIs('admin.company-settings.*') || request()->routeIs('admin.emergency-settings.*');
 @endphp
 <aside class="offcanvas-lg offcanvas-start admin-sidebar d-print-none" tabindex="-1" id="admin-menu" aria-labelledby="admin-menu-title">
 <div class="sidebar-brand-header d-flex align-items-center justify-content-between px-3 px-lg-4">
@@ -640,9 +641,9 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     <div id="menu-users" class="collapse {{ $isUsersActive ? 'show' : '' }}" data-bs-parent="#sidebarMenuAccordion">
         <div class="sidebar-sublinks">
             @if($permService->allowsRoute($currentUser, 'admin.providers.index', 'GET'))
-                <a class="{{ request()->routeIs('admin.providers.*') ? 'active' : '' }}" href="{{ route('admin.providers.index') }}"><i class="fa-solid fa-building-shield me-2" aria-hidden="true"></i>{{ __('Registered providers') }}</a>
+                <a class="{{ request()->routeIs('admin.providers.*') && !$isFinanceActive ? 'active' : '' }}" href="{{ route('admin.providers.index') }}"><i class="fa-solid fa-building-shield me-2" aria-hidden="true"></i>{{ __('Registered providers') }}</a>
             @elseif($permService->allowsRoute($currentUser, 'admin.providers.create', 'GET'))
-                <a class="{{ request()->routeIs('admin.providers.*') ? 'active' : '' }}" href="{{ route('admin.providers.create') }}"><i class="fa-solid fa-building-shield me-2" aria-hidden="true"></i>{{ __('Registered providers') }}</a>
+                <a class="{{ request()->routeIs('admin.providers.*') && !$isFinanceActive ? 'active' : '' }}" href="{{ route('admin.providers.create') }}"><i class="fa-solid fa-building-shield me-2" aria-hidden="true"></i>{{ __('Registered providers') }}</a>
             @endif
 
             @if($permService->allowsRoute($currentUser, 'admin.residents.index', 'GET'))
@@ -657,7 +658,28 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 </div>
 @endif
 
-{{-- 7. النظام والإعدادات --}}
+{{-- 7. الحسابات والمالية --}}
+@if(
+    $permService->allowsRoute($currentUser, 'admin.providers.index', 'GET')
+)
+<div class="sidebar-group">
+    <button class="sidebar-group-btn {{ $isFinanceActive ? 'has-active-child' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#menu-finance" aria-expanded="{{ $isFinanceActive ? 'true' : 'false' }}" aria-controls="menu-finance">
+        <span class="d-flex align-items-center">
+            <i class="fa-solid fa-file-invoice-dollar group-icon"></i>
+            <span>{{ __('Accounts and finance') }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down chevron-icon"></i>
+    </button>
+    <div id="menu-finance" class="collapse {{ $isFinanceActive ? 'show' : '' }}" data-bs-parent="#sidebarMenuAccordion">
+        <div class="sidebar-sublinks">
+            <a class="{{ request()->routeIs('admin.providers.finance.*') ? 'active' : '' }}" href="{{ route('admin.providers.finance.index') }}"><i class="fa-solid fa-scale-balanced me-2" aria-hidden="true"></i>{{ __('Provider accounts & balances') }}</a>
+            <a class="{{ request()->routeIs('admin.providers.commissions.*') ? 'active' : '' }}" href="{{ route('admin.providers.commissions.index') }}"><i class="fa-solid fa-list-check me-2" aria-hidden="true"></i>{{ __('Detailed commissions ledger') }}</a>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- 8. النظام والإعدادات --}}
 @if(
     $permService->allowsRoute($currentUser, 'admin.users.index', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.users.create', 'GET') ||
@@ -665,7 +687,8 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
     $permService->allowsRoute($currentUser, 'admin.permissions.create', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.company-settings.edit', 'GET') ||
     $permService->allowsRoute($currentUser, 'admin.pages.index', 'GET') ||
-    $permService->allowsRoute($currentUser, 'admin.content.index', 'GET')
+    $permService->allowsRoute($currentUser, 'admin.content.index', 'GET') ||
+    $permService->allowsRoute($currentUser, 'admin.emergency-settings.index', 'GET')
 )
 <div class="sidebar-group">
     <button class="sidebar-group-btn {{ $isSettingsActive ? 'has-active-child' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#menu-settings" aria-expanded="{{ $isSettingsActive ? 'true' : 'false' }}" aria-controls="menu-settings">
@@ -699,6 +722,10 @@ a.kpi-card:hover .kpi-icon{background:var(--orange);color:#fff;transform:scale(1
 
             @if($permService->allowsRoute($currentUser, 'admin.faqs.index', 'GET'))
                 <a class="{{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}" href="{{ route('admin.faqs.index') }}"><i class="fa-solid fa-circle-question me-2" aria-hidden="true"></i>الأسئلة الشائعة</a>
+            @endif
+
+            @if($permService->allowsRoute($currentUser, 'admin.emergency-settings.index', 'GET'))
+                <a class="{{ request()->routeIs('admin.emergency-settings.*') ? 'active' : '' }}" href="{{ route('admin.emergency-settings.index') }}"><i class="fa-solid fa-truck-medical me-2" aria-hidden="true"></i>إعدادات طلبات الطوارئ</a>
             @endif
 
             @if($permService->allowsRoute($currentUser, 'admin.content.index', 'GET'))

@@ -109,9 +109,21 @@
                                         <i class="fa-solid fa-circle-check me-1"></i>{{ __('Approved') }}
                                     </span>
                                 @else
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-                                        <i class="fa-solid fa-hourglass-half me-1"></i>{{ __('Pending approval') }}
-                                    </span>
+                                    @adminCan('admin.providers.edit')
+                                        <button type="button" 
+                                                class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 btn btn-link text-decoration-none d-inline-flex align-items-center gap-1 shadow-none"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#approveProviderModal{{ $provider->provider_id }}"
+                                                title="اضغط لتأكيد الاعتماد">
+                                            <i class="fa-solid fa-hourglass-half"></i>
+                                            <span>{{ __('Pending approval') }}</span>
+                                            <i class="fa-solid fa-arrow-pointer ms-1 small opacity-75"></i>
+                                        </button>
+                                    @else
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                            <i class="fa-solid fa-hourglass-half me-1"></i>{{ __('Pending approval') }}
+                                        </span>
+                                    @endadminCan
                                 @endif
                             </td>
                             <td class="text-nowrap">
@@ -149,6 +161,18 @@
                             </td>
                             <td class="text-nowrap">
                                 <div class="d-flex align-items-center gap-1">
+                                    @if(!$provider->is_approved)
+                                        @adminCan('admin.providers.edit')
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 shadow-sm px-2.5 py-1" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#approveProviderModal{{ $provider->provider_id }}"
+                                                    title="اعتماد وتفعيل حساب المزود">
+                                                <i class="fa-solid fa-check"></i>
+                                                <span>اعتماد</span>
+                                            </button>
+                                        @endadminCan
+                                    @endif
                                     @adminCan('admin.providers.edit')
                                         <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.providers.edit', $provider->provider_id) }}" title="{{ __('Edit') }}">
                                             <i class="fa-solid fa-pen-to-square me-1"></i>{{ __('Edit') }}
@@ -181,5 +205,66 @@
             </div>
         @endif
     </div>
+
+    {{-- مودالات اعتماد المزودين --}}
+    @foreach($providers as $provider)
+        @if(!$provider->is_approved)
+            <div class="modal fade" id="approveProviderModal{{ $provider->provider_id }}" tabindex="-1" aria-labelledby="approveModalLabel{{ $provider->provider_id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <div class="modal-header border-bottom pb-3">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; flex-shrink: 0;">
+                                    <i class="fa-solid fa-shield-check fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="modal-title fw-bold mb-0 text-dark" id="approveModalLabel{{ $provider->provider_id }}">اعتماد مزود الخدمة</h5>
+                                    <span class="text-muted small">تفعيل حساب المنشأة وإرسال رسالة تفعيل نصية SMS</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
+                        </div>
+                        <form method="POST" action="{{ route('admin.providers.approve', $provider->provider_id) }}">
+                            @csrf
+                            <div class="modal-body py-3">
+                                <div class="p-3 rounded-3 bg-light border mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-light-subtle">
+                                        <span class="text-secondary small">اسم المنشأة:</span>
+                                        <strong class="text-dark">{{ $provider->company_name }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-light-subtle">
+                                        <span class="text-secondary small">الشخص المسؤول:</span>
+                                        <span class="fw-semibold text-dark">{{ $provider->name }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-light-subtle">
+                                        <span class="text-secondary small">رقم الجوال:</span>
+                                        <span dir="ltr" class="font-monospace fw-bold text-primary">{{ $provider->phone ?: '—' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-secondary small">مرجع العقد:</span>
+                                        <span class="badge bg-white text-secondary border font-monospace">{{ $provider->contract_reference ?? '—' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-success d-flex align-items-start gap-2.5 py-2.5 px-3 mb-0 small rounded-3">
+                                    <i class="fa-solid fa-paper-plane mt-1 text-success fs-6"></i>
+                                    <div>
+                                        عند الضغط على تأكيد الاعتماد، سيتم تفعيل حساب المزود، تفعيل العقد الرسمي، وإرسال رسالة <strong>SMS نصية فورية</strong> لجوال الشريك لإبلاغه بتفعيل حسابه في راوندر مع رابط تسجيل الدخول.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-top pt-2">
+                                <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal">إلغاء</button>
+                                <button type="submit" class="btn btn-success rounded-3 px-4 fw-bold d-inline-flex align-items-center gap-1.5 shadow-sm">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span>تأكيد الاعتماد وإرسال SMS</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
 </main>
 @endsection

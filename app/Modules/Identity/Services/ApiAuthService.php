@@ -199,6 +199,27 @@ class ApiAuthService
         $completedOrdersCount = $actor->technicianBookings()
             ->whereHas('status', fn ($q) => $q->where('code', BookingStatusCode::Completed->value))->count();
 
+        $emergencyQuery = \App\Modules\Emergencies\Models\EmergencyRequest::query()
+            ->where(function ($q) use ($actor) {
+                $q->where('handled_by', $actor->id);
+                if ($actor->provider_profile_id) {
+                    $q->orWhere(function ($sub) use ($actor) {
+                        $sub->whereNull('handled_by')
+                            ->whereHas('assignment', fn ($a) => $a->where('provider_profile_id', $actor->provider_profile_id));
+                    });
+                }
+            });
+
+        $activeEmergenciesCount = (clone $emergencyQuery)
+            ->whereHas('status', fn ($q) => $q->whereIn('code', [
+                \App\Modules\Emergencies\Enums\EmergencyStatusCode::Received->value,
+                \App\Modules\Emergencies\Enums\EmergencyStatusCode::Assigned->value,
+                \App\Modules\Emergencies\Enums\EmergencyStatusCode::OnTheWay->value,
+            ]))->count();
+
+        $resolvedEmergenciesCount = (clone $emergencyQuery)
+            ->whereHas('status', fn ($q) => $q->where('code', \App\Modules\Emergencies\Enums\EmergencyStatusCode::Resolved->value))->count();
+
         $services = $actor->technicianServices->map(fn ($service) => [
             'id' => $service->id,
             'code' => $service->code,
@@ -234,6 +255,9 @@ class ApiAuthService
                     'assigned_orders_count' => $actor->technicianBookings()->count(),
                     'active_orders_count' => $activeOrdersCount,
                     'completed_orders_count' => $completedOrdersCount,
+                    'assigned_emergencies_count' => $emergencyQuery->count(),
+                    'active_emergencies_count' => $activeEmergenciesCount,
+                    'resolved_emergencies_count' => $resolvedEmergenciesCount,
                 ],
             ],
         ];

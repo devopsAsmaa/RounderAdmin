@@ -325,4 +325,133 @@ class OrderBulkStatusTechnicianAssignmentTest extends TestCase
         $booking->refresh();
         $this->assertNull($booking->technician_id);
     }
+
+    public function test_admin_can_assign_technician_to_emergency_request_at_admin_emergencies_page(): void
+    {
+        $this->seed();
+        $admin = Admin::query()->create([
+            'name' => 'مدير بلاغات الطوارئ',
+            'email' => 'admin-em-' . uniqid() . '@example.test',
+            'password' => 'AdminPass123!',
+            'locale' => 'ar',
+            'is_active' => true,
+            'is_super_admin' => true,
+        ]);
+
+        $service = Service::query()->where('is_active', true)->firstOrFail();
+        $profile = app(ProviderRegistrationService::class)->register([
+            'company_name' => 'شركة طوارئ السريعة',
+            'trade_name' => 'طوارئ السريعة',
+            'provider_type' => 'شركة صيانة',
+            'years_of_experience' => 4,
+            'service_ids' => [$service->id],
+            'phone' => '055' . random_int(10000000, 99999999),
+            'password' => 'StrongPassword123!',
+        ]);
+        $profile->update(['is_approved' => true, 'contract_accepted_at' => now()]);
+
+        // Ensure active contract for emergency assignments
+        $activeContractStatusId = DB::table('provider_contract_statuses')
+            ->where('code', ContractStatusCode::Active->value)->value('id');
+        $contract = ProviderContract::query()->where('provider_profile_id', $profile->id)->first();
+        if ($contract) {
+            $contract->update(['status_id' => $activeContractStatusId, 'starts_on' => now()->subDay(), 'ends_on' => now()->addYear()]);
+        } else {
+            $contract = ProviderContract::query()->create([
+                'provider_profile_id' => $profile->id,
+                'status_id' => $activeContractStatusId,
+                'starts_on' => now()->subDay(),
+                'ends_on' => now()->addYear(),
+                'commission_rate' => 10,
+            ]);
+        }
+
+        $portal = app(ProviderPortalService::class);
+        $technicianId = $portal->saveTechnician($profile, $profile->user, [
+            'name' => 'مندوب الطوارئ خالد',
+            'phone' => '055' . random_int(10000000, 99999999),
+            'password' => 'TechPassword123!',
+        ]);
+
+        $resident = User::query()->create([
+            'name' => 'ساكن البلاغ التجريبي',
+            'email' => 'resident-em-' . uniqid() . '@example.test',
+            'password' => 'ResidentPassword123!',
+            'locale' => 'ar',
+            'role_id' => DB::table('roles')->where('code', RoleCode::Resident->value)->value('id'),
+        ]);
+
+        $homeId = DB::table('homes')->insertGetId([
+            'city_id' => DB::table('cities')->value('id'),
+            'name' => 'أبراج الصحافة',
+            'address' => 'طريق أنس بن مالك',
+            'property_code' => 'EM-PROP-' . uniqid(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $membership = ResidentHome::query()->create([
+            'user_id' => $resident->id,
+            'home_id' => $homeId,
+            'unit_label' => '104',
+        ]);
+
+        $emergencyType = \App\Modules\Emergencies\Models\EmergencyType::query()->firstOrCreate(['code' => 'water_leak_test', 'is_active' => true]);
+        $emergencyType->translations()->updateOrCreate(['locale' => 'ar'], ['name' => 'تسريب مياه حاد']);
+
+        $receivedStatus = \App\Modules\Emergencies\Models\EmergencyRequestStatus::query()->where('code', \App\Modules\Emergencies\Enums\EmergencyStatusCode::Received->value)->first();
+        $assignedStatus = \App\Modules\Emergencies\Models\EmergencyRequestStatus::query()->where('code', \App\Modules\Emergencies\Enums\EmergencyStatusCode::Assigned->value)->first();
+
+        $emergency = \App\Modules\Emergencies\Models\EmergencyRequest::query()->create([
+            'resident_id' => $resident->id,
+            'resident_home_id' => $membership->id,
+            'home_id' => $homeId,
+            'emergency_type_id' => $emergencyType->id,
+            'status_id' => $receivedStatus->id,
+            'reference' => 'RD-EM-TEST-1',
+            'contact_phone' => '0551122334',
+            'description' => 'تسريب مياه مفاجئ في المطبخ',
+            'location_details' => 'شقة 104 - الدور 1',
+            'requested_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        // 1. Visit /admin/emergencies and ensure technician-select is present
+        $this->get(route('admin.emergencies.index'))
+            ->assertOk()
+            ->assertSee('technician-select')
+            ->assertSee('مندوب الطوارئ خالد');
+
+        // 2. Admin assigns provider and technician to the emergency request
+        $response = $this->put(route('admin.emergencies.update', $emergency->id), [
+            'status_id' => $assignedStatus->id,
+            'provider_profile_id' => $profile->id,
+            'technician_id' => $technicianId,
+            'note' => 'تم تعيين المندوب خالد وإرسال البلاغ لشركة الصيانة',
+        ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+
+        $emergency->refresh();
+        $this->assertSame($assignedStatus->id, (int) $emergency->status_id);
+        $this->assertSame($technicianId, (int) $emergency->handled_by);
+
+        // 3. Visit index again and verify technician name appears in the row
+        $this->get(route('admin.emergencies.index'))
+            ->assertOk()
+            ->assertSee('مندوب الطوارئ خالد');
+
+        // 4. Admin unassigns the technician
+        $unassignResponse = $this->put(route('admin.emergencies.update', $emergency->id), [
+            'status_id' => $assignedStatus->id,
+            'provider_profile_id' => $profile->id,
+            'technician_id' => '',
+            'note' => 'إلغاء تعيين المندوب',
+        ]);
+
+        $unassignResponse->assertRedirect()->assertSessionHasNoErrors();
+        $emergency->refresh();
+        $this->assertNull($emergency->handled_by);
+    }
 }
